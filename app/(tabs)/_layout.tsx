@@ -8,6 +8,8 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: '#E8640A',
         headerShown: false,
+        tabBarStyle: { backgroundColor: '#000', borderTopColor: '#262626' },
+        tabBarInactiveTintColor: '#555',
       }}>
       <Tabs.Screen
         name="index"
@@ -26,8 +28,15 @@ export default function TabLayout() {
       <Tabs.Screen
         name="explore"
         options={{
-          title: 'Explore',
+          title: 'Feed',
           tabBarIcon: () => <Text style={{ fontSize: 20 }}>📸</Text>,
+        }}
+      />
+      <Tabs.Screen
+        name="scanner"
+        options={{
+          title: 'Scanner',
+          tabBarIcon: () => <Text style={{ fontSize: 20 }}>📡</Text>,
         }}
       />
     </Tabs>
