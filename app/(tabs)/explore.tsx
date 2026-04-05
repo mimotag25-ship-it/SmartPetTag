@@ -1,17 +1,19 @@
 import { useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Animated, Dimensions, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { supabase } from '../../lib/supabase';
 
 const { width } = Dimensions.get('window');
 const IS_WEB = width > 768;
 
 const STORIES = [
-  { id: 1, name: 'your story', emoji: '🐕', isYou: true, gradient: ['#f09433','#e6683c','#dc2743','#cc2366','#bc1888'] },
-  { id: 2, name: 'luna.poodle', emoji: '🐩', gradient: ['#f09433','#e6683c','#dc2743'] },
-  { id: 3, name: 'rocky.bull', emoji: '🐾', gradient: ['#833ab4','#fd1d1d','#fcb045'] },
-  { id: 4, name: 'coco.schnzr', emoji: '🐕', gradient: ['#405de6','#5851db','#833ab4'] },
-  { id: 5, name: 'max.golden', emoji: '🦮', gradient: ['#f09433','#e6683c','#dc2743'] },
-  { id: 6, name: 'bella.lab', emoji: '🐶', gradient: ['#833ab4','#fd1d1d','#fcb045'] },
-  { id: 7, name: 'thor.husky', emoji: '🐕‍🦺', gradient: ['#405de6','#5851db','#833ab4'] },
+  { id: 1, name: 'your story', emoji: '🐕', isYou: true },
+  { id: 2, name: 'luna.poodle', emoji: '🐩' },
+  { id: 3, name: 'rocky.bull', emoji: '🐾' },
+  { id: 4, name: 'coco.schnzr', emoji: '🐕' },
+  { id: 5, name: 'max.golden', emoji: '🦮' },
+  { id: 6, name: 'bella.lab', emoji: '🐶' },
+  { id: 7, name: 'thor.husky', emoji: '🐕‍🦺' },
 ];
 
 const SUGGESTED = [
@@ -38,10 +40,10 @@ const INITIAL_POSTS = [
     dog: 'Athena',
     owner: 'liliana.gutierrez',
     emoji: '🐕',
+    image: null,
     verified: false,
-    audio: 'Original audio',
     location: 'Parque España, CDMX',
-    caption: 'Sunday zoomies at the park 🌳 She literally ran for 2 hours straight and still wanted more.',
+    caption: 'Sunday zoomies at the park 🌳 She literally ran for 2 hours straight.',
     likes: 142,
     time: '2 MINUTES AGO',
     comments: [
@@ -54,8 +56,8 @@ const INITIAL_POSTS = [
     dog: 'Luna',
     owner: 'ana.garcia',
     emoji: '🐩',
+    image: null,
     verified: true,
-    audio: 'Original audio',
     location: 'Doggy Chic Grooming, Roma',
     caption: 'Fresh out of the groomer ✨ She walked out like she owns the entire city.',
     likes: 389,
@@ -63,7 +65,6 @@ const INITIAL_POSTS = [
     comments: [
       { user: 'coco.schnauzer', text: 'STUNNING 👑' },
       { user: 'athena.lab', text: 'We need to do a playdate 🐾' },
-      { user: 'bella.pup', text: 'What groomer is this??' },
     ],
   },
   {
@@ -71,15 +72,14 @@ const INITIAL_POSTS = [
     dog: 'Rocky',
     owner: 'rodrigo.vega',
     emoji: '🐾',
+    image: null,
     verified: false,
-    audio: 'Original audio',
     location: 'Condesa, CDMX',
-    caption: 'Found safe thanks to SmartPet Tag 🦸 Thank you everyone who helped. This community is everything ❤️',
+    caption: 'Found safe thanks to SmartPet Tag 🦸 Thank you everyone who helped ❤️',
     likes: 1204,
     time: '3 HOURS AGO',
     comments: [
       { user: 'liliana.gutierrez', text: 'So relieved!! 😭❤️' },
-      { user: 'ana.garcia', text: 'Never letting Luna out without her tag again' },
       { user: 'smartpettag', text: 'This is why we built SmartPet Tag 🐾' },
     ],
   },
@@ -88,7 +88,6 @@ const INITIAL_POSTS = [
 function Post({ post }) {
   const [liked, setLiked] = useState(false);
   const [likes, setLikes] = useState(post.likes);
-  const [showHeart, setShowHeart] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState(post.comments);
@@ -125,7 +124,6 @@ function Post({ post }) {
 
   return (
     <View style={styles.post}>
-      {/* Header */}
       <View style={styles.postHeader}>
         <View style={styles.storyRingSmall}>
           <View style={styles.postAvatarWrap}>
@@ -141,25 +139,27 @@ function Post({ post }) {
               <Text style={styles.followBtn}>{following ? 'Following' : 'Follow'}</Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.postAudio}>🎵 {post.audio}</Text>
+          <Text style={styles.postLocation}>{post.location}</Text>
         </View>
         <TouchableOpacity>
           <Text style={styles.moreBtn}>···</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Photo */}
       <TouchableOpacity activeOpacity={1} onPress={handleDoubleTap} style={styles.photoWrap}>
-        <View style={styles.photo}>
-          <Text style={styles.photoEmoji}>{post.emoji}</Text>
-          <Text style={styles.photoCaption}>{post.caption}</Text>
-        </View>
+        {post.image ? (
+          <Image source={{ uri: post.image }} style={styles.photo} resizeMode="cover" />
+        ) : (
+          <View style={styles.photoPlaceholder}>
+            <Text style={styles.photoEmoji}>{post.emoji}</Text>
+            <Text style={styles.photoCaption}>{post.caption}</Text>
+          </View>
+        )}
         <Animated.View style={[styles.heartOverlay, { transform: [{ scale: heartScale }], opacity: heartOpacity }]}>
           <Text style={{ fontSize: 80 }}>❤️</Text>
         </Animated.View>
       </TouchableOpacity>
 
-      {/* Actions */}
       <View style={styles.postActions}>
         <View style={{ flexDirection: 'row', gap: 14 }}>
           <TouchableOpacity onPress={() => { setLiked(!liked); setLikes(l => liked ? l - 1 : l + 1); }}>
@@ -177,13 +177,14 @@ function Post({ post }) {
         </TouchableOpacity>
       </View>
 
-      {/* Post body */}
       <View style={styles.postBody}>
         <Text style={styles.likesText}>{likes.toLocaleString()} likes</Text>
-        <Text style={styles.captionLine}>
-          <Text style={styles.postOwner}>{post.owner} </Text>
-          <Text style={styles.captionText}>{post.caption}</Text>
-        </Text>
+        {post.image && (
+          <Text style={styles.captionLine}>
+            <Text style={styles.postOwner}>{post.owner} </Text>
+            <Text style={styles.captionText}>{post.caption}</Text>
+          </Text>
+        )}
         {comments.length > 0 && (
           <TouchableOpacity onPress={() => setShowComments(!showComments)}>
             <Text style={styles.viewAll}>View all {comments.length} comments</Text>
@@ -198,7 +199,6 @@ function Post({ post }) {
         <Text style={styles.timeText}>{post.time}</Text>
       </View>
 
-      {/* Comment input */}
       <View style={styles.commentInputWrap}>
         <Text style={{ fontSize: 18, marginRight: 8 }}>🐕</Text>
         <TextInput
@@ -213,9 +213,6 @@ function Post({ post }) {
             <Text style={styles.postBtn}>Post</Text>
           </TouchableOpacity>
         )}
-        <TouchableOpacity style={{ marginLeft: 8 }}>
-          <Text style={{ fontSize: 16 }}>😊</Text>
-        </TouchableOpacity>
       </View>
     </View>
   );
@@ -223,19 +220,55 @@ function Post({ post }) {
 
 export default function FeedScreen() {
   const [posts, setPosts] = useState(INITIAL_POSTS);
-  const [newCaption, setNewCaption] = useState('');
   const [showComposer, setShowComposer] = useState(false);
+  const [newCaption, setNewCaption] = useState('');
+  const [newImage, setNewImage] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const [viewedStories, setViewedStories] = useState([]);
 
-  function submitPost() {
-    if (!newCaption.trim()) return;
+  async function pickImage() {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled) {
+      setNewImage(result.assets[0].uri);
+    }
+  }
+
+  async function uploadImage(uri) {
+    try {
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const fileName = `post-${Date.now()}.jpg`;
+      const { data, error } = await supabase.storage
+        .from('posts')
+        .upload(fileName, blob, { contentType: 'image/jpeg' });
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from('posts').getPublicUrl(fileName);
+      return urlData.publicUrl;
+    } catch (e) {
+      console.log('Upload error:', e.message);
+      return null;
+    }
+  }
+
+  async function submitPost() {
+    if (!newCaption.trim() && !newImage) return;
+    setUploading(true);
+    let imageUrl = null;
+    if (newImage) {
+      imageUrl = await uploadImage(newImage);
+    }
     setPosts(p => [{
       id: Date.now(),
       dog: 'Athena',
       owner: 'liliana.gutierrez',
       emoji: '🐕',
+      image: imageUrl || newImage,
       verified: false,
-      audio: 'Original audio',
       location: 'Portales, CDMX',
       caption: newCaption,
       likes: 0,
@@ -243,13 +276,13 @@ export default function FeedScreen() {
       comments: [],
     }, ...p]);
     setNewCaption('');
+    setNewImage(null);
     setShowComposer(false);
+    setUploading(false);
   }
 
   return (
     <View style={styles.container}>
-
-      {/* Left sidebar — desktop only */}
       {IS_WEB && (
         <View style={styles.sidebar}>
           <Text style={styles.sidebarLogo}>🐾</Text>
@@ -267,7 +300,6 @@ export default function FeedScreen() {
         </View>
       )}
 
-      {/* Center feed */}
       <ScrollView style={styles.feed} showsVerticalScrollIndicator={false}>
 
         {/* Stories */}
@@ -301,7 +333,20 @@ export default function FeedScreen() {
         {showComposer && (
           <View style={styles.composer}>
             <Text style={styles.composerTitle}>Create new post</Text>
-            <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
+
+            {/* Image picker */}
+            <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+              {newImage ? (
+                <Image source={{ uri: newImage }} style={styles.imagePreview} resizeMode="cover" />
+              ) : (
+                <View style={styles.imagePickerEmpty}>
+                  <Text style={styles.imagePickerIcon}>📷</Text>
+                  <Text style={styles.imagePickerText}>Tap to choose a photo</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start', marginTop: 12 }}>
               <Text style={{ fontSize: 28 }}>🐕</Text>
               <TextInput
                 style={styles.composerInput}
@@ -310,33 +355,29 @@ export default function FeedScreen() {
                 value={newCaption}
                 onChangeText={setNewCaption}
                 multiline
-                autoFocus
               />
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 10 }}>
-              <TouchableOpacity onPress={() => setShowComposer(false)}>
+              <TouchableOpacity onPress={() => { setShowComposer(false); setNewImage(null); setNewCaption(''); }}>
                 <Text style={{ color: '#aaa', fontSize: 14 }}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.shareBtn, !newCaption.trim() && { opacity: 0.4 }]}
+                style={[styles.shareBtn, (!newCaption.trim() && !newImage) && { opacity: 0.4 }]}
                 onPress={submitPost}
-                disabled={!newCaption.trim()}
+                disabled={(!newCaption.trim() && !newImage) || uploading}
               >
-                <Text style={styles.shareBtnText}>Share</Text>
+                <Text style={styles.shareBtnText}>{uploading ? 'Uploading...' : 'Share'}</Text>
               </TouchableOpacity>
             </View>
           </View>
         )}
 
-        {/* Posts */}
         {posts.map(post => <Post key={post.id} post={post} />)}
 
       </ScrollView>
 
-      {/* Right sidebar — desktop only */}
       {IS_WEB && (
         <View style={styles.rightSidebar}>
-          {/* Account */}
           <View style={styles.accountRow}>
             <View style={styles.accountAvatar}>
               <Text style={{ fontSize: 22 }}>🐕</Text>
@@ -349,15 +390,10 @@ export default function FeedScreen() {
               <Text style={styles.switchBtn}>Switch</Text>
             </TouchableOpacity>
           </View>
-
-          {/* Suggested */}
           <View style={styles.suggestedHeader}>
             <Text style={styles.suggestedTitle}>Suggested for you</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAllBtn}>See all</Text>
-            </TouchableOpacity>
+            <TouchableOpacity><Text style={styles.seeAllBtn}>See all</Text></TouchableOpacity>
           </View>
-
           {SUGGESTED.map((s, i) => (
             <View key={i} style={styles.suggestedRow}>
               <View style={styles.suggestedAvatar}>
@@ -367,28 +403,24 @@ export default function FeedScreen() {
                 <Text style={styles.suggestedUser}>{s.user}</Text>
                 <Text style={styles.suggestedNote} numberOfLines={1}>{s.note}</Text>
               </View>
-              <TouchableOpacity>
-                <Text style={styles.followLink}>Follow</Text>
-              </TouchableOpacity>
+              <TouchableOpacity><Text style={styles.followLink}>Follow</Text></TouchableOpacity>
             </View>
           ))}
-
           <Text style={styles.footer}>© 2026 SMARTPET TAG FROM MEXICO CITY</Text>
         </View>
       )}
-
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000', flexDirection: 'row' },
-  sidebar: { width: 240, backgroundColor: '#000', borderRightWidth: 0.5, borderRightColor: '#262626', paddingTop: 20, paddingHorizontal: 16, paddingBottom: 20 },
+  sidebar: { width: 240, backgroundColor: '#000', borderRightWidth: 0.5, borderRightColor: '#262626', paddingTop: 20, paddingHorizontal: 16 },
   sidebarLogo: { fontSize: 32, marginBottom: 4, marginLeft: 12 },
   sidebarAppName: { fontSize: 22, fontWeight: '700', color: '#fff', fontStyle: 'italic', marginBottom: 24, marginLeft: 12 },
   navItem: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12, paddingHorizontal: 12, borderRadius: 10 },
   navIcon: { fontSize: 24 },
-  navLabel: { fontSize: 15, color: '#fff', fontWeight: '400' },
+  navLabel: { fontSize: 15, color: '#fff' },
   feed: { flex: 1, maxWidth: IS_WEB ? 470 : undefined },
   storiesWrap: { backgroundColor: '#000', borderBottomWidth: 0.5, borderBottomColor: '#262626' },
   storyItem: { alignItems: 'center', width: 66 },
@@ -408,10 +440,11 @@ const styles = StyleSheet.create({
   postOwner: { color: '#fff', fontWeight: '600', fontSize: 13 },
   postDot: { color: '#aaa', fontSize: 13 },
   followBtn: { color: '#0095f6', fontWeight: '600', fontSize: 13 },
-  postAudio: { color: '#aaa', fontSize: 12, marginTop: 1 },
+  postLocation: { color: '#aaa', fontSize: 12, marginTop: 1 },
   moreBtn: { color: '#fff', fontSize: 20, letterSpacing: 1 },
   photoWrap: { position: 'relative' },
-  photo: { width: '100%', aspectRatio: 1, backgroundColor: '#111', alignItems: 'center', justifyContent: 'center', padding: 20 },
+  photo: { width: '100%', aspectRatio: 1 },
+  photoPlaceholder: { width: '100%', aspectRatio: 1, backgroundColor: '#111', alignItems: 'center', justifyContent: 'center', padding: 20 },
   photoEmoji: { fontSize: 100, marginBottom: 20 },
   photoCaption: { color: '#fff', fontSize: 15, textAlign: 'center', lineHeight: 22, fontWeight: '500' },
   heartOverlay: { position: 'absolute', top: '40%', left: '40%' },
@@ -430,7 +463,12 @@ const styles = StyleSheet.create({
   postBtn: { color: '#0095f6', fontWeight: '600', fontSize: 13 },
   composer: { backgroundColor: '#111', padding: 16, borderBottomWidth: 0.5, borderBottomColor: '#262626' },
   composerTitle: { color: '#fff', fontWeight: '600', fontSize: 15, marginBottom: 12 },
-  composerInput: { flex: 1, color: '#fff', fontSize: 14, minHeight: 80 },
+  imagePicker: { width: '100%', aspectRatio: 1.5, borderRadius: 12, overflow: 'hidden', backgroundColor: '#1a1a1a', borderWidth: 0.5, borderColor: '#333' },
+  imagePickerEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
+  imagePickerIcon: { fontSize: 40 },
+  imagePickerText: { color: '#555', fontSize: 13 },
+  imagePreview: { width: '100%', height: '100%' },
+  composerInput: { flex: 1, color: '#fff', fontSize: 14, minHeight: 60 },
   shareBtn: { backgroundColor: '#0095f6', paddingHorizontal: 16, paddingVertical: 6, borderRadius: 6 },
   shareBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
   rightSidebar: { width: 320, paddingTop: 20, paddingHorizontal: 20 },
