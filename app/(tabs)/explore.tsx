@@ -1,7 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Animated, Dimensions, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../../lib/supabase';
+import { router } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 const IS_WEB = width > 768;
@@ -40,7 +41,16 @@ const SUGGESTED = [
   { user: 'Max', owner: 'carlos.m', emoji: '🦮', breed: 'Golden', energy: 5, tags: ['Gentle', 'Loves kids'] },
 ];
 
-const INITIAL_POSTS = [
+const NAV_ITEMS = [
+  { icon: '🏠', label: 'Home', route: '/(tabs)/explore' },
+  { icon: '🔍', label: 'Search', route: null },
+  { icon: '🗺️', label: 'Map', route: '/(tabs)/map' },
+  { icon: '❤️', label: 'Activity', route: null },
+  { icon: '➕', label: 'New post', route: null },
+  { icon: '🐕', label: 'Profile', route: '/(tabs)/index' },
+];
+
+const DEMO_POSTS = [
   {
     id: 1,
     dog: 'Athena',
@@ -62,25 +72,6 @@ const INITIAL_POSTS = [
   },
   {
     id: 2,
-    dog: 'Rocky',
-    owner: 'rodrigo.vega',
-    emoji: '🐾',
-    breed: 'French Bulldog',
-    energy: 3,
-    tags: ['Chill', 'Friendly'],
-    type: 'lost',
-    image: null,
-    location: 'Condesa, CDMX',
-    caption: 'FOUND SAFE thanks to SmartPet Tag 🦸 Thank you Condesa community. This app saved my dog ❤️',
-    paws: 1204,
-    time: '3 HRS AGO',
-    comments: [
-      { dog: 'Athena', user: 'liliana.gutierrez', text: 'So relieved!! 😭❤️', emoji: '🐕' },
-      { dog: 'SmartPet Tag', user: 'smartpettag', text: 'This is why we built this 🐾', emoji: '🏷️' },
-    ],
-  },
-  {
-    id: 3,
     dog: 'Luna',
     owner: 'ana.garcia',
     emoji: '🐩',
@@ -98,7 +89,7 @@ const INITIAL_POSTS = [
     ],
   },
   {
-    id: 4,
+    id: 3,
     dog: 'Coco',
     owner: 'maria.lopez',
     emoji: '🐕',
@@ -113,7 +104,6 @@ const INITIAL_POSTS = [
     time: 'YESTERDAY',
     comments: [
       { dog: 'Athena', user: 'liliana.gutierrez', text: 'We will be there!! 🐕', emoji: '🐕' },
-      { dog: 'Luna', user: 'ana.garcia', text: 'Luna is SO ready 🐩', emoji: '🐩' },
     ],
   },
 ];
@@ -125,6 +115,17 @@ function getTypeStyle(type) {
     case 'event': return { border: '#5856D6', bg: '#0d0b1a', label: '🎉 EVENT', labelColor: '#5856D6' };
     default: return { border: '#1a1a1a', bg: '#0d0d0d', label: null, labelColor: null };
   }
+}
+
+function getTimeAgo(timestamp) {
+  const now = new Date();
+  const then = new Date(timestamp);
+  const mins = Math.floor((now - then) / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
 }
 
 function EnergyMeter({ level }) {
@@ -143,7 +144,67 @@ const emStyles = StyleSheet.create({
   barActive: { backgroundColor: '#00D4AA' },
 });
 
-function Post({ post, onPaw }) {
+function AlertCard({ alert }) {
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.3, duration: 800, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+
+  return (
+    <View style={alertStyles.card}>
+      <View style={alertStyles.header}>
+        <Animated.View style={[alertStyles.pulsingDot, { transform: [{ scale: pulseAnim }] }]} />
+        <Text style={alertStyles.headerText}>🚨 EMERGENCY — LOST DOG</Text>
+        <Text style={alertStyles.timeText}>{getTimeAgo(alert.created_at)}</Text>
+      </View>
+      <View style={alertStyles.dogRow}>
+        <View style={alertStyles.dogAvatar}>
+          <Text style={alertStyles.dogEmoji}>🐕</Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={alertStyles.dogName}>{alert.dog_name}</Text>
+          <Text style={alertStyles.dogLocation}>📍 Last seen: {alert.neighbourhood}</Text>
+          <Text style={alertStyles.ownerText}>Owner: {alert.owner_name} · {alert.owner_phone}</Text>
+        </View>
+      </View>
+      <View style={alertStyles.actionRow}>
+        <TouchableOpacity style={alertStyles.foundBtn} onPress={() => router.push('/emergency')}>
+          <Text style={alertStyles.foundBtnText}>🙋 I Found This Dog</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={alertStyles.shareBtn}>
+          <Text style={alertStyles.shareBtnText}>↗ Share</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const alertStyles = StyleSheet.create({
+  card: { marginHorizontal: 12, marginBottom: 8, backgroundColor: '#1a0505', borderRadius: 16, borderWidth: 1.5, borderColor: '#C0392B', overflow: 'hidden' },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#C0392B22', paddingHorizontal: 14, paddingVertical: 10 },
+  pulsingDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#C0392B' },
+  headerText: { color: '#C0392B', fontSize: 11, fontWeight: '800', letterSpacing: 1, flex: 1 },
+  timeText: { color: '#C0392B', fontSize: 10, opacity: 0.7 },
+  dogRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
+  dogAvatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#2a0a0a', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#C0392B' },
+  dogEmoji: { fontSize: 26 },
+  dogName: { fontSize: 18, fontWeight: '800', color: '#fff', marginBottom: 3 },
+  dogLocation: { fontSize: 12, color: '#888', marginBottom: 2 },
+  ownerText: { fontSize: 11, color: '#666' },
+  actionRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 14, paddingBottom: 14 },
+  foundBtn: { flex: 1, backgroundColor: '#C0392B', borderRadius: 10, paddingVertical: 11, alignItems: 'center' },
+  foundBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  shareBtn: { backgroundColor: '#2a0a0a', borderRadius: 10, paddingVertical: 11, paddingHorizontal: 16, alignItems: 'center', borderWidth: 0.5, borderColor: '#C0392B' },
+  shareBtnText: { color: '#C0392B', fontWeight: '600', fontSize: 13 },
+});
+
+function Post({ post }) {
   const [pawned, setPawned] = useState(false);
   const [paws, setPaws] = useState(post.paws);
   const [showComments, setShowComments] = useState(false);
@@ -182,15 +243,11 @@ function Post({ post, onPaw }) {
 
   return (
     <View style={[styles.post, { borderColor: typeStyle.border, backgroundColor: typeStyle.bg }]}>
-
-      {/* Type label */}
       {typeStyle.label && (
         <View style={[styles.typeLabel, { backgroundColor: typeStyle.border + '22' }]}>
           <Text style={[styles.typeLabelText, { color: typeStyle.labelColor }]}>{typeStyle.label}</Text>
         </View>
       )}
-
-      {/* Post header — DOG FIRST */}
       <View style={styles.postHeader}>
         <View style={[styles.storyRingSmall, { borderColor: typeStyle.border }]}>
           <View style={styles.postAvatarWrap}>
@@ -211,8 +268,6 @@ function Post({ post, onPaw }) {
           </View>
         </View>
       </View>
-
-      {/* Tags */}
       <View style={styles.tagRow}>
         {post.tags.map((t, i) => (
           <View key={i} style={styles.tagPill}>
@@ -220,8 +275,6 @@ function Post({ post, onPaw }) {
           </View>
         ))}
       </View>
-
-      {/* Photo */}
       <TouchableOpacity activeOpacity={1} onPress={handleDoubleTap} style={styles.photoWrap}>
         {post.image ? (
           <Image source={{ uri: post.image }} style={styles.photo} resizeMode="cover" />
@@ -235,14 +288,9 @@ function Post({ post, onPaw }) {
           <Text style={{ fontSize: 80 }}>🐾</Text>
         </Animated.View>
       </TouchableOpacity>
-
-      {/* Actions */}
       <View style={styles.postActions}>
         <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
-          <TouchableOpacity
-            style={styles.pawBtn}
-            onPress={() => { setPawned(!pawned); setPaws(p => pawned ? p - 1 : p + 1); }}
-          >
+          <TouchableOpacity style={styles.pawBtn} onPress={() => { setPawned(!pawned); setPaws(p => pawned ? p - 1 : p + 1); }}>
             <Text style={styles.pawIcon}>{pawned ? '🐾' : '🤍'}</Text>
             <Text style={[styles.pawCount, pawned && { color: ACCENT }]}>{paws.toLocaleString()} paws</Text>
           </TouchableOpacity>
@@ -258,8 +306,6 @@ function Post({ post, onPaw }) {
           <Text style={styles.actionIcon}>{saved ? '🔖' : '📋'}</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Comments */}
       <View style={styles.postBody}>
         {comments.length > 0 && (
           <TouchableOpacity onPress={() => setShowComments(!showComments)}>
@@ -277,8 +323,6 @@ function Post({ post, onPaw }) {
         ))}
         <Text style={styles.timeText}>{post.time}</Text>
       </View>
-
-      {/* Comment input */}
       <View style={styles.commentInputWrap}>
         <Text style={{ fontSize: 16, marginRight: 8 }}>🐕</Text>
         <TextInput
@@ -299,7 +343,8 @@ function Post({ post, onPaw }) {
 }
 
 export default function FeedScreen() {
-  const [posts, setPosts] = useState(INITIAL_POSTS);
+  const [posts, setPosts] = useState(DEMO_POSTS);
+  const [lostAlerts, setLostAlerts] = useState([]);
   const [showComposer, setShowComposer] = useState(false);
   const [newCaption, setNewCaption] = useState('');
   const [newImage, setNewImage] = useState(null);
@@ -308,6 +353,21 @@ export default function FeedScreen() {
   const [viewedStories, setViewedStories] = useState([]);
   const [feedMode, setFeedMode] = useState('feed');
   const [activeActivity, setActiveActivity] = useState(0);
+
+  useEffect(() => {
+    loadAlerts();
+    const interval = setInterval(loadAlerts, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  async function loadAlerts() {
+    const { data } = await supabase
+      .from('lost_alerts')
+      .select('*')
+      .eq('status', 'lost')
+      .order('created_at', { ascending: false });
+    if (data) setLostAlerts(data);
+  }
 
   async function pickImage() {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -364,25 +424,23 @@ export default function FeedScreen() {
 
   return (
     <View style={styles.container}>
-
       {IS_WEB && (
         <View style={styles.sidebar}>
           <View style={styles.sidebarLogoWrap}>
             <Text style={styles.sidebarLogo}>🐾</Text>
             <Text style={styles.sidebarAppName}>SmartPet Tag</Text>
           </View>
-          {[
-            { icon: '🏠', label: 'Home' },
-            { icon: '🔍', label: 'Search' },
-            { icon: '🗺️', label: 'Map' },
-            { icon: '❤️', label: 'Activity' },
-            { icon: '➕', label: 'New post' },
-            { icon: '🐕', label: 'Profile' },
-          ].map((item, i) => (
+          {NAV_ITEMS.map((item, i) => (
             <TouchableOpacity
               key={i}
               style={styles.navItem}
-              onPress={() => item.label === 'New post' && setShowComposer(!showComposer)}
+              onPress={() => {
+                if (item.label === 'New post') {
+                  setShowComposer(!showComposer);
+                } else if (item.route) {
+                  router.push(item.route);
+                }
+              }}
             >
               <Text style={styles.navIcon}>{item.icon}</Text>
               <Text style={styles.navLabel}>{item.label}</Text>
@@ -392,8 +450,6 @@ export default function FeedScreen() {
       )}
 
       <ScrollView style={styles.feed} showsVerticalScrollIndicator={false}>
-
-        {/* Stories */}
         <View style={styles.storiesWrap}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 14, paddingVertical: 12 }}>
             {STORIES.map(story => (
@@ -410,7 +466,6 @@ export default function FeedScreen() {
           </ScrollView>
         </View>
 
-        {/* Nearby activity strip */}
         <View style={styles.activityStrip}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}>
             {NEARBY_ACTIVITY.map((a, i) => (
@@ -422,7 +477,6 @@ export default function FeedScreen() {
           </ScrollView>
         </View>
 
-        {/* Feed / Map toggle */}
         <View style={styles.modeToggle}>
           <TouchableOpacity style={[styles.modeBtn, feedMode === 'feed' && styles.modeBtnActive]} onPress={() => setFeedMode('feed')}>
             <Text style={[styles.modeBtnText, feedMode === 'feed' && styles.modeBtnTextActive]}>📸 Feed</Text>
@@ -434,12 +488,22 @@ export default function FeedScreen() {
 
         <View style={styles.hr} />
 
-        {/* Composer */}
+        {lostAlerts.length > 0 && (
+          <View style={styles.alertSection}>
+            <View style={styles.alertSectionHeader}>
+              <View style={styles.alertSectionDot} />
+              <Text style={styles.alertSectionTitle}>ACTIVE ALERTS NEAR YOU</Text>
+              <Text style={styles.alertSectionCount}>{lostAlerts.length}</Text>
+            </View>
+            {lostAlerts.map(alert => (
+              <AlertCard key={alert.id} alert={alert} />
+            ))}
+          </View>
+        )}
+
         {showComposer && (
           <View style={styles.composer}>
             <Text style={styles.composerTitle}>New post as Athena 🐕</Text>
-
-            {/* Post type selector */}
             <View style={styles.postTypeRow}>
               {POST_TYPES.map(pt => (
                 <TouchableOpacity
@@ -452,7 +516,6 @@ export default function FeedScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-
             <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
               {newImage ? (
                 <Image source={{ uri: newImage }} style={styles.imagePreview} resizeMode="cover" />
@@ -463,7 +526,6 @@ export default function FeedScreen() {
                 </View>
               )}
             </TouchableOpacity>
-
             <TextInput
               style={styles.composerInput}
               placeholder="What's Athena up to?"
@@ -472,7 +534,6 @@ export default function FeedScreen() {
               onChangeText={setNewCaption}
               multiline
             />
-
             <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 12 }}>
               <TouchableOpacity onPress={() => { setShowComposer(false); setNewImage(null); setNewCaption(''); }}>
                 <Text style={{ color: '#444', fontSize: 14 }}>Cancel</Text>
@@ -488,33 +549,31 @@ export default function FeedScreen() {
           </View>
         )}
 
-        {/* Map mode placeholder */}
         {feedMode === 'map' && (
           <View style={styles.mapModePlaceholder}>
             <Text style={styles.mapModeEmoji}>🗺️</Text>
             <Text style={styles.mapModeTitle}>Live dog activity near you</Text>
-            <Text style={styles.mapModeSub}>Switch to the Map tab to see real-time activity around Condesa & Roma</Text>
-            <TouchableOpacity style={styles.mapModeBtn}>
+            <Text style={styles.mapModeSub}>Switch to the Map tab to see real-time activity around Condesa and Roma</Text>
+            <TouchableOpacity style={styles.mapModeBtn} onPress={() => router.push('/(tabs)/map')}>
               <Text style={styles.mapModeBtnText}>Open Dog Map</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        {/* Posts */}
         {feedMode === 'feed' && posts.map(post => <Post key={post.id} post={post} />)}
-
       </ScrollView>
 
       {IS_WEB && (
         <View style={styles.rightSidebar}>
           <View style={styles.accountRow}>
-            <View style={styles.accountAvatar}><Text style={{ fontSize: 22 }}>🐕</Text></View>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/index')}>
+              <View style={styles.accountAvatar}><Text style={{ fontSize: 22 }}>🐕</Text></View>
+            </TouchableOpacity>
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={styles.accountDog}>Athena</Text>
               <Text style={styles.accountOwner}>by liliana.gutierrez</Text>
             </View>
           </View>
-
           <Text style={styles.sectionTitle}>Nearby dogs</Text>
           {SUGGESTED.map((s, i) => (
             <View key={i} style={styles.suggestedRow}>
@@ -534,7 +593,6 @@ export default function FeedScreen() {
               <TouchableOpacity><Text style={styles.followLink}>Follow</Text></TouchableOpacity>
             </View>
           ))}
-
           <Text style={styles.footer}>© 2026 SMARTPET TAG · MEXICO CITY</Text>
         </View>
       )}
@@ -567,12 +625,17 @@ const styles = StyleSheet.create({
   activityIcon: { fontSize: 13 },
   activityText: { fontSize: 11, color: '#444', maxWidth: 160 },
   activityTextActive: { color: ACCENT },
-  modeToggle: { flexDirection: 'row', gap: 0, margin: 12, backgroundColor: '#0d0d0d', borderRadius: 12, borderWidth: 0.5, borderColor: '#1a1a1a', padding: 4 },
+  modeToggle: { flexDirection: 'row', margin: 12, backgroundColor: '#0d0d0d', borderRadius: 12, borderWidth: 0.5, borderColor: '#1a1a1a', padding: 4 },
   modeBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 10 },
   modeBtnActive: { backgroundColor: ACCENT_DIM },
   modeBtnText: { fontSize: 13, color: '#444', fontWeight: '500' },
   modeBtnTextActive: { color: ACCENT },
   hr: { height: 0.5, backgroundColor: '#111' },
+  alertSection: { paddingTop: 8 },
+  alertSectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingBottom: 10 },
+  alertSectionDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#C0392B' },
+  alertSectionTitle: { fontSize: 10, fontWeight: '800', color: '#C0392B', letterSpacing: 1.5, flex: 1 },
+  alertSectionCount: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#C0392B', color: '#fff', fontSize: 11, fontWeight: '700', textAlign: 'center', lineHeight: 20 },
   post: { borderWidth: 0.5, borderRadius: 16, margin: 12, marginBottom: 6, overflow: 'hidden' },
   typeLabel: { paddingHorizontal: 14, paddingVertical: 6 },
   typeLabelText: { fontSize: 10, fontWeight: '700', letterSpacing: 1 },
