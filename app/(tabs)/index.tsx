@@ -6,16 +6,32 @@ import { router } from 'expo-router';
 export default function ProfileScreen() {
   const [dog, setDog] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [pendingAlert, setPendingAlert] = useState(null);
 
   useEffect(() => {
-    async function loadDog() {
-      const { data, error } = await supabase.from('dogs').select('*').single();
-      if (error) console.log('Error:', error.message);
-      else setDog(data);
-      setLoading(false);
-    }
     loadDog();
+    loadPendingAlerts();
+    const interval = setInterval(loadPendingAlerts, 15000);
+    return () => clearInterval(interval);
   }, []);
+
+  async function loadDog() {
+    const { data, error } = await supabase.from('dogs').select('*').single();
+    if (error) console.log('Error:', error.message);
+    else setDog(data);
+    setLoading(false);
+  }
+
+  async function loadPendingAlerts() {
+    const { data } = await supabase
+      .from('lost_alerts')
+      .select('*')
+      .eq('status_pending_owner', true)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    if (data && data.length > 0) setPendingAlert(data[0]);
+    else setPendingAlert(null);
+  }
 
   if (loading) return (
     <View style={styles.loader}>
@@ -36,6 +52,24 @@ export default function ProfileScreen() {
         <Text style={styles.appName}>SmartPet Tag</Text>
         <View style={styles.onlineDot} />
       </View>
+
+      {/* PENDING CONFIRMATION BANNER */}
+      {pendingAlert && (
+        <TouchableOpacity
+          style={styles.pendingBanner}
+          onPress={() => router.push({ pathname: '/confirm-found', params: { alertId: pendingAlert.id } })}
+        >
+          <View style={styles.pendingBannerLeft}>
+            <Text style={styles.pendingBannerEmoji}>🔔</Text>
+            <View>
+              <Text style={styles.pendingBannerTitle}>Someone found {pendingAlert.dog_name}!</Text>
+              <Text style={styles.pendingBannerSub}>Tap to review and confirm → you have final say</Text>
+            </View>
+          </View>
+          <Text style={styles.pendingBannerArrow}>→</Text>
+        </TouchableOpacity>
+      )}
+
       <View style={styles.avatarSection}>
         <View style={styles.avatarRing}>
           <View style={styles.avatarInner}>
@@ -132,6 +166,12 @@ const styles = StyleSheet.create({
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
   appName: { fontSize: 18, fontWeight: '700', color: '#fff', fontStyle: 'italic', letterSpacing: -0.5 },
   onlineDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#1D9E75' },
+  pendingBanner: { marginHorizontal: 16, marginBottom: 12, backgroundColor: '#1a1200', borderRadius: 16, borderWidth: 1.5, borderColor: '#F5A623', padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  pendingBannerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  pendingBannerEmoji: { fontSize: 28 },
+  pendingBannerTitle: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 2 },
+  pendingBannerSub: { fontSize: 11, color: '#F5A623' },
+  pendingBannerArrow: { color: '#F5A623', fontSize: 18 },
   avatarSection: { alignItems: 'center', paddingTop: 20, paddingBottom: 24 },
   avatarRing: { width: 110, height: 110, borderRadius: 55, borderWidth: 2, borderColor: '#C0392B', padding: 4, marginBottom: 16 },
   avatarInner: { flex: 1, borderRadius: 50, backgroundColor: '#1a0505', alignItems: 'center', justifyContent: 'center' },

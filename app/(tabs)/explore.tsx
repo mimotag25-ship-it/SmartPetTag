@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Animated, Dimensions, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Animated, Dimensions, Image, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../../lib/supabase';
+import { resolveAlert } from '../../lib/alerts';
 import { router } from 'expo-router';
 
 const { width } = Dimensions.get('window');
@@ -108,8 +109,11 @@ const emStyles = StyleSheet.create({
   barActive: { backgroundColor: '#00D4AA' },
 });
 
-function AlertCard({ alert }) {
+function AlertCard({ alert, onResolved }) {
   const pulseAnim = useRef(new Animated.Value(1)).current;
+  const [resolving, setResolving] = useState(false);
+  const [resolved, setResolved] = useState(false);
+
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
@@ -118,6 +122,30 @@ function AlertCard({ alert }) {
       ])
     ).start();
   }, []);
+
+  async function handleFound() {
+    setResolving(true);
+    const success = await resolveAlert(alert.id, alert.dog_name);
+    if (success) {
+      setResolved(true);
+      pulseAnim.stopAnimation();
+      setTimeout(() => onResolved(alert.id), 1500);
+    }
+    setResolving(false);
+  }
+
+  if (resolved) {
+    return (
+      <View style={alertStyles.resolvedCard}>
+        <Text style={alertStyles.resolvedEmoji}>🎉</Text>
+        <View>
+          <Text style={alertStyles.resolvedTitle}>{alert.dog_name} has been found!</Text>
+          <Text style={alertStyles.resolvedSub}>Thank you for helping the community 🐾</Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={alertStyles.card}>
       <View style={alertStyles.header}>
@@ -134,8 +162,14 @@ function AlertCard({ alert }) {
         </View>
       </View>
       <View style={alertStyles.actionRow}>
-        <TouchableOpacity style={alertStyles.foundBtn} onPress={() => router.push('/emergency')}>
-          <Text style={alertStyles.foundBtnText}>🙋 I Found This Dog</Text>
+        <TouchableOpacity
+          style={[alertStyles.foundBtn, resolving && { opacity: 0.6 }]}
+          onPress={handleFound}
+          disabled={resolving}
+        >
+          <Text style={alertStyles.foundBtnText}>
+            {resolving ? 'Resolving...' : '🙋 I Found This Dog'}
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity style={alertStyles.shareBtn}>
           <Text style={alertStyles.shareBtnText}>↗ Share</Text>
@@ -162,6 +196,10 @@ const alertStyles = StyleSheet.create({
   foundBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
   shareBtn: { backgroundColor: '#2a0a0a', borderRadius: 10, paddingVertical: 11, paddingHorizontal: 16, alignItems: 'center', borderWidth: 0.5, borderColor: '#C0392B' },
   shareBtnText: { color: '#C0392B', fontWeight: '600', fontSize: 13 },
+  resolvedCard: { marginHorizontal: 12, marginBottom: 8, backgroundColor: '#051a10', borderRadius: 16, borderWidth: 1.5, borderColor: '#1D9E75', padding: 16, flexDirection: 'row', alignItems: 'center', gap: 14 },
+  resolvedEmoji: { fontSize: 32 },
+  resolvedTitle: { fontSize: 15, fontWeight: '700', color: '#fff', marginBottom: 2 },
+  resolvedSub: { fontSize: 12, color: '#1D9E75' },
 });
 
 function Post({ post }) {
@@ -339,7 +377,7 @@ export default function FeedScreen() {
           urgent: true,
         }));
         setNearbyActivity(prev => {
-          const nonAlerts = prev.filter(p => !p.id?.startsWith('alert-'));
+          const nonAlerts = prev.filter(p => !String(p.id).startsWith('alert-'));
           return [...alertPills, ...nonAlerts];
         });
       }
@@ -354,10 +392,15 @@ export default function FeedScreen() {
       .limit(6);
     if (data) {
       setNearbyActivity(prev => {
-        const alerts = prev.filter(p => p.id?.startsWith('alert-'));
+        const alerts = prev.filter(p => String(p.id).startsWith('alert-'));
         return [...alerts, ...data.map(a => ({ id: a.id, icon: a.icon, message: a.message, urgent: a.urgent }))];
       });
     }
+  }
+
+  function handleAlertResolved(alertId) {
+    setLostAlerts(prev => prev.filter(a => a.id !== alertId));
+    loadActivity();
   }
 
   async function pickImage() {
@@ -394,10 +437,11 @@ export default function FeedScreen() {
     }, ...p]);
     setNewCaption(''); setNewImage(null); setPostType('normal');
     setShowComposer(false); setUploading(false);
-
     await supabase.from('activity').insert({
-      type: postType, icon: postType === 'lost' ? '🚨' : postType === 'spotted' ? '👀' : postType === 'event' ? '🎉' : '📸',
-      message: `Athena posted in Portales`, neighbourhood: 'Portales', urgent: postType === 'lost',
+      type: postType,
+      icon: postType === 'lost' ? '🚨' : postType === 'spotted' ? '👀' : postType === 'event' ? '🎉' : '📸',
+      message: `Athena posted in Portales`,
+      neighbourhood: 'Portales', urgent: postType === 'lost',
     });
     loadActivity();
   }
@@ -440,7 +484,6 @@ export default function FeedScreen() {
           </ScrollView>
         </View>
 
-        {/* REAL nearby activity from Supabase */}
         {nearbyActivity.length > 0 && (
           <View style={styles.activityStrip}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}>
@@ -476,7 +519,9 @@ export default function FeedScreen() {
               <Text style={styles.alertSectionTitle}>ACTIVE ALERTS NEAR YOU</Text>
               <Text style={styles.alertSectionCount}>{lostAlerts.length}</Text>
             </View>
-            {lostAlerts.map(alert => <AlertCard key={alert.id} alert={alert} />)}
+            {lostAlerts.map(alert => (
+              <AlertCard key={alert.id} alert={alert} onResolved={handleAlertResolved} />
+            ))}
           </View>
         )}
 

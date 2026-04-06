@@ -6,25 +6,15 @@ import { View, ActivityIndicator } from 'react-native';
 import { supabase } from '../lib/supabase';
 
 export default function RootLayout() {
-  const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
+    supabase.auth.getSession().then(() => setLoading(false));
   }, []);
 
   if (loading) return (
-    <View style={{ flex: 1, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center' }}>
-      <ActivityIndicator size="large" color="#E8640A" />
+    <View style={{ flex: 1, backgroundColor: '#050508', alignItems: 'center', justifyContent: 'center' }}>
+      <ActivityIndicator size="large" color="#C0392B" />
     </View>
   );
 
@@ -34,6 +24,9 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="emergency" options={{ headerShown: false }} />
+        <Stack.Screen name="found" options={{ headerShown: false }} />
+        <Stack.Screen name="confirm-found" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
       <StatusBar style="light" />
