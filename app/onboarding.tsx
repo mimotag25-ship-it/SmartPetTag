@@ -5,7 +5,9 @@ import { router } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
-const BREEDS = ['Labrador Retriever', 'Golden Retriever', 'French Bulldog', 'German Shepherd', 'Poodle', 'Chihuahua', 'Schnauzer', 'Beagle', 'Husky', 'Dachshund', 'Shih Tzu', 'Mixed breed'];
+const BREEDS = ['Labrador Retriever', 'Golden Retriever', 'French Bulldog', 'Bulldog', 'Poodle', 'Beagle', 'Rottweiler', 'German Shepherd', 'Husky', 'Chihuahua', 'Dachshund', 'Schnauzer', 'Shih Tzu', 'Mixed breed', 'Other'];
+
+const DOG_EMOJIS = ['🐕', '🐶', '🦮', '🐕‍🦺', '🐩'];
 
 export default function Onboarding() {
   const [step, setStep] = useState(0);
@@ -14,6 +16,7 @@ export default function Onboarding() {
   const [age, setAge] = useState('');
   const [personality, setPersonality] = useState('');
   const [neighbourhood, setNeighbourhood] = useState('');
+  const [selectedEmoji, setSelectedEmoji] = useState('🐕');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,61 +24,54 @@ export default function Onboarding() {
   const slideAnim = useRef(new Animated.Value(0)).current;
 
   function nextStep() {
-    Animated.timing(slideAnim, { toValue: -width, duration: 250, useNativeDriver: true }).start(() => {
-      setStep(s => s + 1);
-      slideAnim.setValue(width);
-      Animated.timing(slideAnim, { toValue: 0, duration: 250, useNativeDriver: true }).start();
-    });
+    Animated.sequence([
+      Animated.timing(slideAnim, { toValue: -30, duration: 150, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
+    ]).start();
+    setStep(s => s + 1);
   }
 
   function prevStep() {
-    Animated.timing(slideAnim, { toValue: width, duration: 250, useNativeDriver: true }).start(() => {
-      setStep(s => s - 1);
-      slideAnim.setValue(-width);
-      Animated.timing(slideAnim, { toValue: 0, duration: 250, useNativeDriver: true }).start();
-    });
+    setStep(s => s - 1);
   }
 
   async function finish() {
     setLoading(true);
     setError('');
-    try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
-      if (authError) { setError(authError.message); setLoading(false); return; }
 
-      const { error: dogError } = await supabase.from('dogs').insert({
-        name: dogName,
-        breed,
-        age: parseInt(age) || 0,
-        personality,
-        neighbourhood,
-        owner_name: email.split('@')[0],
-        owner_phone: '',
-      });
+    const { error: signUpError } = await supabase.auth.signUp({ email, password });
+    if (signUpError) { setError(signUpError.message); setLoading(false); return; }
 
-      if (dogError) { setError(dogError.message); setLoading(false); return; }
-      router.replace('/');
-    } catch (e) {
-      setError(e.message);
-    }
+    const { error: dogError } = await supabase.from('dogs').insert({
+      name: dogName,
+      breed,
+      age: parseInt(age) || 0,
+      personality,
+      neighbourhood,
+      owner_name: email.split('@')[0],
+      owner_phone: '',
+    });
+
+    if (dogError) { setError(dogError.message); setLoading(false); return; }
     setLoading(false);
+    nextStep();
   }
 
   const steps = [
 
-    // ── STEP 0: Welcome ──
-    <View style={styles.slide}>
+    <View style={styles.screen} key="welcome">
       <View style={styles.welcomeHero}>
         <Text style={styles.welcomeEmoji}>🐾</Text>
         <Text style={styles.welcomeTitle}>SmartPet Tag</Text>
-        <Text style={styles.welcomeSub}>The smart collar ecosystem for dog owners in Mexico City</Text>
+        <Text style={styles.welcomeSub}>The connected ecosystem for dog owners in Mexico City</Text>
       </View>
       <View style={styles.featureList}>
         {[
-          { icon: '📡', text: 'BLE collar tag — found without scanning' },
-          { icon: '🚨', text: 'Lost dog alerts to your whole neighbourhood' },
-          { icon: '🗺️', text: 'Live map of nearby dogs, parks & vets' },
-          { icon: '📸', text: 'Social feed for the dog community' },
+          { icon: '📡', text: 'BLE smart collar tags' },
+          { icon: '🚨', text: 'Instant lost dog alerts' },
+          { icon: '🗺️', text: 'Real-time dog map' },
+          { icon: '📸', text: 'Dog social feed' },
+          { icon: '🏥', text: 'Find nearby vets & groomers' },
         ].map((f, i) => (
           <View key={i} style={styles.featureRow}>
             <Text style={styles.featureIcon}>{f.icon}</Text>
@@ -86,19 +82,32 @@ export default function Onboarding() {
       <TouchableOpacity style={styles.primaryBtn} onPress={nextStep}>
         <Text style={styles.primaryBtnText}>Get started 🐾</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => router.replace('/login')} style={{ marginTop: 16 }}>
-        <Text style={styles.secondaryLink}>Already have an account? Log in</Text>
+      <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.replace('/login')}>
+        <Text style={styles.secondaryBtnText}>I already have an account</Text>
       </TouchableOpacity>
     </View>,
 
-    // ── STEP 1: Dog name ──
-    <View style={styles.slide}>
-      <Text style={styles.stepEmoji}>🐕</Text>
-      <Text style={styles.stepTitle}>What's your dog's name?</Text>
-      <Text style={styles.stepSub}>This appears on their SmartPet Tag profile</Text>
+    <View style={styles.screen} key="dogname">
+      <Text style={styles.stepTitle}>First, tell us about your dog</Text>
+      <Text style={styles.stepSub}>This creates their SmartPet Tag profile</Text>
+      <View style={styles.emojiPicker}>
+        {DOG_EMOJIS.map(e => (
+          <TouchableOpacity
+            key={e}
+            style={[styles.emojiBtn, selectedEmoji === e && styles.emojiBtnActive]}
+            onPress={() => setSelectedEmoji(e)}
+          >
+            <Text style={styles.emojiOption}>{e}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <View style={styles.selectedAvatarWrap}>
+        <Text style={styles.selectedAvatar}>{selectedEmoji}</Text>
+      </View>
+      <Text style={styles.inputLabel}>Dog's name</Text>
       <TextInput
         style={styles.input}
-        placeholder="e.g. Athena, Mango, Rocky..."
+        placeholder="e.g. Athena"
         placeholderTextColor="#555"
         value={dogName}
         onChangeText={setDogName}
@@ -109,45 +118,26 @@ export default function Onboarding() {
         onPress={nextStep}
         disabled={!dogName.trim()}
       >
-        <Text style={styles.primaryBtnText}>Continue →</Text>
+        <Text style={styles.primaryBtnText}>Continue</Text>
       </TouchableOpacity>
     </View>,
 
-    // ── STEP 2: Breed ──
-    <View style={styles.slide}>
-      <Text style={styles.stepEmoji}>🦮</Text>
-      <Text style={styles.stepTitle}>What breed is {dogName}?</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="e.g. Labrador Retriever..."
-        placeholderTextColor="#555"
-        value={breed}
-        onChangeText={setBreed}
-      />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.breedPills}>
-        {BREEDS.map((b, i) => (
+    <View style={styles.screen} key="breed">
+      <Text style={styles.stepTitle}>{selectedEmoji} {dogName}'s details</Text>
+      <Text style={styles.stepSub}>Help neighbours recognise your dog</Text>
+      <Text style={styles.inputLabel}>Breed</Text>
+      <ScrollView style={styles.breedList} showsVerticalScrollIndicator={false}>
+        {BREEDS.map(b => (
           <TouchableOpacity
-            key={i}
-            style={[styles.breedPill, breed === b && styles.breedPillActive]}
+            key={b}
+            style={[styles.breedRow, breed === b && styles.breedRowActive]}
             onPress={() => setBreed(b)}
           >
-            <Text style={[styles.breedPillText, breed === b && styles.breedPillTextActive]}>{b}</Text>
+            <Text style={[styles.breedText, breed === b && styles.breedTextActive]}>{b}</Text>
+            {breed === b && <Text style={{ color: '#E8640A' }}>✓</Text>}
           </TouchableOpacity>
         ))}
       </ScrollView>
-      <TouchableOpacity
-        style={[styles.primaryBtn, !breed.trim() && styles.btnDisabled]}
-        onPress={nextStep}
-        disabled={!breed.trim()}
-      >
-        <Text style={styles.primaryBtnText}>Continue →</Text>
-      </TouchableOpacity>
-    </View>,
-
-    // ── STEP 3: Age + personality ──
-    <View style={styles.slide}>
-      <Text style={styles.stepEmoji}>🎂</Text>
-      <Text style={styles.stepTitle}>Tell us about {dogName}</Text>
       <Text style={styles.inputLabel}>Age (years)</Text>
       <TextInput
         style={styles.input}
@@ -157,73 +147,61 @@ export default function Onboarding() {
         onChangeText={setAge}
         keyboardType="numeric"
       />
+      <TouchableOpacity
+        style={[styles.primaryBtn, (!breed || !age) && styles.btnDisabled]}
+        onPress={nextStep}
+        disabled={!breed || !age}
+      >
+        <Text style={styles.primaryBtnText}>Continue</Text>
+      </TouchableOpacity>
+    </View>,
+
+    <View style={styles.screen} key="personality">
+      <Text style={styles.stepTitle}>Tell us more about {dogName}</Text>
+      <Text style={styles.stepSub}>This shows on their tag profile when scanned</Text>
       <Text style={styles.inputLabel}>Personality</Text>
       <TextInput
-        style={[styles.input, styles.inputMulti]}
-        placeholder="e.g. Loves fetch, gentle with kids, friendly..."
+        style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
+        placeholder="e.g. Friendly, loves fetch, gentle with kids"
         placeholderTextColor="#555"
         value={personality}
         onChangeText={setPersonality}
         multiline
       />
-      <TouchableOpacity
-        style={[styles.primaryBtn, (!age.trim() || !personality.trim()) && styles.btnDisabled]}
-        onPress={nextStep}
-        disabled={!age.trim() || !personality.trim()}
-      >
-        <Text style={styles.primaryBtnText}>Continue →</Text>
-      </TouchableOpacity>
-    </View>,
-
-    // ── STEP 4: Neighbourhood ──
-    <View style={styles.slide}>
-      <Text style={styles.stepEmoji}>📍</Text>
-      <Text style={styles.stepTitle}>Where are you based?</Text>
-      <Text style={styles.stepSub}>Used to show {dogName} on the local map</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.breedPills}>
-        {['Condesa', 'Roma Norte', 'Roma Sur', 'Polanco', 'Portales', 'Coyoacán', 'Del Valle', 'Narvarte', 'Doctores', 'Centro'].map((n, i) => (
-          <TouchableOpacity
-            key={i}
-            style={[styles.breedPill, neighbourhood === n && styles.breedPillActive]}
-            onPress={() => setNeighbourhood(n + ', CDMX')}
-          >
-            <Text style={[styles.breedPillText, neighbourhood === n + ', CDMX' && styles.breedPillTextActive]}>{n}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <Text style={styles.inputLabel}>Your neighbourhood</Text>
       <TextInput
         style={styles.input}
-        placeholder="Or type your neighbourhood..."
+        placeholder="e.g. Condesa, CDMX"
         placeholderTextColor="#555"
         value={neighbourhood}
         onChangeText={setNeighbourhood}
       />
       <TouchableOpacity
-        style={[styles.primaryBtn, !neighbourhood.trim() && styles.btnDisabled]}
+        style={[styles.primaryBtn, (!personality || !neighbourhood) && styles.btnDisabled]}
         onPress={nextStep}
-        disabled={!neighbourhood.trim()}
+        disabled={!personality || !neighbourhood}
       >
-        <Text style={styles.primaryBtnText}>Continue →</Text>
+        <Text style={styles.primaryBtnText}>Continue</Text>
       </TouchableOpacity>
     </View>,
 
-    // ── STEP 5: Account ──
-    <View style={styles.slide}>
-      <Text style={styles.stepEmoji}>🔐</Text>
+    <View style={styles.screen} key="account">
       <Text style={styles.stepTitle}>Create your account</Text>
-      <Text style={styles.stepSub}>Almost done — just your email and password</Text>
+      <Text style={styles.stepSub}>Almost done — set up your owner profile</Text>
+      <Text style={styles.inputLabel}>Email</Text>
       <TextInput
         style={styles.input}
-        placeholder="Email"
+        placeholder="your@email.com"
         placeholderTextColor="#555"
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
         keyboardType="email-address"
       />
+      <Text style={styles.inputLabel}>Password</Text>
       <TextInput
         style={styles.input}
-        placeholder="Password (min 6 characters)"
+        placeholder="At least 6 characters"
         placeholderTextColor="#555"
         value={password}
         onChangeText={setPassword}
@@ -231,120 +209,99 @@ export default function Onboarding() {
       />
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
       <TouchableOpacity
-        style={[styles.primaryBtn, (!email.trim() || password.length < 6) && styles.btnDisabled]}
-        onPress={nextStep}
-        disabled={!email.trim() || password.length < 6}
+        style={[styles.primaryBtn, (!email || !password || loading) && styles.btnDisabled]}
+        onPress={finish}
+        disabled={!email || !password || loading}
       >
-        <Text style={styles.primaryBtnText}>Continue →</Text>
+        <Text style={styles.primaryBtnText}>{loading ? 'Creating account...' : 'Create account & save dog'}</Text>
       </TouchableOpacity>
     </View>,
 
-    // ── STEP 6: All set ──
-    <View style={styles.slide}>
-      <View style={styles.successWrap}>
-        <Text style={styles.successEmoji}>🎉</Text>
-        <Text style={styles.successTitle}>All set, {dogName}!</Text>
-        <Text style={styles.successSub}>Your SmartPet Tag profile is ready. Welcome to the Condesa dog community.</Text>
+    <View style={styles.screen} key="done">
+      <View style={styles.doneWrap}>
+        <Text style={styles.doneEmoji}>{selectedEmoji}</Text>
+        <Text style={styles.doneTitle}>You're all set!</Text>
+        <Text style={styles.doneSub}>{dogName}'s SmartPet Tag profile is live. You can now trigger lost dog alerts, appear on the map, and connect with the dog community in your area.</Text>
+        <View style={styles.doneFeatures}>
+          <Text style={styles.doneFeature}>✅ Dog profile created</Text>
+          <Text style={styles.doneFeature}>✅ Account created</Text>
+          <Text style={styles.doneFeature}>✅ Ready to scan BLE tags</Text>
+          <Text style={styles.doneFeature}>✅ Lost dog alerts active</Text>
+        </View>
+        <TouchableOpacity style={styles.primaryBtn} onPress={() => router.replace('/(tabs)')}>
+          <Text style={styles.primaryBtnText}>Take me to SmartPet Tag 🐾</Text>
+        </TouchableOpacity>
       </View>
-      <View style={styles.summaryCard}>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryKey}>Dog</Text>
-          <Text style={styles.summaryVal}>{dogName}</Text>
-        </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryKey}>Breed</Text>
-          <Text style={styles.summaryVal}>{breed}</Text>
-        </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryKey}>Age</Text>
-          <Text style={styles.summaryVal}>{age} yrs</Text>
-        </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryKey}>Area</Text>
-          <Text style={styles.summaryVal}>{neighbourhood}</Text>
-        </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryKey}>Account</Text>
-          <Text style={styles.summaryVal}>{email}</Text>
-        </View>
-      </View>
-      <TouchableOpacity
-        style={[styles.primaryBtn, loading && styles.btnDisabled]}
-        onPress={finish}
-        disabled={loading}
-      >
-        <Text style={styles.primaryBtnText}>{loading ? 'Creating your profile...' : 'Take me to SmartPet Tag 🐾'}</Text>
-      </TouchableOpacity>
     </View>,
+
   ];
 
   return (
     <View style={styles.container}>
-
-      {/* Progress dots */}
-      {step > 0 && step < steps.length - 1 && (
-        <View style={styles.progress}>
-          {steps.slice(1, -1).map((_, i) => (
-            <View key={i} style={[styles.dot, i + 1 <= step && styles.dotActive]} />
-          ))}
+      {step < 5 && (
+        <View style={styles.progressWrap}>
+          {step > 0 && (
+            <TouchableOpacity onPress={prevStep} style={styles.backBtn}>
+              <Text style={styles.backBtnText}>←</Text>
+            </TouchableOpacity>
+          )}
+          <View style={styles.dots}>
+            {[0,1,2,3,4].map(i => (
+              <View key={i} style={[styles.dot, step === i && styles.dotActive]} />
+            ))}
+          </View>
         </View>
       )}
-
-      {/* Back button */}
-      {step > 0 && step < steps.length - 1 && (
-        <TouchableOpacity style={styles.backBtn} onPress={prevStep}>
-          <Text style={styles.backBtnText}>← Back</Text>
-        </TouchableOpacity>
-      )}
-
-      {/* Slide content */}
-      <Animated.View style={[styles.slideWrap, { transform: [{ translateX: slideAnim }] }]}>
+      <Animated.View style={[styles.stepWrap, { transform: [{ translateX: slideAnim }] }]}>
         {steps[step]}
       </Animated.View>
-
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  progress: { flexDirection: 'row', justifyContent: 'center', gap: 6, paddingTop: 16, paddingBottom: 4 },
+  progressWrap: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  backBtn: { padding: 8, marginRight: 8 },
+  backBtnText: { color: '#fff', fontSize: 20 },
+  dots: { flexDirection: 'row', gap: 6 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#333' },
   dotActive: { backgroundColor: '#E8640A', width: 20 },
-  backBtn: { paddingHorizontal: 20, paddingVertical: 8 },
-  backBtnText: { color: '#aaa', fontSize: 14 },
-  slideWrap: { flex: 1 },
-  slide: { flex: 1, paddingHorizontal: 28, paddingVertical: 20, justifyContent: 'center' },
-  welcomeHero: { alignItems: 'center', marginBottom: 32 },
-  welcomeEmoji: { fontSize: 64, marginBottom: 12 },
-  welcomeTitle: { fontSize: 32, fontWeight: '700', color: '#fff', marginBottom: 8, fontStyle: 'italic' },
+  stepWrap: { flex: 1 },
+  screen: { flex: 1, padding: 24 },
+  welcomeHero: { alignItems: 'center', paddingTop: 40, paddingBottom: 40 },
+  welcomeEmoji: { fontSize: 64, marginBottom: 16 },
+  welcomeTitle: { fontSize: 32, fontWeight: '700', color: '#fff', fontStyle: 'italic', marginBottom: 8 },
   welcomeSub: { fontSize: 15, color: '#aaa', textAlign: 'center', lineHeight: 22 },
   featureList: { marginBottom: 32 },
-  featureRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 16 },
-  featureIcon: { fontSize: 24, width: 36, textAlign: 'center' },
-  featureText: { fontSize: 14, color: '#ccc', flex: 1, lineHeight: 20 },
-  stepEmoji: { fontSize: 52, marginBottom: 16, textAlign: 'center' },
-  stepTitle: { fontSize: 24, fontWeight: '700', color: '#fff', marginBottom: 8, textAlign: 'center' },
-  stepSub: { fontSize: 14, color: '#aaa', textAlign: 'center', marginBottom: 24, lineHeight: 20 },
-  inputLabel: { fontSize: 13, color: '#aaa', marginBottom: 6, marginTop: 4 },
-  input: { backgroundColor: '#111', borderWidth: 0.5, borderColor: '#333', borderRadius: 12, padding: 14, fontSize: 15, color: '#fff', marginBottom: 14 },
-  inputMulti: { height: 80, textAlignVertical: 'top' },
-  breedPills: { marginBottom: 16, maxHeight: 44 },
-  breedPill: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 0.5, borderColor: '#333', backgroundColor: '#111', marginRight: 8 },
-  breedPillActive: { backgroundColor: '#E8640A', borderColor: '#E8640A' },
-  breedPillText: { fontSize: 13, color: '#aaa' },
-  breedPillTextActive: { color: '#fff', fontWeight: '600' },
-  primaryBtn: { backgroundColor: '#E8640A', borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 8 },
-  btnDisabled: { opacity: 0.4 },
+  featureRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 10, borderBottomWidth: 0.5, borderBottomColor: '#1a1a1a' },
+  featureIcon: { fontSize: 22, width: 32 },
+  featureText: { fontSize: 14, color: '#fff' },
+  stepTitle: { fontSize: 24, fontWeight: '700', color: '#fff', marginBottom: 6, marginTop: 16 },
+  stepSub: { fontSize: 14, color: '#aaa', marginBottom: 24, lineHeight: 20 },
+  inputLabel: { fontSize: 12, color: '#aaa', marginBottom: 6, marginTop: 16, textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: '600' },
+  input: { backgroundColor: '#111', borderWidth: 0.5, borderColor: '#333', borderRadius: 10, padding: 14, fontSize: 14, color: '#fff', marginBottom: 4 },
+  emojiPicker: { flexDirection: 'row', gap: 12, marginBottom: 16, justifyContent: 'center' },
+  emojiBtn: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#111', borderWidth: 0.5, borderColor: '#333', alignItems: 'center', justifyContent: 'center' },
+  emojiBtnActive: { borderColor: '#E8640A', backgroundColor: '#1a0e00' },
+  emojiOption: { fontSize: 26 },
+  selectedAvatarWrap: { alignItems: 'center', marginBottom: 16 },
+  selectedAvatar: { fontSize: 64 },
+  breedList: { maxHeight: 200, marginBottom: 8, backgroundColor: '#111', borderRadius: 10, borderWidth: 0.5, borderColor: '#333' },
+  breedRow: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: '#1a1a1a', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  breedRowActive: { backgroundColor: '#1a0e00' },
+  breedText: { fontSize: 14, color: '#aaa' },
+  breedTextActive: { color: '#E8640A', fontWeight: '600' },
+  primaryBtn: { backgroundColor: '#E8640A', borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 20 },
+  btnDisabled: { opacity: 0.35 },
   primaryBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  secondaryLink: { color: '#aaa', fontSize: 14, textAlign: 'center' },
-  errorText: { color: '#ff4444', fontSize: 13, textAlign: 'center', marginBottom: 10 },
-  successWrap: { alignItems: 'center', marginBottom: 28 },
-  successEmoji: { fontSize: 64, marginBottom: 16 },
-  successTitle: { fontSize: 26, fontWeight: '700', color: '#fff', marginBottom: 8 },
-  successSub: { fontSize: 14, color: '#aaa', textAlign: 'center', lineHeight: 22 },
-  summaryCard: { backgroundColor: '#111', borderRadius: 14, padding: 16, marginBottom: 24, borderWidth: 0.5, borderColor: '#262626' },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 0.5, borderBottomColor: '#1a1a1a' },
-  summaryKey: { fontSize: 13, color: '#aaa' },
-  summaryVal: { fontSize: 13, color: '#fff', fontWeight: '500' },
+  secondaryBtn: { alignItems: 'center', marginTop: 14 },
+  secondaryBtnText: { color: '#aaa', fontSize: 14 },
+  errorText: { color: '#ed4956', fontSize: 13, marginTop: 8, textAlign: 'center' },
+  doneWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  doneEmoji: { fontSize: 80, marginBottom: 16 },
+  doneTitle: { fontSize: 28, fontWeight: '700', color: '#fff', marginBottom: 10 },
+  doneSub: { fontSize: 14, color: '#aaa', textAlign: 'center', lineHeight: 22, marginBottom: 24 },
+  doneFeatures: { alignSelf: 'stretch', backgroundColor: '#111', borderRadius: 12, padding: 16, marginBottom: 24 },
+  doneFeature: { fontSize: 14, color: '#fff', paddingVertical: 6, borderBottomWidth: 0.5, borderBottomColor: '#1a1a1a' },
 });
