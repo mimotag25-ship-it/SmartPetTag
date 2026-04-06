@@ -6,16 +6,8 @@ import { router } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 const IS_WEB = width > 768;
-
 const ACCENT = '#00D4AA';
 const ACCENT_DIM = '#003d30';
-
-const NEARBY_ACTIVITY = [
-  { icon: '🐾', text: '14 dogs at Parque España right now' },
-  { icon: '🚨', text: 'Lost dog alert — Condesa, 0.4km away' },
-  { icon: '🐕', text: 'Spotted: Golden near Álvaro Obregón' },
-  { icon: '🎉', text: 'Dog meetup — Parque México, Sunday 10am' },
-];
 
 const STORIES = [
   { id: 1, name: 'your story', emoji: '🐕', isYou: true },
@@ -52,59 +44,31 @@ const NAV_ITEMS = [
 
 const DEMO_POSTS = [
   {
-    id: 1,
-    dog: 'Athena',
-    owner: 'liliana.gutierrez',
-    emoji: '🐕',
-    breed: 'Labrador',
-    energy: 5,
-    tags: ['Friendly', 'Playful'],
-    type: 'normal',
-    image: null,
-    location: 'Parque España, CDMX',
-    caption: 'Sunday zoomies at the park 🌳 She ran for 2 hours straight and still wanted more.',
-    paws: 142,
-    time: '2 MIN AGO',
+    id: 1, dog: 'Athena', owner: 'liliana.gutierrez', emoji: '🐕',
+    breed: 'Labrador', energy: 5, tags: ['Friendly', 'Playful'],
+    type: 'normal', image: null, location: 'Parque España, CDMX',
+    caption: 'Sunday zoomies at the park 🌳 She ran for 2 hours straight.',
+    paws: 142, time: '2 MIN AGO',
     comments: [
       { dog: 'Luna', user: 'ana.garcia', text: 'Athena is everything 😍', emoji: '🐩' },
       { dog: 'Rocky', user: 'rodrigo.vega', text: 'Goals 🐾🐾', emoji: '🐾' },
     ],
   },
   {
-    id: 2,
-    dog: 'Luna',
-    owner: 'ana.garcia',
-    emoji: '🐩',
-    breed: 'Poodle',
-    energy: 4,
-    tags: ['Playful', 'Social'],
-    type: 'spotted',
-    image: null,
-    location: 'Roma Norte, CDMX',
-    caption: 'Spotted this absolute queen near Álvaro Obregón. Anyone know this dog? She had no collar 👀',
-    paws: 89,
-    time: '5 HRS AGO',
-    comments: [
-      { dog: 'Coco', user: 'maria.lopez', text: 'That looks like Mochi from Roma!', emoji: '🐕' },
-    ],
+    id: 2, dog: 'Luna', owner: 'ana.garcia', emoji: '🐩',
+    breed: 'Poodle', energy: 4, tags: ['Playful', 'Social'],
+    type: 'spotted', image: null, location: 'Roma Norte, CDMX',
+    caption: 'Spotted this queen near Álvaro Obregón. Anyone know this dog? No collar 👀',
+    paws: 89, time: '5 HRS AGO',
+    comments: [{ dog: 'Coco', user: 'maria.lopez', text: 'That looks like Mochi from Roma!', emoji: '🐕' }],
   },
   {
-    id: 3,
-    dog: 'Coco',
-    owner: 'maria.lopez',
-    emoji: '🐕',
-    breed: 'Schnauzer',
-    energy: 5,
-    tags: ['Crazy', 'Loud'],
-    type: 'event',
-    image: null,
-    location: 'Parque México, CDMX',
-    caption: '🎉 Dog meetup this Sunday 10am at Parque México! All breeds welcome. Bring snacks 🦴',
-    paws: 203,
-    time: 'YESTERDAY',
-    comments: [
-      { dog: 'Athena', user: 'liliana.gutierrez', text: 'We will be there!! 🐕', emoji: '🐕' },
-    ],
+    id: 3, dog: 'Coco', owner: 'maria.lopez', emoji: '🐕',
+    breed: 'Schnauzer', energy: 5, tags: ['Crazy', 'Loud'],
+    type: 'event', image: null, location: 'Parque México, CDMX',
+    caption: '🎉 Dog meetup this Sunday 10am at Parque México! All breeds welcome.',
+    paws: 203, time: 'YESTERDAY',
+    comments: [{ dog: 'Athena', user: 'liliana.gutierrez', text: 'We will be there!! 🐕', emoji: '🐕' }],
   },
 ];
 
@@ -146,7 +110,6 @@ const emStyles = StyleSheet.create({
 
 function AlertCard({ alert }) {
   const pulseAnim = useRef(new Animated.Value(1)).current;
-
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
@@ -155,7 +118,6 @@ function AlertCard({ alert }) {
       ])
     ).start();
   }, []);
-
   return (
     <View style={alertStyles.card}>
       <View style={alertStyles.header}>
@@ -164,9 +126,7 @@ function AlertCard({ alert }) {
         <Text style={alertStyles.timeText}>{getTimeAgo(alert.created_at)}</Text>
       </View>
       <View style={alertStyles.dogRow}>
-        <View style={alertStyles.dogAvatar}>
-          <Text style={alertStyles.dogEmoji}>🐕</Text>
-        </View>
+        <View style={alertStyles.dogAvatar}><Text style={alertStyles.dogEmoji}>🐕</Text></View>
         <View style={{ flex: 1 }}>
           <Text style={alertStyles.dogName}>{alert.dog_name}</Text>
           <Text style={alertStyles.dogLocation}>📍 Last seen: {alert.neighbourhood}</Text>
@@ -345,6 +305,7 @@ function Post({ post }) {
 export default function FeedScreen() {
   const [posts, setPosts] = useState(DEMO_POSTS);
   const [lostAlerts, setLostAlerts] = useState([]);
+  const [nearbyActivity, setNearbyActivity] = useState([]);
   const [showComposer, setShowComposer] = useState(false);
   const [newCaption, setNewCaption] = useState('');
   const [newImage, setNewImage] = useState(null);
@@ -356,8 +317,10 @@ export default function FeedScreen() {
 
   useEffect(() => {
     loadAlerts();
-    const interval = setInterval(loadAlerts, 30000);
-    return () => clearInterval(interval);
+    loadActivity();
+    const alertInterval = setInterval(loadAlerts, 30000);
+    const activityInterval = setInterval(loadActivity, 60000);
+    return () => { clearInterval(alertInterval); clearInterval(activityInterval); };
   }, []);
 
   async function loadAlerts() {
@@ -366,15 +329,41 @@ export default function FeedScreen() {
       .select('*')
       .eq('status', 'lost')
       .order('created_at', { ascending: false });
-    if (data) setLostAlerts(data);
+    if (data) {
+      setLostAlerts(data);
+      if (data.length > 0) {
+        const alertPills = data.map(a => ({
+          id: 'alert-' + a.id,
+          icon: '🚨',
+          message: `Lost dog alert — ${a.neighbourhood}`,
+          urgent: true,
+        }));
+        setNearbyActivity(prev => {
+          const nonAlerts = prev.filter(p => !p.id?.startsWith('alert-'));
+          return [...alertPills, ...nonAlerts];
+        });
+      }
+    }
+  }
+
+  async function loadActivity() {
+    const { data } = await supabase
+      .from('activity')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(6);
+    if (data) {
+      setNearbyActivity(prev => {
+        const alerts = prev.filter(p => p.id?.startsWith('alert-'));
+        return [...alerts, ...data.map(a => ({ id: a.id, icon: a.icon, message: a.message, urgent: a.urgent }))];
+      });
+    }
   }
 
   async function pickImage() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
+      allowsEditing: true, aspect: [1, 1], quality: 0.8,
     });
     if (!result.canceled) setNewImage(result.assets[0].uri);
   }
@@ -384,14 +373,11 @@ export default function FeedScreen() {
       const response = await fetch(uri);
       const blob = await response.blob();
       const fileName = `post-${Date.now()}.jpg`;
-      const { data, error } = await supabase.storage.from('posts').upload(fileName, blob, { contentType: 'image/jpeg' });
+      const { error } = await supabase.storage.from('posts').upload(fileName, blob, { contentType: 'image/jpeg' });
       if (error) throw error;
       const { data: urlData } = supabase.storage.from('posts').getPublicUrl(fileName);
       return urlData.publicUrl;
-    } catch (e) {
-      console.log('Upload error:', e.message);
-      return null;
-    }
+    } catch (e) { console.log('Upload error:', e.message); return null; }
   }
 
   async function submitPost() {
@@ -400,26 +386,20 @@ export default function FeedScreen() {
     let imageUrl = null;
     if (newImage) imageUrl = await uploadImage(newImage);
     setPosts(p => [{
-      id: Date.now(),
-      dog: 'Athena',
-      owner: 'liliana.gutierrez',
-      emoji: '🐕',
-      breed: 'Labrador',
-      energy: 5,
-      tags: ['Friendly', 'Playful'],
-      type: postType,
-      image: imageUrl || newImage,
-      location: 'Portales, CDMX',
-      caption: newCaption,
-      paws: 0,
-      time: 'JUST NOW',
-      comments: [],
+      id: Date.now(), dog: 'Athena', owner: 'liliana.gutierrez',
+      emoji: '🐕', breed: 'Labrador', energy: 5,
+      tags: ['Friendly', 'Playful'], type: postType,
+      image: imageUrl || newImage, location: 'Portales, CDMX',
+      caption: newCaption, paws: 0, time: 'JUST NOW', comments: [],
     }, ...p]);
-    setNewCaption('');
-    setNewImage(null);
-    setPostType('normal');
-    setShowComposer(false);
-    setUploading(false);
+    setNewCaption(''); setNewImage(null); setPostType('normal');
+    setShowComposer(false); setUploading(false);
+
+    await supabase.from('activity').insert({
+      type: postType, icon: postType === 'lost' ? '🚨' : postType === 'spotted' ? '👀' : postType === 'event' ? '🎉' : '📸',
+      message: `Athena posted in Portales`, neighbourhood: 'Portales', urgent: postType === 'lost',
+    });
+    loadActivity();
   }
 
   return (
@@ -431,17 +411,11 @@ export default function FeedScreen() {
             <Text style={styles.sidebarAppName}>SmartPet Tag</Text>
           </View>
           {NAV_ITEMS.map((item, i) => (
-            <TouchableOpacity
-              key={i}
-              style={styles.navItem}
+            <TouchableOpacity key={i} style={styles.navItem}
               onPress={() => {
-                if (item.label === 'New post') {
-                  setShowComposer(!showComposer);
-                } else if (item.route) {
-                  router.push(item.route);
-                }
-              }}
-            >
+                if (item.label === 'New post') setShowComposer(!showComposer);
+                else if (item.route) router.push(item.route);
+              }}>
               <Text style={styles.navIcon}>{item.icon}</Text>
               <Text style={styles.navLabel}>{item.label}</Text>
             </TouchableOpacity>
@@ -466,16 +440,23 @@ export default function FeedScreen() {
           </ScrollView>
         </View>
 
-        <View style={styles.activityStrip}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}>
-            {NEARBY_ACTIVITY.map((a, i) => (
-              <TouchableOpacity key={i} style={[styles.activityPill, activeActivity === i && styles.activityPillActive]} onPress={() => setActiveActivity(i)}>
-                <Text style={styles.activityIcon}>{a.icon}</Text>
-                <Text style={[styles.activityText, activeActivity === i && styles.activityTextActive]}>{a.text}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+        {/* REAL nearby activity from Supabase */}
+        {nearbyActivity.length > 0 && (
+          <View style={styles.activityStrip}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}>
+              {nearbyActivity.map((a, i) => (
+                <TouchableOpacity
+                  key={a.id || i}
+                  style={[styles.activityPill, activeActivity === i && styles.activityPillActive, a.urgent && styles.activityPillUrgent]}
+                  onPress={() => setActiveActivity(i)}
+                >
+                  <Text style={styles.activityIcon}>{a.icon}</Text>
+                  <Text style={[styles.activityText, activeActivity === i && styles.activityTextActive, a.urgent && styles.activityTextUrgent]}>{a.message}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         <View style={styles.modeToggle}>
           <TouchableOpacity style={[styles.modeBtn, feedMode === 'feed' && styles.modeBtnActive]} onPress={() => setFeedMode('feed')}>
@@ -495,9 +476,7 @@ export default function FeedScreen() {
               <Text style={styles.alertSectionTitle}>ACTIVE ALERTS NEAR YOU</Text>
               <Text style={styles.alertSectionCount}>{lostAlerts.length}</Text>
             </View>
-            {lostAlerts.map(alert => (
-              <AlertCard key={alert.id} alert={alert} />
-            ))}
+            {lostAlerts.map(alert => <AlertCard key={alert.id} alert={alert} />)}
           </View>
         )}
 
@@ -506,11 +485,9 @@ export default function FeedScreen() {
             <Text style={styles.composerTitle}>New post as Athena 🐕</Text>
             <View style={styles.postTypeRow}>
               {POST_TYPES.map(pt => (
-                <TouchableOpacity
-                  key={pt.key}
+                <TouchableOpacity key={pt.key}
                   style={[styles.postTypeBtn, postType === pt.key && { borderColor: pt.color, backgroundColor: pt.color + '22' }]}
-                  onPress={() => setPostType(pt.key)}
-                >
+                  onPress={() => setPostType(pt.key)}>
                   <Text style={styles.postTypeIcon}>{pt.icon}</Text>
                   <Text style={[styles.postTypeLabel, postType === pt.key && { color: pt.color }]}>{pt.label}</Text>
                 </TouchableOpacity>
@@ -526,23 +503,14 @@ export default function FeedScreen() {
                 </View>
               )}
             </TouchableOpacity>
-            <TextInput
-              style={styles.composerInput}
-              placeholder="What's Athena up to?"
-              placeholderTextColor="#333"
-              value={newCaption}
-              onChangeText={setNewCaption}
-              multiline
-            />
+            <TextInput style={styles.composerInput} placeholder="What's Athena up to?" placeholderTextColor="#333" value={newCaption} onChangeText={setNewCaption} multiline />
             <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 12 }}>
               <TouchableOpacity onPress={() => { setShowComposer(false); setNewImage(null); setNewCaption(''); }}>
                 <Text style={{ color: '#444', fontSize: 14 }}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.shareBtn, (!newCaption.trim() && !newImage) && { opacity: 0.3 }]}
-                onPress={submitPost}
-                disabled={(!newCaption.trim() && !newImage) || uploading}
-              >
+                onPress={submitPost} disabled={(!newCaption.trim() && !newImage) || uploading}>
                 <Text style={styles.shareBtnText}>{uploading ? 'Posting...' : 'Share'}</Text>
               </TouchableOpacity>
             </View>
@@ -622,9 +590,11 @@ const styles = StyleSheet.create({
   activityStrip: { paddingVertical: 10, borderBottomWidth: 0.5, borderBottomColor: '#111' },
   activityPill: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#0d0d0d', borderWidth: 0.5, borderColor: '#1a1a1a', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
   activityPillActive: { borderColor: ACCENT, backgroundColor: ACCENT_DIM },
+  activityPillUrgent: { borderColor: '#C0392B', backgroundColor: '#1a0505' },
   activityIcon: { fontSize: 13 },
-  activityText: { fontSize: 11, color: '#444', maxWidth: 160 },
+  activityText: { fontSize: 11, color: '#444', maxWidth: 180 },
   activityTextActive: { color: ACCENT },
+  activityTextUrgent: { color: '#C0392B' },
   modeToggle: { flexDirection: 'row', margin: 12, backgroundColor: '#0d0d0d', borderRadius: 12, borderWidth: 0.5, borderColor: '#1a1a1a', padding: 4 },
   modeBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 10 },
   modeBtnActive: { backgroundColor: ACCENT_DIM },
