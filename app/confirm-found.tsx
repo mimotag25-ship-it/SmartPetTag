@@ -21,11 +21,7 @@ export default function ConfirmFound() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
-        .from('lost_alerts')
-        .select('*')
-        .eq('id', alertId)
-        .single();
+      const { data } = await supabase.from('lost_alerts').select('*').eq('id', alertId).single();
       if (data) setAlert(data);
       setLoading(false);
     }
@@ -33,55 +29,33 @@ export default function ConfirmFound() {
   }, []);
 
   function toggleOption(key) {
-    setHowFound(prev =>
-      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
-    );
+    setHowFound(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
   }
 
   async function confirmFound() {
     if (howFound.length === 0) return;
     setConfirming(true);
-
-    await supabase.from('lost_alerts')
-      .update({
-        status: 'found',
-        status_pending_owner: false,
-      })
-      .eq('id', alertId);
-
+    await supabase.from('lost_alerts').update({ status: 'found', status_pending_owner: false }).eq('id', alertId);
     await supabase.from('activity').insert({
-      type: 'found',
-      icon: '🎉',
+      type: 'found', icon: '🎉',
       message: `${alert.dog_name} is home safe! Owner confirmed 🐾`,
-      neighbourhood: alert.neighbourhood || 'Nearby',
-      urgent: false,
+      neighbourhood: alert.neighbourhood || 'Nearby', urgent: false,
     });
-
     setConfirming(false);
     setDone(true);
   }
 
   async function rejectReport() {
-    await supabase.from('lost_alerts')
-      .update({
-        status: 'lost',
-        status_pending_owner: false,
-        finder_name: null,
-        found_photo: null,
-        found_message: null,
-        found_location: null,
-        found_contacted: false,
-      })
-      .eq('id', alertId);
-
+    await supabase.from('lost_alerts').update({
+      status: 'lost', status_pending_owner: false,
+      finder_name: null, found_photo: null,
+      found_message: null, found_location: null, found_contacted: false,
+    }).eq('id', alertId);
     await supabase.from('activity').insert({
-      type: 'alert',
-      icon: '🚨',
+      type: 'alert', icon: '🚨',
       message: `${alert?.dog_name} is still missing — false report dismissed`,
-      neighbourhood: alert?.neighbourhood || 'Nearby',
-      urgent: true,
+      neighbourhood: alert?.neighbourhood || 'Nearby', urgent: true,
     });
-
     router.replace('/(tabs)/index');
   }
 
@@ -96,9 +70,7 @@ export default function ConfirmFound() {
       <View style={styles.doneSection}>
         <Text style={styles.doneEmoji}>🎉</Text>
         <Text style={styles.doneTitle}>{alert?.dog_name} is home!</Text>
-        <Text style={styles.doneSub}>
-          The alert has been closed. {alert?.finder_name} has been credited as a Lost Dog Hero in the community feed.
-        </Text>
+        <Text style={styles.doneSub}>{alert?.finder_name} has been credited as a Lost Dog Hero in the community feed.</Text>
         <View style={styles.statsBox}>
           <Text style={styles.statsTitle}>Case closed ✓</Text>
           <Text style={styles.statsLine}>🐕 Dog: {alert?.dog_name}</Text>
@@ -117,16 +89,12 @@ export default function ConfirmFound() {
       <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
         <Text style={styles.backBtnText}>← Back</Text>
       </TouchableOpacity>
-
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-
         <View style={styles.header}>
           <Text style={styles.headerEmoji}>🔔</Text>
           <Text style={styles.title}>Someone found {alert?.dog_name}!</Text>
           <Text style={styles.sub}>Review what the finder submitted and confirm how they contacted you. Only you can close this alert.</Text>
         </View>
-
-        {/* Finder info */}
         <View style={styles.finderCard}>
           <Text style={styles.finderTitle}>Finder's report</Text>
           <View style={styles.finderRow}>
@@ -161,11 +129,8 @@ export default function ConfirmFound() {
             <Text style={styles.noProofText}>No additional proof submitted</Text>
           )}
         </View>
-
-        {/* Owner confirmation */}
         <Text style={styles.sectionTitle}>How did the finder contact you?</Text>
         <Text style={styles.sectionSub}>Select all that apply — this creates the official record</Text>
-
         {HOW_OPTIONS.map(opt => (
           <TouchableOpacity
             key={opt.key}
@@ -177,32 +142,24 @@ export default function ConfirmFound() {
             {howFound.includes(opt.key) && <Text style={styles.optionCheck}>✓</Text>}
           </TouchableOpacity>
         ))}
-
         {howFound.length === 0 && (
           <View style={styles.warningBox}>
             <Text style={styles.warningText}>⚠️ Select at least one option to confirm the handoff</Text>
           </View>
         )}
-
         <TouchableOpacity
           style={[styles.confirmBtn, howFound.length === 0 && styles.confirmBtnDisabled]}
           onPress={confirmFound}
           disabled={howFound.length === 0 || confirming}
         >
-          {confirming
-            ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.confirmBtnText}>✅ Confirm — {alert?.dog_name} is home safe</Text>
-          }
+          {confirming ? <ActivityIndicator color="#fff" /> : <Text style={styles.confirmBtnText}>✅ Confirm — {alert?.dog_name} is home safe</Text>}
         </TouchableOpacity>
-
         <View style={styles.divider} />
-
         <Text style={styles.rejectTitle}>This report is incorrect?</Text>
-        <Text style={styles.rejectSub}>If this is a false report or you haven't been contacted, dismiss it and the alert stays active.</Text>
+        <Text style={styles.rejectSub}>If this is a false report, dismiss it and the alert stays active.</Text>
         <TouchableOpacity style={styles.rejectBtn} onPress={rejectReport}>
           <Text style={styles.rejectBtnText}>🚨 Dismiss — my dog is still missing</Text>
         </TouchableOpacity>
-
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>

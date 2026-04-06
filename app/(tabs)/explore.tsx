@@ -123,15 +123,17 @@ function AlertCard({ alert, onResolved }) {
     ).start();
   }, []);
 
-  async function handleFound() {
-    setResolving(true);
-    const success = await resolveAlert(alert.id, alert.dog_name);
-    if (success) {
-      setResolved(true);
-      pulseAnim.stopAnimation();
-      setTimeout(() => onResolved(alert.id), 1500);
-    }
-    setResolving(false);
+  function handleFound() {
+    router.push({
+      pathname: '/found',
+      params: {
+        alertId: alert.id,
+        dogName: alert.dog_name,
+        ownerName: alert.owner_name,
+        ownerPhone: alert.owner_phone,
+        neighbourhood: alert.neighbourhood,
+      }
+    });
   }
 
   if (resolved) {
