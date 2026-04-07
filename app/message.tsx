@@ -17,16 +17,8 @@ export default function MessageScreen() {
   useEffect(() => {
     if (convId && convId !== 'new') {
       loadMessages(convId);
-      const sub = supabase
-        .channel('messages-' + convId)
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${convId}` },
-          payload => {
-            setMessages(prev => [...prev, payload.new]);
-            setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
-          }
-        )
-        .subscribe();
-      return () => supabase.removeChannel(sub);
+      const interval = setInterval(() => loadMessages(convId), 2000);
+      return () => clearInterval(interval);
     } else {
       setLoading(false);
     }
@@ -38,39 +30,39 @@ export default function MessageScreen() {
       .select('*')
       .eq('conversation_id', id)
       .order('created_at', { ascending: true });
-    if (data) setMessages(data);
+    if (data) {
+      setMessages(data);
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 50);
+    }
     setLoading(false);
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 100);
   }
 
   async function sendMessage() {
     if (!text.trim()) return;
     setSending(true);
+    const msgText = text.trim();
+    setText('');
+
     let activeConvId = convId;
 
     if (!activeConvId) {
       const { data: newConv } = await supabase
         .from('conversations')
-        .insert({ dog1_name: MY_DOG, dog2_name: otherDog, owner1_phone: '', owner2_phone: otherOwner || '', last_message: text.trim() })
+        .insert({ dog1_name: MY_DOG, dog2_name: otherDog, owner1_phone: '', owner2_phone: otherOwner || '', last_message: msgText })
         .select()
         .single();
       if (newConv) { activeConvId = newConv.id; setConvId(newConv.id); }
     }
 
     if (activeConvId) {
-      await supabase.from('messages').insert({
-        conversation_id: activeConvId,
-        sender_dog: MY_DOG,
-        sender_name: MY_NAME,
-        text: text.trim(),
-      });
-      await supabase.from('conversations').update({
-        last_message: text.trim(),
-        last_message_at: new Date().toISOString(),
-      }).eq('id', activeConvId);
+      const newMsg = { conversation_id: activeConvId, sender_dog: MY_DOG, sender_name: MY_NAME, text: msgText, created_at: new Date().toISOString() };
+      setMessages(prev => [...prev, { ...newMsg, id: Date.now() }]);
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
+
+      await supabase.from('messages').insert(newMsg);
+      await supabase.from('conversations').update({ last_message: msgText, last_message_at: new Date().toISOString() }).eq('id', activeConvId);
     }
 
-    setText('');
     setSending(false);
   }
 
@@ -81,8 +73,6 @@ export default function MessageScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-
-      {/* Header */}
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.backBtn}>←</Text>
@@ -101,15 +91,13 @@ export default function MessageScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Messages */}
       {loading ? (
         <ActivityIndicator size="large" color="#00D4AA" style={{ marginTop: 60 }} />
       ) : (
         <ScrollView
           ref={scrollRef}
           style={styles.messageList}
-          contentContainerStyle={{ padding: 16, gap: 8 }}
-          onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
+          contentContainerStyle={{ padding: 16, paddingBottom: 8 }}
         >
           {messages.length === 0 && (
             <View style={styles.emptyChat}>
@@ -120,7 +108,7 @@ export default function MessageScreen() {
           {messages.map((msg, i) => {
             const isMe = msg.sender_dog === MY_DOG;
             return (
-              <View key={msg.id || i} style={[styles.msgRow, isMe && styles.msgRowMe]}>
+              <View key={msg.id || i} style={[styles.msgRow, isMe && styles.msgRowMe, { marginBottom: 8 }]}>
                 {!isMe && (
                   <View style={styles.msgAvatar}>
                     <Text style={{ fontSize: 14 }}>🐕</Text>
@@ -137,7 +125,6 @@ export default function MessageScreen() {
         </ScrollView>
       )}
 
-      {/* Input */}
       <View style={styles.inputBar}>
         <View style={styles.inputAvatar}>
           <Text style={{ fontSize: 16 }}>🐕</Text>
@@ -150,6 +137,7 @@ export default function MessageScreen() {
           onChangeText={setText}
           multiline
           maxLength={500}
+          onSubmitEditing={sendMessage}
         />
         <TouchableOpacity
           style={[styles.sendBtn, !text.trim() && styles.sendBtnDisabled]}
@@ -162,7 +150,6 @@ export default function MessageScreen() {
           }
         </TouchableOpacity>
       </View>
-
     </KeyboardAvoidingView>
   );
 }
@@ -181,7 +168,7 @@ const styles = StyleSheet.create({
   emptyChat: { alignItems: 'center', paddingTop: 60, gap: 10 },
   emptyChatEmoji: { fontSize: 40 },
   emptyChatText: { fontSize: 14, color: '#444' },
-  msgRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginBottom: 4 },
+  msgRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   msgRowMe: { flexDirection: 'row-reverse' },
   msgAvatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#111', alignItems: 'center', justifyContent: 'center', borderWidth: 0.5, borderColor: '#222' },
   bubble: { maxWidth: '75%', borderRadius: 16, padding: 10 },

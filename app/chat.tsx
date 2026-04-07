@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { router } from 'expo-router';
 
@@ -9,11 +9,8 @@ export default function ChatList() {
 
   useEffect(() => {
     loadConversations();
-    const sub = supabase
-      .channel('conversations')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, loadConversations)
-      .subscribe();
-    return () => supabase.removeChannel(sub);
+    const interval = setInterval(loadConversations, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   async function loadConversations() {
@@ -36,6 +33,27 @@ export default function ChatList() {
     return `${Math.floor(hrs / 24)}d`;
   }
 
+  async function startNewChat() {
+    const { data } = await supabase
+      .from('conversations')
+      .insert({
+        dog1_name: 'Athena',
+        dog2_name: 'Luna',
+        owner1_phone: '+52 55 4532-0981',
+        owner2_phone: '',
+        last_message: '',
+        last_message_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+    if (data) {
+      router.push({
+        pathname: '/message',
+        params: { conversationId: data.id, otherDog: 'Luna', otherOwner: '' }
+      });
+    }
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.topBar}>
@@ -43,7 +61,7 @@ export default function ChatList() {
           <Text style={styles.backBtn}>←</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Messages</Text>
-        <View style={{ width: 24 }} />
+        <View style={{ width: 40 }} />
       </View>
 
       {loading && <ActivityIndicator size="large" color="#00D4AA" style={{ marginTop: 60 }} />}
@@ -53,6 +71,9 @@ export default function ChatList() {
           <Text style={styles.emptyEmoji}>💬</Text>
           <Text style={styles.emptyTitle}>No conversations yet</Text>
           <Text style={styles.emptySub}>Chats start when you connect with other dog owners — through lost alerts, found reports, or meetups.</Text>
+          <TouchableOpacity style={styles.startBtn} onPress={startNewChat}>
+            <Text style={styles.startBtnText}>Start a test chat with Luna 🐩</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -61,14 +82,23 @@ export default function ChatList() {
           <TouchableOpacity
             key={conv.id}
             style={styles.convRow}
-            onPress={() => router.push({ pathname: '/message', params: { conversationId: conv.id, otherDog: conv.dog2_name, otherOwner: conv.owner2_phone } })}
+            onPress={() => router.push({
+              pathname: '/message',
+              params: {
+                conversationId: conv.id,
+                otherDog: conv.dog1_name === 'Athena' ? conv.dog2_name : conv.dog1_name,
+                otherOwner: conv.dog1_name === 'Athena' ? conv.owner2_phone : conv.owner1_phone,
+              }
+            })}
           >
             <View style={styles.convAvatar}>
               <Text style={styles.convAvatarEmoji}>🐕</Text>
             </View>
             <View style={styles.convBody}>
               <View style={styles.convHeader}>
-                <Text style={styles.convDogName}>{conv.dog2_name}</Text>
+                <Text style={styles.convDogName}>
+                  {conv.dog1_name === 'Athena' ? conv.dog2_name : conv.dog1_name}
+                </Text>
                 <Text style={styles.convTime}>{getTimeAgo(conv.last_message_at)}</Text>
               </View>
               {conv.alert_id && (
@@ -77,16 +107,18 @@ export default function ChatList() {
                 </View>
               )}
               <Text style={styles.convLastMsg} numberOfLines={1}>
-                {conv.last_message || 'Start the conversation...'}
+                {conv.last_message || 'Tap to start chatting...'}
               </Text>
             </View>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
-      <TouchableOpacity style={styles.newChatBtn} onPress={() => router.push({ pathname: '/message', params: { conversationId: 'new', otherDog: 'New chat', otherOwner: '' } })}>
-        <Text style={styles.newChatBtnText}>+ New conversation</Text>
-      </TouchableOpacity>
+      {conversations.length > 0 && (
+        <TouchableOpacity style={styles.newChatBtn} onPress={startNewChat}>
+          <Text style={styles.newChatBtnText}>+ New conversation</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -99,7 +131,9 @@ const styles = StyleSheet.create({
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
   emptyEmoji: { fontSize: 52, marginBottom: 16 },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: '#fff', marginBottom: 8 },
-  emptySub: { fontSize: 13, color: '#444', textAlign: 'center', lineHeight: 20 },
+  emptySub: { fontSize: 13, color: '#444', textAlign: 'center', lineHeight: 20, marginBottom: 24 },
+  startBtn: { backgroundColor: '#003d30', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 20, borderWidth: 0.5, borderColor: '#00D4AA' },
+  startBtnText: { color: '#00D4AA', fontWeight: '600', fontSize: 14 },
   convRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderBottomWidth: 0.5, borderBottomColor: '#0d0d0d' },
   convAvatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#111', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#00D4AA' },
   convAvatarEmoji: { fontSize: 24 },
