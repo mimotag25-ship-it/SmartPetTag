@@ -85,6 +85,15 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      <TouchableOpacity style={styles.chatBtn} onPress={() => router.push('/chat')}>
+        <Text style={styles.chatBtnEmoji}>💬</Text>
+        <View>
+          <Text style={styles.chatBtnTitle}>Messages</Text>
+          <Text style={styles.chatBtnSub}>Chat with nearby dog owners</Text>
+        </View>
+        <Text style={styles.chatBtnArrow}>→</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.emergencyBtn} onPress={() => router.push('/emergency')}>
         <Text style={styles.emergencyBtnEmoji}>🚨</Text>
         <View>
@@ -182,6 +191,11 @@ const styles = StyleSheet.create({
   badge: { backgroundColor: '#111', borderWidth: 0.5, borderColor: '#222', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5 },
   badgeGreen: { borderColor: '#0F6E56', backgroundColor: '#051a14' },
   badgeText: { fontSize: 11, color: '#888', fontWeight: '500' },
+  chatBtn: { marginHorizontal: 16, backgroundColor: '#003d30', borderRadius: 16, borderWidth: 1, borderColor: '#00D4AA', padding: 16, marginBottom: 10, flexDirection: 'row', alignItems: 'center', gap: 14 },
+  chatBtnEmoji: { fontSize: 26 },
+  chatBtnTitle: { fontSize: 15, fontWeight: '700', color: '#fff', marginBottom: 2 },
+  chatBtnSub: { fontSize: 12, color: '#00D4AA' },
+  chatBtnArrow: { color: '#00D4AA', fontSize: 18, marginLeft: 'auto' },
   emergencyBtn: { marginHorizontal: 16, backgroundColor: '#1a0505', borderRadius: 16, borderWidth: 1.5, borderColor: '#C0392B', padding: 18, marginBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 14 },
   emergencyBtnEmoji: { fontSize: 32 },
   emergencyBtnTitle: { fontSize: 16, fontWeight: '800', color: '#fff', marginBottom: 2, letterSpacing: 0.3 },

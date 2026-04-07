@@ -27,6 +27,8 @@ export default function RootLayout() {
         <Stack.Screen name="emergency" options={{ headerShown: false }} />
         <Stack.Screen name="found" options={{ headerShown: false }} />
         <Stack.Screen name="confirm-found" options={{ headerShown: false }} />
+        <Stack.Screen name="chat" options={{ headerShown: false }} />
+        <Stack.Screen name="message" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
       <StatusBar style="light" />
