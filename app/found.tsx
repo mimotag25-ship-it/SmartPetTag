@@ -45,11 +45,14 @@ export default function FoundDog() {
       <View style={styles.doneSection}>
         <Text style={styles.doneEmoji}>🔔</Text>
         <Text style={styles.doneTitle}>Report submitted!</Text>
-        <Text style={styles.doneSub}>{ownerName} has been notified and will confirm once they connect with you. Alert stays active until owner confirms.</Text>
+        <Text style={styles.doneSub}>{ownerName} has been notified. A chat thread has been opened so you can coordinate directly.</Text>
         <View style={styles.pendingBox}>
           <Text style={styles.pendingIcon}>⏳</Text>
           <View><Text style={styles.pendingTitle}>Waiting for owner confirmation</Text><Text style={styles.pendingSub}>{ownerName} needs to confirm on their end</Text></View>
         </View>
+        <TouchableOpacity style={styles.chatNowBtn} onPress={() => router.push('/chat')}>
+          <Text style={styles.chatNowBtnText}>💬 Open chat with {ownerName}</Text>
+        </TouchableOpacity>
         <View style={styles.heroUnlock}>
           <Text style={styles.heroIcon}>🦸</Text>
           <View><Text style={styles.heroTitle}>Badge pending: Lost Dog Hero</Text><Text style={styles.heroSub}>Unlocks when owner confirms 🐾</Text></View>
@@ -184,6 +187,8 @@ const styles = StyleSheet.create({
   heroIcon: { fontSize: 32 },
   heroTitle: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 2 },
   heroSub: { fontSize: 12, color: '#1D9E75' },
+  chatNowBtn: { backgroundColor: '#003d30', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 24, alignItems: 'center', marginBottom: 12, width: '100%', borderWidth: 1, borderColor: '#00D4AA' },
+  chatNowBtnText: { color: '#00D4AA', fontWeight: '700', fontSize: 15 },
   doneBtn: { backgroundColor: '#0d0d0d', borderWidth: 0.5, borderColor: '#333', borderRadius: 14, padding: 16, width: '100%', alignItems: 'center' },
   doneBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
 });

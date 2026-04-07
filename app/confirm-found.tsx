@@ -157,6 +157,13 @@ export default function ConfirmFound() {
         <View style={styles.divider} />
         <Text style={styles.rejectTitle}>This report is incorrect?</Text>
         <Text style={styles.rejectSub}>If this is a false report, dismiss it and the alert stays active.</Text>
+        <TouchableOpacity
+          style={styles.chatWithFinderBtn}
+          onPress={() => router.push('/chat')}
+        >
+          <Text style={styles.chatWithFinderText}>💬 Chat with {alert?.finder_name || 'finder'} directly</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity style={styles.rejectBtn} onPress={rejectReport}>
           <Text style={styles.rejectBtnText}>🚨 Dismiss — my dog is still missing</Text>
         </TouchableOpacity>
@@ -198,6 +205,8 @@ const styles = StyleSheet.create({
   divider: { height: 0.5, backgroundColor: '#1a1a1a', marginHorizontal: 16, marginBottom: 20 },
   rejectTitle: { fontSize: 14, color: '#ccc', fontWeight: '600', marginHorizontal: 16, marginBottom: 4 },
   rejectSub: { fontSize: 12, color: '#444', marginHorizontal: 16, marginBottom: 12, lineHeight: 18 },
+  chatWithFinderBtn: { marginHorizontal: 16, backgroundColor: '#003d30', borderRadius: 14, paddingVertical: 14, alignItems: 'center', borderWidth: 0.5, borderColor: '#00D4AA', marginBottom: 10 },
+  chatWithFinderText: { color: '#00D4AA', fontWeight: '600', fontSize: 14 },
   rejectBtn: { marginHorizontal: 16, backgroundColor: '#1a0505', borderRadius: 14, paddingVertical: 14, alignItems: 'center', borderWidth: 0.5, borderColor: '#C0392B' },
   rejectBtnText: { color: '#C0392B', fontSize: 14, fontWeight: '600' },
   doneSection: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
