@@ -41,24 +41,22 @@ export default function MapScreen() {
     Animated.timing(slideAnim, { toValue: 300, duration: 200, useNativeDriver: true }).start(() => setSelectedDog(null));
   }
 
-  function togglePrivacy() {
-    setShowPrivacy(!showPrivacy);
-  }
+  function makeDogMarkerJS(d, i) {
+    const color = d.visibility === 'community' ? '#F5A623' : '#00D4AA';
+    const bg = d.visibility === 'community' ? '#854F0B' : '#003d30';
+    const movingDot = d.is_moving ? '<circle cx=\\"22\\" cy=\\"2\\" r=\\"4\\" fill=\\"#00D4AA\\"/>' : '';
+    const svgContent = `<svg xmlns=\\"http://www.w3.org/2000/svg\\" width=\\"44\\" height=\\"52\\"><circle cx=\\"22\\" cy=\\"22\\" r=\\"20\\" fill=\\"${bg}\\" stroke=\\"${color}\\" stroke-width=\\"2\\"/><text x=\\"22\\" y=\\"29\\" text-anchor=\\"middle\\" font-size=\\"18\\">${d.emoji}</text>${movingDot}</svg>`;
 
-  const mapHTML = useMemo(() => {
-    const dogMarkersJS = dogs.map((d, i) => `
+    return `
       var dogPos${i} = { lat: ${d.lat}, lng: ${d.lng} };
       var dogMarker${i} = new google.maps.Marker({
         position: dogPos${i},
         map: map,
         title: '${d.dog_name}',
         icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: ${d.is_moving ? 10 : 8},
-          fillColor: '${d.visibility === 'community' ? '#F5A623' : '#00D4AA'}',
-          fillOpacity: 1,
-          strokeColor: '#fff',
-          strokeWeight: 2,
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent("${svgContent}"),
+          scaledSize: new google.maps.Size(44, 52),
+          anchor: new google.maps.Point(22, 52),
         }
       });
 
@@ -67,40 +65,21 @@ export default function MapScreen() {
       var speed${i} = 0.00003 + Math.random() * 0.00002;
       setInterval(function() {
         angle${i} += (Math.random() - 0.5) * 0.3;
-        var newLat = dogPos${i}.lat + Math.sin(angle${i}) * speed${i};
-        var newLng = dogPos${i}.lng + Math.cos(angle${i}) * speed${i};
-        dogPos${i} = { lat: newLat, lng: newLng };
+        dogPos${i} = { lat: dogPos${i}.lat + Math.sin(angle${i}) * speed${i}, lng: dogPos${i}.lng + Math.cos(angle${i}) * speed${i} };
         dogMarker${i}.setPosition(dogPos${i});
-      }, 1500);
-      ` : ''}
+      }, 1500);` : ''}
 
-      dogMarker${i}.addListener('click', function() {
-        window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'dogSelected',
-          dog: {
-            id: '${d.id}',
-            dog_name: '${d.dog_name}',
-            owner_name: '${d.owner_name}',
-            breed: '${d.breed}',
-            personality: '${d.personality}',
-            visibility: '${d.visibility}',
-            is_moving: ${d.is_moving},
-            emoji: '${d.emoji}'
-          }
-        }));
-      });
-
-      var pulseCircle${i} = new google.maps.Circle({
-        map: map,
-        center: dogPos${i},
+      new google.maps.Circle({
+        map: map, center: { lat: ${d.lat}, lng: ${d.lng} },
         radius: ${d.is_moving ? 30 : 15},
-        fillColor: '${d.visibility === 'community' ? '#F5A623' : '#00D4AA'}',
-        fillOpacity: 0.15,
-        strokeColor: '${d.visibility === 'community' ? '#F5A623' : '#00D4AA'}',
-        strokeOpacity: 0.3,
-        strokeWeight: 1,
+        fillColor: '${color}', fillOpacity: 0.12,
+        strokeColor: '${color}', strokeOpacity: 0.3, strokeWeight: 1,
       });
-    `).join('');
+    `;
+  }
+
+  const mapHTML = useMemo(() => {
+    const dogMarkersJS = dogs.map((d, i) => makeDogMarkerJS(d, i)).join('');
 
     const alertMarkersJS = alerts.map((a, i) => `
       var alertMarker${i} = new google.maps.Marker({
@@ -110,17 +89,9 @@ export default function MapScreen() {
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
           scale: 12,
-          fillColor: '#C0392B',
-          fillOpacity: 1,
-          strokeColor: '#ff6b6b',
-          strokeWeight: 3,
+          fillColor: '#C0392B', fillOpacity: 1,
+          strokeColor: '#ff6b6b', strokeWeight: 3,
         }
-      });
-      alertMarker${i}.addListener('click', function() {
-        window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'alertSelected',
-          alert: { dog_name: '${a.dog_name}', owner_name: '${a.owner_name}', owner_phone: '${a.owner_phone}', neighbourhood: '${a.neighbourhood}' }
-        }));
       });
       new google.maps.Circle({
         map: map, center: { lat: 19.4148, lng: -99.1728 },
@@ -138,10 +109,8 @@ export default function MapScreen() {
     <script>
       function initMap() {
         var map = new google.maps.Map(document.getElementById('map'), {
-          center: { lat: 19.4136, lng: -99.1716 },
-          zoom: 15,
-          disableDefaultUI: true,
-          zoomControl: true,
+          center: { lat: 19.4136, lng: -99.1716 }, zoom: 15,
+          disableDefaultUI: true, zoomControl: true,
           styles: [
             { elementType: 'geometry', stylers: [{ color: '#0a0a0f' }] },
             { elementType: 'labels.text.stroke', stylers: [{ color: '#0a0a0f' }] },
@@ -156,27 +125,15 @@ export default function MapScreen() {
             { featureType: 'transit', stylers: [{ visibility: 'off' }] },
           ],
         });
-
         var youMarker = new google.maps.Marker({
-          position: { lat: 19.4136, lng: -99.1716 },
-          map: map,
-          title: 'You + Athena',
-          icon: {
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: 14,
-            fillColor: '#C0392B',
-            fillOpacity: 1,
-            strokeColor: '#ff9966',
-            strokeWeight: 3,
-          }
+          position: { lat: 19.4136, lng: -99.1716 }, map: map, title: 'You + Athena',
+          icon: { path: google.maps.SymbolPath.CIRCLE, scale: 14, fillColor: '#C0392B', fillOpacity: 1, strokeColor: '#ff9966', strokeWeight: 3 }
         });
-
         new google.maps.Circle({
           map: map, center: { lat: 19.4136, lng: -99.1716 },
           radius: 150, fillColor: '#C0392B', fillOpacity: 0.08,
           strokeColor: '#C0392B', strokeOpacity: 0.2, strokeWeight: 1,
         });
-
         ${dogMarkersJS}
         ${alertMarkersJS}
       }
@@ -191,22 +148,14 @@ export default function MapScreen() {
     { key: 'private', label: 'Private', icon: '🔴', desc: 'Only you can see your dog\'s location' },
   ];
 
-  const FILTERS = ['all', 'dogs', 'lost', 'parks'];
-
   return (
     <View style={styles.container}>
       <View style={styles.topBar}>
         <Text style={styles.appName}>SmartPet Tag</Text>
-        <View style={styles.topBarRight}>
-          <TouchableOpacity style={styles.privacyBtn} onPress={togglePrivacy}>
-            <Text style={styles.privacyBtnIcon}>
-              {myVisibility === 'public' ? '🟢' : myVisibility === 'community' ? '🟡' : '🔴'}
-            </Text>
-            <Text style={styles.privacyBtnText}>
-              {myVisibility === 'public' ? 'Visible' : myVisibility === 'community' ? 'Community' : 'Hidden'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity style={styles.privacyBtn} onPress={() => setShowPrivacy(!showPrivacy)}>
+          <Text style={styles.privacyBtnIcon}>{myVisibility === 'public' ? '🟢' : myVisibility === 'community' ? '🟡' : '🔴'}</Text>
+          <Text style={styles.privacyBtnText}>{myVisibility === 'public' ? 'Visible' : myVisibility === 'community' ? 'Community' : 'Hidden'}</Text>
+        </TouchableOpacity>
       </View>
 
       {alerts.length > 0 && (
@@ -225,7 +174,7 @@ export default function MapScreen() {
 
       <View style={styles.filterBar}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
-          {FILTERS.map(f => (
+          {['all', 'dogs', 'lost', 'parks'].map(f => (
             <TouchableOpacity key={f} style={[styles.filterPill, filter === f && styles.filterPillActive]} onPress={() => setFilter(f)}>
               <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>
                 {f === 'all' ? '🗺️ All' : f === 'dogs' ? '🐶 Dogs' : f === 'lost' ? '🚨 Lost' : '🌳 Parks'}
@@ -240,11 +189,22 @@ export default function MapScreen() {
       </View>
 
       <View style={styles.mapContainer}>
-        <iframe
-          srcDoc={mapHTML}
-          style={{ width: '100%', height: '100%', border: 'none' }}
-          title="SmartPet Tag Live Map"
-        />
+        <iframe srcDoc={mapHTML} style={{ width: '100%', height: '100%', border: 'none' }} title="SmartPet Tag Live Map" />
+      </View>
+
+      {/* Dog chips — tap for profile */}
+      <View style={styles.dogListWrap}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 16, paddingVertical: 10 }}>
+          {dogs.map((dog, i) => (
+            <TouchableOpacity key={i} style={[styles.dogChip, dog.is_moving && styles.dogChipMoving]} onPress={() => openDogProfile(dog)}>
+              <Text style={styles.dogChipEmoji}>{dog.emoji}</Text>
+              <View>
+                <Text style={styles.dogChipName}>{dog.dog_name}</Text>
+                <Text style={styles.dogChipStatus}>{dog.is_moving ? '🟢 moving' : '⚪ still'}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
       <View style={styles.legendBar}>
@@ -273,7 +233,7 @@ export default function MapScreen() {
               {selectedDog.is_moving && <View style={styles.movingDot} />}
             </View>
             <View style={{ flex: 1 }}>
-              <View style={styles.popupNameRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
                 <Text style={styles.popupDogName}>{selectedDog.dog_name}</Text>
                 <View style={[styles.visibilityBadge, { backgroundColor: selectedDog.visibility === 'community' ? '#1a1200' : '#003d30' }]}>
                   <Text style={[styles.visibilityBadgeText, { color: selectedDog.visibility === 'community' ? '#F5A623' : '#00D4AA' }]}>
@@ -298,26 +258,21 @@ export default function MapScreen() {
               <Text style={styles.popupValue}>{selectedDog.owner_name}</Text>
             </View>
           </View>
-          <View style={styles.popupActions}>
-            <TouchableOpacity
-              style={styles.popupChatBtn}
-              onPress={() => {
-                closeDogProfile();
-                router.push({ pathname: '/message', params: { conversationId: 'new', otherDog: selectedDog.dog_name, otherOwner: '' } });
-              }}
-            >
-              <Text style={styles.popupChatBtnText}>💬 Say hello to {selectedDog.dog_name}</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles.popupChatBtn}
+            onPress={() => { closeDogProfile(); router.push({ pathname: '/message', params: { conversationId: 'new', otherDog: selectedDog.dog_name, otherOwner: '' } }); }}
+          >
+            <Text style={styles.popupChatBtnText}>💬 Say hello to {selectedDog.dog_name}</Text>
+          </TouchableOpacity>
         </Animated.View>
       )}
 
-      {/* Privacy settings panel */}
+      {/* Privacy panel */}
       {showPrivacy && (
         <View style={styles.privacyPanel}>
           <View style={styles.privacyHeader}>
             <Text style={styles.privacyTitle}>📍 Visibility settings</Text>
-            <TouchableOpacity onPress={togglePrivacy}>
+            <TouchableOpacity onPress={() => setShowPrivacy(false)}>
               <Text style={styles.closeBtn}>✕</Text>
             </TouchableOpacity>
           </View>
@@ -330,18 +285,17 @@ export default function MapScreen() {
             >
               <Text style={styles.visibilityIcon}>{opt.icon}</Text>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.visibilityLabel, myVisibility === opt.key && styles.visibilityLabelActive]}>{opt.label}</Text>
+                <Text style={[styles.visibilityLabel, myVisibility === opt.key && { color: '#fff' }]}>{opt.label}</Text>
                 <Text style={styles.visibilityDesc}>{opt.desc}</Text>
               </View>
-              {myVisibility === opt.key && <Text style={styles.visibilityCheck}>✓</Text>}
+              {myVisibility === opt.key && <Text style={{ color: '#00D4AA', fontSize: 16, fontWeight: '700' }}>✓</Text>}
             </TouchableOpacity>
           ))}
           <View style={styles.privacyNote}>
-            <Text style={styles.privacyNoteText}>🔒 Your location is never sold or shared with third parties. You can change this anytime.</Text>
+            <Text style={styles.privacyNoteText}>🔒 Your location is never sold or shared with third parties.</Text>
           </View>
         </View>
       )}
-
     </View>
   );
 }
@@ -350,7 +304,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#050508' },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
   appName: { fontSize: 18, fontWeight: '700', color: '#fff', fontStyle: 'italic' },
-  topBarRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   privacyBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#0d0d0d', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 0.5, borderColor: '#1a1a1a' },
   privacyBtnIcon: { fontSize: 12 },
   privacyBtnText: { fontSize: 12, color: '#ccc', fontWeight: '500' },
@@ -371,17 +324,22 @@ const styles = StyleSheet.create({
   liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#00D4AA' },
   liveText: { fontSize: 11, color: '#00D4AA', fontWeight: '500' },
   mapContainer: { flex: 1 },
-  legendBar: { paddingVertical: 10, backgroundColor: '#0d0d0d', borderTopWidth: 0.5, borderTopColor: '#111' },
+  dogListWrap: { borderTopWidth: 0.5, borderTopColor: '#111', backgroundColor: '#050508' },
+  dogChip: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#0d0d0d', borderRadius: 12, borderWidth: 0.5, borderColor: '#1a1a1a', paddingHorizontal: 12, paddingVertical: 8 },
+  dogChipMoving: { borderColor: '#00D4AA' },
+  dogChipEmoji: { fontSize: 22 },
+  dogChipName: { fontSize: 13, fontWeight: '600', color: '#fff' },
+  dogChipStatus: { fontSize: 10, color: '#444', marginTop: 1 },
+  legendBar: { paddingVertical: 8, backgroundColor: '#0d0d0d', borderTopWidth: 0.5, borderTopColor: '#111' },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
   legendText: { fontSize: 11, color: '#444' },
-  dogPopup: { position: 'absolute', bottom: 60, left: 0, right: 0, backgroundColor: '#0d0d0d', borderTopLeftRadius: 24, borderTopRightRadius: 24, borderTopWidth: 0.5, borderColor: '#1a1a1a', padding: 20, paddingTop: 12 },
+  dogPopup: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#0d0d0d', borderTopLeftRadius: 24, borderTopRightRadius: 24, borderTopWidth: 0.5, borderColor: '#1a1a1a', padding: 20, paddingTop: 12 },
   popupHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#222', alignSelf: 'center', marginBottom: 16 },
   popupHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
   popupAvatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#111', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#00D4AA', position: 'relative' },
   popupAvatarEmoji: { fontSize: 26 },
   movingDot: { position: 'absolute', top: 0, right: 0, width: 12, height: 12, borderRadius: 6, backgroundColor: '#00D4AA', borderWidth: 2, borderColor: '#0d0d0d' },
-  popupNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
   popupDogName: { fontSize: 18, fontWeight: '700', color: '#fff' },
   visibilityBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
   visibilityBadgeText: { fontSize: 10, fontWeight: '600' },
@@ -392,7 +350,6 @@ const styles = StyleSheet.create({
   popupRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 0.5, borderBottomColor: '#111' },
   popupLabel: { fontSize: 13, color: '#555' },
   popupValue: { fontSize: 13, color: '#ccc', flex: 1, textAlign: 'right' },
-  popupActions: { gap: 8 },
   popupChatBtn: { backgroundColor: '#003d30', borderRadius: 12, paddingVertical: 12, alignItems: 'center', borderWidth: 0.5, borderColor: '#00D4AA' },
   popupChatBtnText: { color: '#00D4AA', fontWeight: '600', fontSize: 14 },
   privacyPanel: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#0d0d0d', borderTopLeftRadius: 24, borderTopRightRadius: 24, borderTopWidth: 0.5, borderColor: '#1a1a1a', padding: 20 },
@@ -403,9 +360,7 @@ const styles = StyleSheet.create({
   visibilityRowActive: { borderColor: '#00D4AA', backgroundColor: '#003d30' },
   visibilityIcon: { fontSize: 20 },
   visibilityLabel: { fontSize: 14, fontWeight: '600', color: '#ccc', marginBottom: 2 },
-  visibilityLabelActive: { color: '#fff' },
   visibilityDesc: { fontSize: 12, color: '#444' },
-  visibilityCheck: { color: '#00D4AA', fontSize: 16, fontWeight: '700' },
   privacyNote: { backgroundColor: '#0a0a14', borderRadius: 10, padding: 12, marginTop: 4 },
   privacyNoteText: { fontSize: 11, color: '#444', lineHeight: 16 },
 });
