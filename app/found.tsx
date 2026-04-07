@@ -12,6 +12,7 @@ export default function FoundDog() {
   const [contacted, setContacted] = useState(false);
   const [finderName, setFinderName] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [createdConvId, setCreatedConvId] = useState(null);
   const [done, setDone] = useState(false);
 
   const isValid = (photo || contacted || (message.trim() && location.trim())) && finderName.trim();
@@ -24,6 +25,7 @@ export default function FoundDog() {
   async function submit() {
     if (!isValid) return;
     setSubmitting(true);
+
     let photoUrl = null;
     if (photo) {
       try {
@@ -34,10 +36,47 @@ export default function FoundDog() {
         if (!error) { const { data } = supabase.storage.from('posts').getPublicUrl(fileName); photoUrl = data.publicUrl; }
       } catch (e) { console.log('Upload error:', e.message); }
     }
-    await supabase.from('lost_alerts').update({ status: 'pending_owner', status_pending_owner: true, found_photo: photoUrl, found_message: message, found_location: location, found_contacted: contacted, finder_name: finderName }).eq('id', alertId);
-    await supabase.from('activity').insert({ type: 'pending', icon: '🔔', message: `${dogName} may have been found — owner confirmation pending`, neighbourhood: neighbourhood || 'Nearby', urgent: true });
-    setSubmitting(false);
-    setDone(true);
+
+    await supabase.from('lost_alerts').update({
+      status: 'pending_owner', status_pending_owner: true,
+      found_photo: photoUrl, found_message: message,
+      found_location: location, found_contacted: contacted,
+      finder_name: finderName,
+    }).eq('id', alertId);
+
+    await supabase.from('activity').insert({
+      type: 'pending', icon: '🔔',
+      message: `${dogName} may have been found — owner confirmation pending`,
+      neighbourhood: neighbourhood || 'Nearby', urgent: true,
+    });
+
+    const { data: conv } = await supabase
+      .from('conversations')
+      .insert({
+        dog1_name: finderName,
+        dog2_name: dogName,
+        owner1_phone: '',
+        owner2_phone: ownerPhone || '',
+        last_message: `Hi! I found ${dogName} 🐾`,
+        last_message_at: new Date().toISOString(),
+        alert_id: alertId,
+      })
+      .select()
+      .single();
+
+    if (conv) {
+      await supabase.from('messages').insert({
+        conversation_id: conv.id,
+        sender_dog: finderName,
+        sender_name: finderName,
+        text: `Hi! I found ${dogName} 🐾 I'm at ${location || 'nearby'}. ${message || ''}`.trim(),
+      });
+      setSubmitting(false);
+      router.push({ pathname: '/message', params: { conversationId: conv.id, otherDog: dogName, otherOwner: ownerPhone } });
+    } else {
+      setSubmitting(false);
+      setDone(true);
+    }
   }
 
   if (done) return (
@@ -45,14 +84,11 @@ export default function FoundDog() {
       <View style={styles.doneSection}>
         <Text style={styles.doneEmoji}>🔔</Text>
         <Text style={styles.doneTitle}>Report submitted!</Text>
-        <Text style={styles.doneSub}>{ownerName} has been notified. A chat thread has been opened so you can coordinate directly.</Text>
+        <Text style={styles.doneSub}>{ownerName} has been notified and will confirm once they connect with you.</Text>
         <View style={styles.pendingBox}>
           <Text style={styles.pendingIcon}>⏳</Text>
           <View><Text style={styles.pendingTitle}>Waiting for owner confirmation</Text><Text style={styles.pendingSub}>{ownerName} needs to confirm on their end</Text></View>
         </View>
-        <TouchableOpacity style={styles.chatNowBtn} onPress={() => router.push('/chat')}>
-          <Text style={styles.chatNowBtnText}>💬 Open chat with {ownerName}</Text>
-        </TouchableOpacity>
         <View style={styles.heroUnlock}>
           <Text style={styles.heroIcon}>🦸</Text>
           <View><Text style={styles.heroTitle}>Badge pending: Lost Dog Hero</Text><Text style={styles.heroSub}>Unlocks when owner confirms 🐾</Text></View>
@@ -112,7 +148,7 @@ export default function FoundDog() {
             <View style={{ flex: 1 }}><Text style={styles.optionTitle}>📍 Location + message</Text><Text style={styles.optionDesc}>Tell the owner where you are</Text></View>
             {location.trim() && message.trim() && <Text style={styles.checkMark}>✓</Text>}
           </View>
-          <TextInput style={styles.input} placeholder="Your location (e.g. Orizaba & Sonora, Roma)" placeholderTextColor="#333" value={location} onChangeText={setLocation} />
+          <TextInput style={styles.input} placeholder="Your location" placeholderTextColor="#333" value={location} onChangeText={setLocation} />
           <TextInput style={[styles.input, { height: 70, textAlignVertical: 'top', marginTop: 8 }]} placeholder="Message for owner" placeholderTextColor="#333" value={message} onChangeText={setMessage} multiline />
         </View>
         {!finderName.trim() && <View style={styles.warningBox}><Text style={styles.warningText}>⚠️ Please enter your name</Text></View>}
@@ -122,7 +158,7 @@ export default function FoundDog() {
           <Text style={styles.ownerConfirmText}>Alert stays active until {ownerName} confirms. This protects against false reports.</Text>
         </View>
         <TouchableOpacity style={[styles.submitBtn, !isValid && styles.submitBtnDisabled]} onPress={submit} disabled={!isValid || submitting}>
-          {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>Submit report → notify owner</Text>}
+          {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>Submit report → open chat with owner</Text>}
         </TouchableOpacity>
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -187,8 +223,6 @@ const styles = StyleSheet.create({
   heroIcon: { fontSize: 32 },
   heroTitle: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 2 },
   heroSub: { fontSize: 12, color: '#1D9E75' },
-  chatNowBtn: { backgroundColor: '#003d30', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 24, alignItems: 'center', marginBottom: 12, width: '100%', borderWidth: 1, borderColor: '#00D4AA' },
-  chatNowBtnText: { color: '#00D4AA', fontWeight: '700', fontSize: 15 },
   doneBtn: { backgroundColor: '#0d0d0d', borderWidth: 0.5, borderColor: '#333', borderRadius: 14, padding: 16, width: '100%', alignItems: 'center' },
   doneBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
 });
