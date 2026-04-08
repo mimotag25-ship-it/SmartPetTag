@@ -94,16 +94,10 @@ export default function Emergency() {
     } catch (e) { console.log('Share error:', e); }
   }
 
-  async function sharePoster() {
-    const msg = '🚨 PERRO PERDIDO: ' + dog.name + '\n' +
-      '📍 ' + lastSeen + '\n' +
-      '🐕 ' + description + '\n' +
-      '📞 ' + (dog.owner_phone || 'Ver app') + '\n\n' +
-      'Reporta un avistamiento: http://localhost:8081/sighting?alertId=' + alertId + '\n\n' +
-      'Powered by SmartPet Tag';
-    try {
-      await Share.share({ message: msg, title: 'Perro perdido: ' + dog.name });
-    } catch (e) { console.log('Share error:', e); }
+  function sharePoster() {
+    if (alertId) {
+      router.push({ pathname: '/poster', params: { alertId: alertId } });
+    }
   }
 
   if (!dog) return (
