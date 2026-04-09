@@ -17,7 +17,7 @@ export default function Emergency() {
 
   useEffect(() => {
     async function loadDog() {
-      const { data } = await supabase.from('dogs').select('*').single();
+      const { data } = await supabase.from('dogs').select('*, photo_url').single();
       if (data) {
         setDog(data);
         setLastSeen(data.neighbourhood || '');
@@ -66,6 +66,7 @@ export default function Emergency() {
       owner_phone: dog.owner_phone,
       neighbourhood: lastSeen,
       status: 'lost',
+      dog_photo: dog.photo_url || null,
     }).select().single();
     if (data) setAlertId(data.id);
     simulateResponses();

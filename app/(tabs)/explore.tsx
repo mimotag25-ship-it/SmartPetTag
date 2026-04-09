@@ -157,11 +157,10 @@ function AlertCard({ alert, onResolved }) {
       </View>
       <View style={alertStyles.dogRow}>
         <View style={alertStyles.dogAvatar}>
-          {alert.dog_photo ? (
-            <Image source={{ uri: alert.dog_photo }} style={alertStyles.dogPhoto} />
-          ) : (
-            <Text style={alertStyles.dogEmoji}>🐕</Text>
-          )}
+          {alert.dog_photo
+            ? <Image source={{ uri: alert.dog_photo }} style={alertStyles.dogPhoto} />
+            : <Text style={alertStyles.dogEmoji}>🐕</Text>
+          }
         </View>
         <View style={{ flex: 1 }}>
           <Text style={alertStyles.dogName}>{alert.dog_name}</Text>
