@@ -26,6 +26,7 @@ export default function RootLayout() {
         <Stack.Screen name="chat" options={{ headerShown: false }} />
         <Stack.Screen name="message" options={{ headerShown: false }} />
         <Stack.Screen name="sighting" options={{ headerShown: false }} />
+        <Stack.Screen name="story" options={{ headerShown: false, presentation: "fullScreenModal" }} />
         <Stack.Screen name="poster" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>

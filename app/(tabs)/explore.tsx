@@ -479,7 +479,18 @@ export default function FeedScreen() {
         <View style={styles.storiesWrap}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 14, paddingVertical: 12 }}>
             {STORIES.map(story => (
-              <TouchableOpacity key={story.id} style={styles.storyItem} onPress={() => setViewedStories(v => [...v, story.id])}>
+              <TouchableOpacity
+                key={story.id}
+                style={styles.storyItem}
+                onPress={() => {
+                  if (story.isYou) {
+                    router.push({ pathname: '/story', params: { mode: 'create' } });
+                  } else {
+                    setViewedStories(v => [...v, story.id]);
+                    router.push({ pathname: '/story', params: { mode: 'view', dogName: story.name } });
+                  }
+                }}
+              >
                 <View style={[styles.storyRing, viewedStories.includes(story.id) && styles.storyRingViewed]}>
                   <View style={styles.storyAvatarWrap}>
                     <Text style={styles.storyEmoji}>{story.emoji}</Text>
