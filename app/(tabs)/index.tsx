@@ -9,10 +9,12 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [pendingAlert, setPendingAlert] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [stats, setStats] = useState({ alerts: 0, found: 0, sightings: 0, posts: 0 });
 
   useEffect(() => {
     loadDog();
     loadPendingAlerts();
+    loadStats();
     const interval = setInterval(loadPendingAlerts, 15000);
     return () => clearInterval(interval);
   }, []);
@@ -52,6 +54,15 @@ export default function ProfileScreen() {
       setDog(d => ({ ...d, photo_url: data.publicUrl }));
     } catch (e) { console.log('Photo error:', e.message); }
     setUploadingPhoto(false);
+  }
+
+  async function loadStats() {
+    const { data: alertData } = await supabase.from('lost_alerts').select('id, status').eq('owner_name', dog?.owner_name || '');
+    const { data: sightingData } = await supabase.from('activity').select('id').eq('type', 'sighting');
+    const alerts = alertData?.length || 0;
+    const found = alertData?.filter(a => a.status === 'found').length || 0;
+    const sightings = sightingData?.length || 0;
+    setStats({ alerts, found, sightings, posts: 3 });
   }
 
   async function loadPendingAlerts() {
@@ -186,18 +197,18 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.infoCard}>
-        <Text style={styles.cardTitle}>Badges</Text>
-        <View style={styles.badgesGrid}>
+        <Text style={styles.cardTitle}>Activity</Text>
+        <View style={styles.activityGrid}>
           {[
-            { icon: '🌳', name: 'Park Explorer', earned: true },
-            { icon: '📸', name: 'Social Pup', earned: true },
-            { icon: '🦸', name: 'Lost Dog Hero', earned: false },
-            { icon: '🏆', name: 'Top Walker', earned: false },
-          ].map((b, i) => (
-            <View key={i} style={[styles.badgeCard, !b.earned && styles.badgeCardLocked]}>
-              <Text style={styles.badgeCardIcon}>{b.icon}</Text>
-              <Text style={styles.badgeCardName}>{b.name}</Text>
-              {!b.earned && <Text style={styles.badgeCardLock}>🔒</Text>}
+            { icon: '🚨', value: stats.alerts, label: 'Alerts triggered' },
+            { icon: '🐕', value: stats.found, label: 'Dogs found' },
+            { icon: '👀', value: stats.sightings, label: 'Sightings reported' },
+            { icon: '📸', value: stats.posts, label: 'Posts made' },
+          ].map((s, i) => (
+            <View key={i} style={styles.activityCard}>
+              <Text style={styles.activityCardIcon}>{s.icon}</Text>
+              <Text style={styles.activityCardValue}>{s.value}</Text>
+              <Text style={styles.activityCardLabel}>{s.label}</Text>
             </View>
           ))}
         </View>
@@ -256,10 +267,9 @@ const styles = StyleSheet.create({
   infoIcon: { fontSize: 14, width: 24 },
   infoLabel: { fontSize: 13, color: '#555', width: 90 },
   infoValue: { fontSize: 13, color: '#ccc', flex: 1, textAlign: 'right' },
-  badgesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  badgeCard: { flex: 1, minWidth: '45%', backgroundColor: '#111', borderRadius: 12, borderWidth: 0.5, borderColor: '#222', padding: 14, alignItems: 'center', gap: 6 },
-  badgeCardLocked: { opacity: 0.35 },
-  badgeCardIcon: { fontSize: 28 },
-  badgeCardName: { fontSize: 11, color: '#888', fontWeight: '500', textAlign: 'center' },
-  badgeCardLock: { fontSize: 10 },
+  activityGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  activityCard: { flex: 1, minWidth: '45%', backgroundColor: '#111', borderRadius: 12, borderWidth: 0.5, borderColor: '#1a1a1a', padding: 14, alignItems: 'center', gap: 4 },
+  activityCardIcon: { fontSize: 24, marginBottom: 4 },
+  activityCardValue: { fontSize: 26, fontWeight: '800', color: '#00D4AA' },
+  activityCardLabel: { fontSize: 10, color: '#555', textAlign: 'center', fontWeight: '500' },
 });
