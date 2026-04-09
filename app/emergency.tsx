@@ -59,7 +59,7 @@ export default function Emergency() {
     if (!dog) return;
     setStep('active');
     startPulse();
-    const { data } = await supabase.from('lost_alerts').insert({
+    const { data, error: alertError } = await supabase.from('lost_alerts').insert({
       dog_id: dog.id,
       dog_name: dog.name,
       owner_name: dog.owner_name,
@@ -68,6 +68,7 @@ export default function Emergency() {
       status: 'lost',
       dog_photo: dog.photo_url || null,
     }).select().single();
+    console.log('Alert insert result:', data, alertError);
     if (data) setAlertId(data.id);
     simulateResponses();
     await sendLostDogAlert(dog);

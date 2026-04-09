@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { supabase } from '../lib/supabase';
+import { registerForPushNotifications, savePushToken } from '../lib/notifications';
 
 export default function RootLayout() {
   const [loading, setLoading] = useState(true);
