@@ -18,7 +18,9 @@ export default function ProfileScreen() {
   }, []);
 
   async function loadDog() {
-    const { data, error } = await supabase.from('dogs').select('*').single();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setLoading(false); return; }
+    const { data, error } = await supabase.from('dogs').select('*').eq('owner_email', user.email).single();
     if (error) console.log('Error:', error.message);
     else setDog(data);
     setLoading(false);
@@ -46,10 +48,12 @@ export default function ProfileScreen() {
   }
 
   async function loadPendingAlerts() {
+    const { data: { user } } = await supabase.auth.getUser();
     const { data } = await supabase
       .from('lost_alerts')
       .select('*')
       .eq('status_pending_owner', true)
+      .eq('owner_name', user?.email ? user.email : '')
       .order('created_at', { ascending: false })
       .limit(1);
     if (data && data.length > 0) setPendingAlert(data[0]);

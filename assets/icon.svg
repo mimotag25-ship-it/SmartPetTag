@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" rx="180" fill="#050508"/>
+  <circle cx="512" cy="512" r="380" fill="#0d0d0d"/>
+  <circle cx="512" cy="512" r="340" fill="none" stroke="#00D4AA" stroke-width="8"/>
+  <text x="512" y="580" text-anchor="middle" font-size="320" font-family="Arial">🐾</text>
+  <circle cx="512" cy="512" r="380" fill="none" stroke="#C0392B" stroke-width="4" opacity="0.3"/>
+</svg>

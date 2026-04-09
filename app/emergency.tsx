@@ -17,7 +17,8 @@ export default function Emergency() {
 
   useEffect(() => {
     async function loadDog() {
-      const { data } = await supabase.from('dogs').select('*, photo_url').single();
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data } = await supabase.from('dogs').select('*, photo_url').eq('owner_email', user?.email).single();
       if (data) {
         setDog(data);
         setLastSeen(data.neighbourhood || '');

@@ -203,11 +203,13 @@ export default function Onboarding() {
         name: dogName, breed: breed?.name || '', age: parseInt(age) || 0,
         personality: selectedTags.join(', '), neighbourhood,
         owner_name: ownerName, owner_phone: phone, emoji: selectedEmoji,
+        owner_email: email,
       });
       await supabase.from('dog_locations').insert({
         dog_name: dogName, owner_name: ownerName, breed: breed?.name || '',
         personality: selectedTags.join(', '), lat: 19.4136, lng: -99.1716,
         visibility: 'public', is_moving: false, emoji: selectedEmoji,
+        owner_email: email,
       });
       setLoading(false);
       animateToStep('next');
