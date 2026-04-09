@@ -130,6 +130,9 @@ export default function ProfileScreen() {
         </TouchableOpacity>
         <Text style={styles.dogName}>{dog.name}</Text>
         <Text style={styles.dogBreed}>{dog.breed}</Text>
+        <TouchableOpacity style={styles.editProfileBtn} onPress={() => router.push('/edit-profile')}>
+          <Text style={styles.editProfileBtnText}>✏️ Edit full profile</Text>
+        </TouchableOpacity>
         <View style={styles.badgeRow}>
           <View style={styles.badge}><Text style={styles.badgeText}>🐾 {dog.age} yrs</Text></View>
           <View style={styles.badge}><Text style={styles.badgeText}>📍 {dog.neighbourhood}</Text></View>
@@ -241,7 +244,9 @@ const styles = StyleSheet.create({
   avatarEditText: { fontSize: 11 },
   avatarEmoji: { fontSize: 48 },
   dogName: { fontSize: 28, fontWeight: '700', color: '#fff', letterSpacing: -0.5, marginBottom: 4 },
-  dogBreed: { fontSize: 14, color: '#666', marginBottom: 14 },
+  dogBreed: { fontSize: 14, color: '#666', marginBottom: 10 },
+  editProfileBtn: { backgroundColor: '#0d0d0d', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 6, borderWidth: 0.5, borderColor: '#1a1a1a', marginBottom: 14 },
+  editProfileBtnText: { fontSize: 12, color: '#555', fontWeight: '500' },
   badgeRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'center' },
   badge: { backgroundColor: '#111', borderWidth: 0.5, borderColor: '#222', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5 },
   badgeGreen: { borderColor: '#0F6E56', backgroundColor: '#051a14' },
