@@ -60,7 +60,7 @@ export default function EditProfile() {
   async function save() {
     if (!dog) return;
     setSaving(true);
-    await supabase.from('dogs').update({
+    const { error } = await supabase.from('dogs').update({
       color, size, markings, microchip,
       has_microchip: hasMicrochip,
       has_gps_tag: hasGpsTag,
@@ -71,8 +71,10 @@ export default function EditProfile() {
       if_found_instructions: ifFoundInstructions,
       responds_to: respondsTo,
     }).eq('id', dog.id);
+    console.log('Save result:', error);
     setSaving(false);
-    setSaved(true);
+    if (!error) setSaved(true);
+    else console.log('Save error:', error.message);
     setTimeout(() => setSaved(false), 2000);
   }
 
