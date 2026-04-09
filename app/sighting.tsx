@@ -18,7 +18,7 @@ export default function PublicSighting() {
     async function load() {
       const { data } = await supabase
         .from('lost_alerts')
-        .select('*')
+        .select('*, dogs(color, size, markings, responds_to, behaviour_notes, if_found_instructions, has_microchip, microchip, vaccinated, vet_name, vet_phone)')
         .eq('id', alertId)
         .single();
       if (data) setAlert(data);
@@ -97,7 +97,16 @@ export default function PublicSighting() {
           <View>
             <Text style={styles.dogName}>{alert.dog_name}</Text>
             <Text style={styles.dogBreed}>Last seen: {alert.neighbourhood}</Text>
+          {alert.dogs?.color && <Text style={styles.dogBreed}>Color: {alert.dogs.color} · {alert.dogs.size}</Text>}
+          {alert.dogs?.markings && <Text style={styles.dogBreed}>Markings: {alert.dogs.markings}</Text>}
+          {alert.dogs?.responds_to && <Text style={styles.dogBreed}>Responds to: {alert.dogs.responds_to}</Text>}
             <Text style={styles.dogOwner}>Owner: {alert.owner_name}</Text>
+          {alert.dogs?.if_found_instructions && (
+            <View style={styles.ifFoundBox}>
+              <Text style={styles.ifFoundTitle}>🚨 If found:</Text>
+              <Text style={styles.ifFoundText}>{alert.dogs.if_found_instructions}</Text>
+            </View>
+          )}
           </View>
         </View>
         <TouchableOpacity
@@ -193,6 +202,9 @@ const styles = StyleSheet.create({
   submitBtnDisabled: { opacity: 0.3 },
   submitBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
   poweredBy: { fontSize: 11, color: '#333', textAlign: 'center', lineHeight: 18 },
+  ifFoundBox: { backgroundColor: '#1a0505', borderRadius: 10, padding: 12, marginTop: 8, borderWidth: 0.5, borderColor: '#C0392B' },
+  ifFoundTitle: { fontSize: 12, color: '#C0392B', fontWeight: '700', marginBottom: 4 },
+  ifFoundText: { fontSize: 13, color: '#ccc', lineHeight: 18 },
   contactBox: { backgroundColor: '#0d0d0d', borderRadius: 14, padding: 16, marginTop: 24, alignItems: 'center', width: '100%' },
   contactTitle: { fontSize: 13, color: '#555', marginBottom: 8 },
   contactPhone: { fontSize: 16, color: '#00D4AA', fontWeight: '700' },
