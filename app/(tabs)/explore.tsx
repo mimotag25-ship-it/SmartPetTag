@@ -156,7 +156,13 @@ function AlertCard({ alert, onResolved }) {
         <Text style={alertStyles.timeText}>{getTimeAgo(alert.created_at)}</Text>
       </View>
       <View style={alertStyles.dogRow}>
-        <View style={alertStyles.dogAvatar}><Text style={alertStyles.dogEmoji}>🐕</Text></View>
+        <View style={alertStyles.dogAvatar}>
+          {alert.dog_photo ? (
+            <Image source={{ uri: alert.dog_photo }} style={alertStyles.dogPhoto} />
+          ) : (
+            <Text style={alertStyles.dogEmoji}>🐕</Text>
+          )}
+        </View>
         <View style={{ flex: 1 }}>
           <Text style={alertStyles.dogName}>{alert.dog_name}</Text>
           <Text style={alertStyles.dogLocation}>📍 Last seen: {alert.neighbourhood}</Text>
@@ -190,6 +196,7 @@ const alertStyles = StyleSheet.create({
   dogRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
   dogAvatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#2a0a0a', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#C0392B' },
   dogEmoji: { fontSize: 26 },
+  dogPhoto: { width: 48, height: 48, borderRadius: 24 },
   dogName: { fontSize: 18, fontWeight: '800', color: '#fff', marginBottom: 3 },
   dogLocation: { fontSize: 12, color: '#888', marginBottom: 2 },
   ownerText: { fontSize: 11, color: '#666' },

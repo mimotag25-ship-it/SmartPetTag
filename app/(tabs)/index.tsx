@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../../lib/supabase';
 import { router } from 'expo-router';
 
@@ -7,6 +8,7 @@ export default function ProfileScreen() {
   const [dog, setDog] = useState(null);
   const [loading, setLoading] = useState(true);
   const [pendingAlert, setPendingAlert] = useState(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   useEffect(() => {
     loadDog();
@@ -20,6 +22,27 @@ export default function ProfileScreen() {
     if (error) console.log('Error:', error.message);
     else setDog(data);
     setLoading(false);
+  }
+
+  async function uploadDogPhoto() {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true, aspect: [1, 1], quality: 0.8,
+    });
+    if (result.canceled) return;
+    setUploadingPhoto(true);
+    try {
+      const response = await fetch(result.assets[0].uri);
+      const blob = await response.blob();
+      const fileName = `dog-${Date.now()}.jpg`;
+      const { error } = await supabase.storage.from('posts').upload(fileName, blob, { contentType: 'image/jpeg' });
+      if (error) throw error;
+      const { data } = supabase.storage.from('posts').getPublicUrl(fileName);
+      await supabase.from('dogs').update({ photo_url: data.publicUrl }).eq('id', dog.id);
+      await supabase.from('dog_locations').update({ photo_url: data.publicUrl }).eq('dog_name', dog.name);
+      setDog(d => ({ ...d, photo_url: data.publicUrl }));
+    } catch (e) { console.log('Photo error:', e.message); }
+    setUploadingPhoto(false);
   }
 
   async function loadPendingAlerts() {
@@ -71,11 +94,18 @@ export default function ProfileScreen() {
       )}
 
       <View style={styles.avatarSection}>
-        <View style={styles.avatarRing}>
-          <View style={styles.avatarInner}>
-            <Text style={styles.avatarEmoji}>🐕</Text>
-          </View>
-        </View>
+        <TouchableOpacity style={styles.avatarRing} onPress={uploadDogPhoto}>
+          {dog.photo_url ? (
+            <Image source={{ uri: dog.photo_url }} style={styles.avatarPhoto} />
+          ) : (
+            <View style={styles.avatarInner}>
+              <Text style={styles.avatarEmoji}>🐕</Text>
+              <View style={styles.avatarEditBadge}>
+                <Text style={styles.avatarEditText}>{uploadingPhoto ? '...' : '📷'}</Text>
+              </View>
+            </View>
+          )}
+        </TouchableOpacity>
         <Text style={styles.dogName}>{dog.name}</Text>
         <Text style={styles.dogBreed}>{dog.breed}</Text>
         <View style={styles.badgeRow}>
@@ -183,7 +213,10 @@ const styles = StyleSheet.create({
   pendingBannerArrow: { color: '#F5A623', fontSize: 18 },
   avatarSection: { alignItems: 'center', paddingTop: 20, paddingBottom: 24 },
   avatarRing: { width: 110, height: 110, borderRadius: 55, borderWidth: 2, borderColor: '#C0392B', padding: 4, marginBottom: 16 },
-  avatarInner: { flex: 1, borderRadius: 50, backgroundColor: '#1a0505', alignItems: 'center', justifyContent: 'center' },
+  avatarInner: { flex: 1, borderRadius: 50, backgroundColor: '#1a0505', alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  avatarPhoto: { width: 102, height: 102, borderRadius: 51 },
+  avatarEditBadge: { position: 'absolute', bottom: 0, right: 0, width: 24, height: 24, borderRadius: 12, backgroundColor: '#00D4AA', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#050508' },
+  avatarEditText: { fontSize: 11 },
   avatarEmoji: { fontSize: 48 },
   dogName: { fontSize: 28, fontWeight: '700', color: '#fff', letterSpacing: -0.5, marginBottom: 4 },
   dogBreed: { fontSize: 14, color: '#666', marginBottom: 14 },
