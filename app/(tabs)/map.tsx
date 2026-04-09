@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated, Platform } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { router } from 'expo-router';
 
@@ -189,7 +189,24 @@ export default function MapScreen() {
       </View>
 
       <View style={styles.mapContainer}>
-        <iframe srcDoc={mapHTML} style={{ width: '100%', height: '100%', border: 'none' }} title="SmartPet Tag Live Map" />
+        {Platform.OS === 'web' ? (
+          <iframe srcDoc={mapHTML} style={{ width: '100%', height: '100%', border: 'none' }} title="SmartPet Tag Live Map" />
+        ) : (
+          <View style={styles.mobileMapPlaceholder}>
+            <Text style={styles.mobileMapEmoji}>🗺️</Text>
+            <Text style={styles.mobileMapTitle}>Live Dog Map</Text>
+            <Text style={styles.mobileMapSub}>Open on desktop to see the full interactive map with live dog tracking</Text>
+            <View style={styles.mobileMapDogs}>
+              {dogs.slice(0, 4).map((dog, i) => (
+                <TouchableOpacity key={i} style={styles.mobileMapDogChip} onPress={() => openDogProfile(dog)}>
+                  <Text style={styles.mobileMapDogEmoji}>{dog.emoji}</Text>
+                  <Text style={styles.mobileMapDogName}>{dog.dog_name}</Text>
+                  <Text style={styles.mobileMapDogStatus}>{dog.is_moving ? '🟢' : '⚪'}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
       </View>
 
       {/* Dog chips — tap for profile */}
@@ -324,6 +341,15 @@ const styles = StyleSheet.create({
   liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#00D4AA' },
   liveText: { fontSize: 11, color: '#00D4AA', fontWeight: '500' },
   mapContainer: { flex: 1 },
+  mobileMapPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  mobileMapEmoji: { fontSize: 52, marginBottom: 12 },
+  mobileMapTitle: { fontSize: 22, fontWeight: '700', color: '#fff', marginBottom: 8 },
+  mobileMapSub: { fontSize: 13, color: '#555', textAlign: 'center', lineHeight: 20, marginBottom: 24 },
+  mobileMapDogs: { width: '100%', gap: 10 },
+  mobileMapDogChip: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#0d0d0d', borderRadius: 12, borderWidth: 0.5, borderColor: '#1a1a1a', padding: 14 },
+  mobileMapDogEmoji: { fontSize: 24 },
+  mobileMapDogName: { flex: 1, fontSize: 14, fontWeight: '600', color: '#fff' },
+  mobileMapDogStatus: { fontSize: 14 },
   dogListWrap: { borderTopWidth: 0.5, borderTopColor: '#111', backgroundColor: '#050508' },
   dogChip: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#0d0d0d', borderRadius: 12, borderWidth: 0.5, borderColor: '#1a1a1a', paddingHorizontal: 12, paddingVertical: 8 },
   dogChipMoving: { borderColor: '#00D4AA' },

@@ -19,10 +19,17 @@ export default function ProfileScreen() {
 
   async function loadDog() {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setLoading(false); return; }
+    if (!user) {
+      const { data, error } = await supabase.from('dogs').select('*').single();
+      if (!error) setDog(data);
+      setLoading(false);
+      return;
+    }
     const { data, error } = await supabase.from('dogs').select('*').eq('owner_email', user.email).single();
-    if (error) console.log('Error:', error.message);
-    else setDog(data);
+    if (error) {
+      const { data: fallback } = await supabase.from('dogs').select('*').single();
+      if (fallback) setDog(fallback);
+    } else setDog(data);
     setLoading(false);
   }
 
