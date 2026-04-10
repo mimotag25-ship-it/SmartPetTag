@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated, Platform, Share } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { router } from 'expo-router';
 
@@ -152,6 +152,18 @@ export default function MapScreen() {
     <View style={styles.container}>
       <View style={styles.topBar}>
         <Text style={styles.appName}>SmartPet Tag</Text>
+        <TouchableOpacity
+          style={styles.inviteBtn}
+          onPress={async () => {
+            try {
+              await Share.share({
+                message: '🐾 ' + dogs.length + ' dogs are tracked near you on SmartPet Tag. Join the safety network for dog owners in CDMX — lost dog alerts, live map, community chat.\n\nsmartpettag.app',
+              });
+            } catch (e) {}
+          }}
+        >
+          <Text style={styles.inviteBtnText}>👥 Invite</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.privacyBtn} onPress={() => setShowPrivacy(!showPrivacy)}>
           <Text style={styles.privacyBtnIcon}>{myVisibility === 'public' ? '🟢' : myVisibility === 'community' ? '🟡' : '🔴'}</Text>
           <Text style={styles.privacyBtnText}>{myVisibility === 'public' ? 'Visible' : myVisibility === 'community' ? 'Community' : 'Hidden'}</Text>
@@ -321,6 +333,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#050508' },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
   appName: { fontSize: 18, fontWeight: '700', color: '#fff', fontStyle: 'italic' },
+  inviteBtn: { backgroundColor: '#003d30', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 0.5, borderColor: '#00D4AA', marginRight: 8 },
+  inviteBtnText: { color: '#00D4AA', fontSize: 12, fontWeight: '600' },
   privacyBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#0d0d0d', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 0.5, borderColor: '#1a1a1a' },
   privacyBtnIcon: { fontSize: 12 },
   privacyBtnText: { fontSize: 12, color: '#ccc', fontWeight: '500' },

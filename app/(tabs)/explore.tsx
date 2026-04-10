@@ -21,10 +21,11 @@ const STORIES = [
 ];
 
 const POST_TYPES = [
-  { key: 'normal', label: 'Post', icon: '📸', color: '#00D4AA' },
+  { key: 'checkin', label: 'Check-in', icon: '📍', color: '#00D4AA' },
   { key: 'lost', label: 'Lost', icon: '🚨', color: '#C0392B' },
   { key: 'spotted', label: 'Spotted', icon: '👀', color: '#F5A623' },
   { key: 'event', label: 'Event', icon: '🎉', color: '#5856D6' },
+  { key: 'warning', label: 'Warning', icon: '⚠️', color: '#E67E22' },
 ];
 
 const SUGGESTED = [
@@ -78,6 +79,8 @@ function getTypeStyle(type) {
     case 'lost': return { border: '#C0392B', bg: '#1a0505', label: '🚨 LOST DOG', labelColor: '#C0392B' };
     case 'spotted': return { border: '#F5A623', bg: '#1a1200', label: '👀 SPOTTED', labelColor: '#F5A623' };
     case 'event': return { border: '#5856D6', bg: '#0d0b1a', label: '🎉 EVENT', labelColor: '#5856D6' };
+    case 'checkin': return { border: '#00D4AA', bg: '#001a14', label: '📍 CHECK-IN', labelColor: '#00D4AA' };
+    case 'warning': return { border: '#E67E22', bg: '#1a0e00', label: '⚠️ WARNING', labelColor: '#E67E22' };
     default: return { border: '#1a1a1a', bg: '#0d0d0d', label: null, labelColor: null };
   }
 }

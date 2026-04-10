@@ -39,13 +39,6 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🗺️</Text>,
         }}
       />
-      <Tabs.Screen
-        name="scanner"
-        options={{
-          title: 'Scanner',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📡</Text>,
-        }}
-      />
     </Tabs>
   );
 }
