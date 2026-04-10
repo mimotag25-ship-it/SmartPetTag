@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../../lib/supabase';
 import { router } from 'expo-router';
+import { useLanguage } from '../../lib/i18n';
 
 export default function ProfileScreen() {
   const [dog, setDog] = useState(null);
@@ -10,6 +11,7 @@ export default function ProfileScreen() {
   const [pendingAlert, setPendingAlert] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [stats, setStats] = useState({ alerts: 0, found: 0, sightings: 0, posts: 0 });
+  const { lang, setLang, t } = useLanguage();
 
   useEffect(() => {
     loadDog();
@@ -217,6 +219,23 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      <View style={styles.langRow}>
+        <TouchableOpacity
+          style={[styles.langBtn, lang === 'es' && styles.langBtnActive]}
+          onPress={() => setLang('es')}
+        >
+          <Text style={[styles.langBtnText, lang === 'es' && styles.langBtnTextActive]}>🇲🇽 Español</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.langBtn, lang === 'en' && styles.langBtnActive]}
+          onPress={() => setLang('en')}
+        >
+          <Text style={[styles.langBtnText, lang === 'en' && styles.langBtnTextActive]}>🇺🇸 English</Text>
+        </TouchableOpacity>
+      </View>
+      <TouchableOpacity style={styles.privacyLink} onPress={() => router.push('/privacy')}>
+        <Text style={styles.privacyLinkText}>{t('privacyPolicy')}</Text>
+      </TouchableOpacity>
       <View style={{ height: 32 }} />
     </ScrollView>
   );
@@ -245,6 +264,13 @@ const styles = StyleSheet.create({
   avatarEmoji: { fontSize: 48 },
   dogName: { fontSize: 28, fontWeight: '700', color: '#fff', letterSpacing: -0.5, marginBottom: 4 },
   dogBreed: { fontSize: 14, color: '#666', marginBottom: 10 },
+  langRow: { flexDirection: 'row', gap: 10, justifyContent: 'center', marginBottom: 8 },
+  langBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#0d0d0d', borderWidth: 0.5, borderColor: '#1a1a1a' },
+  langBtnActive: { backgroundColor: '#003d30', borderColor: '#00D4AA' },
+  langBtnText: { fontSize: 12, color: '#555', fontWeight: '500' },
+  langBtnTextActive: { color: '#00D4AA' },
+  privacyLink: { alignItems: 'center', paddingVertical: 8 },
+  privacyLinkText: { fontSize: 11, color: '#333' },
   editProfileBtn: { backgroundColor: '#0d0d0d', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 6, borderWidth: 0.5, borderColor: '#1a1a1a', marginBottom: 14 },
   editProfileBtnText: { fontSize: 12, color: '#555', fontWeight: '500' },
   badgeRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'center' },

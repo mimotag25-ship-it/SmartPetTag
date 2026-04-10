@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { registerForPushNotifications, savePushToken } from '../lib/notifications';
+import LanguageProvider from '../lib/LanguageProvider';
 
 export default function RootLayout() {
   const [loading, setLoading] = useState(true);
@@ -23,6 +24,7 @@ export default function RootLayout() {
   );
 
   return (
+    <LanguageProvider>
     <ThemeProvider value={DarkTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -38,9 +40,11 @@ export default function RootLayout() {
         <Stack.Screen name="poster" options={{ headerShown: false }} />
         <Stack.Screen name="story" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
         <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
+        <Stack.Screen name="privacy" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
       <StatusBar style="light" />
     </ThemeProvider>
+    </LanguageProvider>
   );
 }
