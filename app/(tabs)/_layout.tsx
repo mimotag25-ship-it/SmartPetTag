@@ -1,46 +1,52 @@
 import { Text } from 'react-native';
 import { Tabs } from 'expo-router';
-import React from 'react';
+import { colors } from '../../lib/design';
 import { useLanguage } from '../../lib/i18n';
 
 export default function TabLayout() {
-  const { lang, t } = useLanguage();
+  const { t, lang } = useLanguage();
   return (
     <Tabs
       key={lang}
-      initialRouteName="explore"
+      initialRouteName="index"
       screenOptions={{
-        tabBarActiveTintColor: '#00D4AA',
+        tabBarActiveTintColor: colors.amber,
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#050508',
-          borderTopColor: '#111',
+          backgroundColor: colors.bg,
+          borderTopColor: colors.bgBorder,
           borderTopWidth: 0.5,
-          height: 60,
-          paddingBottom: 8,
+          height: 64,
+          paddingBottom: 10,
+          paddingTop: 6,
         },
-        tabBarInactiveTintColor: '#333',
+        tabBarInactiveTintColor: colors.textMuted,
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
       }}>
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: t('feed'),
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📸</Text>,
-        }}
-      />
       <Tabs.Screen
         name="index"
         options={{
-          title: t('profile'),
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🐾</Text>,
+          title: t('home'),
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 22 }}>🏠</Text>,
         }}
       />
       <Tabs.Screen
         name="map"
         options={{
           title: t('map'),
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🗺️</Text>,
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 22 }}>🗺️</Text>,
         }}
+      />
+      <Tabs.Screen
+        name="explore"
+        options={{
+          title: t('community'),
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 22 }}>🐾</Text>,
+        }}
+      />
+      <Tabs.Screen
+        name="scanner"
+        options={{ href: null }}
       />
     </Tabs>
   );
