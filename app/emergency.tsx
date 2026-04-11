@@ -1,318 +1,369 @@
-import { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated, TextInput, Share } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Animated, Dimensions, Linking, ScrollView } from 'react-native';
 import { supabase } from '../lib/supabase';
-import { useLanguage, t } from '../lib/i18n';
-import { sendLostDogAlert } from '../lib/notifications';
 import { router } from 'expo-router';
+import { colors, shadows } from '../lib/design';
+import { useLanguage } from '../lib/i18n';
+
+const { width, height } = Dimensions.get('window');
 
 export default function Emergency() {
   const [dog, setDog] = useState(null);
-  const { t } = useLanguage();
-  const [step, setStep] = useState('confirm');
+  const [step, setStep] = useState(0); // 0=confirm, 1=active, 2=found
   const [lastSeen, setLastSeen] = useState('');
   const [description, setDescription] = useState('');
   const [alertId, setAlertId] = useState(null);
   const [notified, setNotified] = useState(0);
-  const [responses, setResponses] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [sightings, setSightings] = useState([]);
+  const { t } = useLanguage();
+
+  // Animations
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const pulseAnim2 = useRef(new Animated.Value(1)).current;
+  const bgAnim = useRef(new Animated.Value(0)).current;
+  const countAnim = useRef(new Animated.Value(0)).current;
+  const shakeAnim = useRef(new Animated.Value(0)).current;
+  const ringAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    async function loadDog() {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data } = await supabase.from('dogs').select('*, photo_url').eq('owner_email', user?.email).single();
-      if (data) {
-        setDog(data);
-        setLastSeen(data.neighbourhood || '');
-        setDescription(data.breed + ', ' + data.age + ' years old. ' + data.personality);
-      }
-    }
     loadDog();
+    Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
   }, []);
 
-  function startPulse() {
-    Animated.loop(Animated.sequence([
-      Animated.timing(pulseAnim, { toValue: 1.5, duration: 800, useNativeDriver: true }),
-      Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-    ])).start();
-    Animated.loop(Animated.sequence([
-      Animated.delay(400),
-      Animated.timing(pulseAnim2, { toValue: 2.0, duration: 800, useNativeDriver: true }),
-      Animated.timing(pulseAnim2, { toValue: 1, duration: 800, useNativeDriver: true }),
-    ])).start();
+  useEffect(() => {
+    if (step === 1) {
+      // Red pulse
+      Animated.loop(Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.08, duration: 600, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+      ])).start();
+      // Count up notified users
+      Animated.timing(countAnim, { toValue: 47, duration: 3000, useNativeDriver: false }).start();
+      // Ring expand
+      Animated.loop(Animated.sequence([
+        Animated.timing(ringAnim, { toValue: 1, duration: 1500, useNativeDriver: true }),
+        Animated.timing(ringAnim, { toValue: 0, duration: 0, useNativeDriver: true }),
+      ])).start();
+      // Poll for sightings
+      const interval = setInterval(loadSightings, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [step]);
+
+  async function loadDog() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      const { data } = await supabase.from('dogs').select('*, photo_url').single();
+      if (data) setDog(data);
+      return;
+    }
+    const { data } = await supabase.from('dogs').select('*, photo_url').eq('owner_email', user?.email).single();
+    if (data) setDog(data);
   }
 
-  function simulateResponses() {
-    const RESPONSES = [
-      { time: 2000, count: 8, msg: 'Alert sent to 8 nearby users', icon: '📡' },
-      { time: 4000, count: 23, msg: '23 users notified in 1km radius', icon: '🔔' },
-      { time: 7000, count: 47, msg: '47 users notified in 5km radius', icon: '📣' },
-      { time: 10000, count: 3, msg: '3 people are actively looking', icon: '👀' },
-      { time: 14000, count: 1, msg: 'Someone spotted a dog near Parque Espana!', icon: '🐕', urgent: true },
-    ];
-    RESPONSES.forEach(r => {
-      setTimeout(() => {
-        setNotified(r.count);
-        setResponses(prev => [r, ...prev]);
-      }, r.time);
-    });
+  async function loadSightings() {
+    if (!alertId) return;
+    const { data } = await supabase.from('lost_alerts').select('found_message, finder_name, found_location, created_at').eq('id', alertId);
+    if (data) setSightings(data.filter(d => d.found_message));
   }
 
   async function triggerAlert() {
     if (!dog) return;
-    setStep('active');
-    startPulse();
-    const { data, error: alertError } = await supabase.from('lost_alerts').insert({
-      dog_id: dog.id,
-      dog_name: dog.name,
-      owner_name: dog.owner_name,
-      owner_phone: dog.owner_phone,
-      neighbourhood: lastSeen,
-      status: 'lost',
-      dog_photo: dog.photo_url || null,
+    setLoading(true);
+
+    // Shake animation
+    Animated.sequence([
+      Animated.timing(shakeAnim, { toValue: 10, duration: 80, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -10, duration: 80, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 6, duration: 80, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0, duration: 80, useNativeDriver: true }),
+    ]).start();
+
+    const { data, error } = await supabase.from('lost_alerts').insert({
+      dog_id: dog.id, dog_name: dog.name, owner_name: dog.owner_name,
+      owner_phone: dog.owner_phone, neighbourhood: lastSeen || dog.neighbourhood || 'CDMX',
+      status: 'lost', dog_photo: dog.photo_url || null,
     }).select().single();
-    console.log('Alert insert result:', data, alertError);
-    if (data) setAlertId(data.id);
-    simulateResponses();
-    await sendLostDogAlert(dog);
-  }
 
-  async function cancelAlert() {
-    if (!dog) return;
-    await supabase.from('lost_alerts').update({ status: 'found' }).eq('dog_name', dog.name).eq('status', 'lost');
-    pulseAnim.stopAnimation();
-    pulseAnim2.stopAnimation();
-    setStep('found');
-  }
-
-  async function shareWhatsApp() {
-    const sightingLink = 'http://localhost:8081/sighting?alertId=' + alertId;
-    const msg = '🚨 *PERRO PERDIDO — ' + dog.name + '*\n\n' +
-      '📍 Ultima vez visto: ' + lastSeen + '\n' +
-      '🐕 ' + description + '\n' +
-      '📞 Contacto: ' + (dog.owner_phone || 'Ver app') + '\n\n' +
-      '👉 Si lo ves, reportalo aqui (sin necesidad de la app):\n' +
-      sightingLink + '\n\n' +
-      'Por favor comparte este mensaje 🙏 #SmartPetTag #PerroPerdido';
-    try {
-      await Share.share({ message: msg });
-    } catch (e) { console.log('Share error:', e); }
-  }
-
-  function sharePoster() {
-    if (alertId) {
-      router.push({ pathname: '/poster', params: { alertId: alertId } });
+    if (data) {
+      setAlertId(data.id);
+      await supabase.from('activity').insert({
+        type: 'alert', message: `🚨 ${dog.name} is missing in ${lastSeen || dog.neighbourhood}`,
+        icon: '🚨', neighbourhood: lastSeen || dog.neighbourhood, urgent: true,
+      });
     }
+    setLoading(false);
+    setStep(1);
   }
 
-  if (!dog) return (
-    <View style={styles.container}>
-      <Text style={styles.loadingText}>Loading...</Text>
-    </View>
-  );
+  async function resolveAlert() {
+    if (!alertId) return;
+    await supabase.from('lost_alerts').update({ status: 'found' }).eq('id', alertId);
+    setStep(2);
+  }
+
+  const ringScale = ringAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 3] });
+  const ringOpacity = ringAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.6, 0.2, 0] });
+
+  const sightingUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://smartpettag.app'}/sighting?alertId=${alertId}`;
+  const whatsappMsg = `🚨 PERRO PERDIDO — ${dog?.name}!\n\nRaza: ${dog?.breed}\nÚltima ubicación: ${lastSeen || dog?.neighbourhood}\nDueño: ${dog?.owner_name} · ${dog?.owner_phone}\n\n¿Lo viste? Reporta aquí → ${sightingUrl}`;
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-        <Text style={styles.backBtnText}>Back</Text>
-      </TouchableOpacity>
+    <Animated.View style={[s.container, { opacity: fadeAnim }]}>
 
-      {step === 'confirm' && (
-        <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-          <View style={styles.confirmSection}>
-            <View style={styles.warningBadge}>
-              <Text style={styles.warningBadgeText}>EMERGENCY ALERT</Text>
-            </View>
-            <Text style={styles.confirmTitle}>Report {dog.name} as lost?</Text>
-            <Text style={styles.confirmSub}>This will instantly notify nearby SmartPet Tag users and show {dog.name} on the map as missing.</Text>
+      {/* STEP 0 — CONFIRM */}
+      {step === 0 && (
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.confirmContent}>
+          <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
+            <Text style={s.backBtnText}>← Back</Text>
+          </TouchableOpacity>
+
+          <View style={s.confirmHeader}>
+            <Text style={s.confirmWarning}>⚠️</Text>
+            <Text style={s.confirmTitle}>{t('emergencyAlert')}</Text>
+            <Text style={s.confirmSub}>This will immediately notify everyone within 5km</Text>
           </View>
-          <View style={styles.dogCard}>
-            <View style={styles.dogAvatar}>
-              <Text style={styles.dogAvatarEmoji}>{dog.emoji || '🐕'}</Text>
+
+          <View style={s.dogConfirmCard}>
+            <View style={s.dogConfirmAvatar}>
+              <Text style={{ fontSize: 40 }}>{dog?.emoji || '🐕'}</Text>
             </View>
             <View>
-              <Text style={styles.dogCardName}>{dog.name}</Text>
-              <Text style={styles.dogCardBreed}>{dog.breed} · {dog.age} yrs</Text>
+              <Text style={s.dogConfirmName}>{dog?.name}</Text>
+              <Text style={s.dogConfirmBreed}>{dog?.breed}</Text>
             </View>
           </View>
-          <View style={styles.fieldWrap}>
-            <Text style={styles.fieldLabel}>Last seen location</Text>
-            <TextInput style={styles.fieldInput} value={lastSeen} onChangeText={setLastSeen} placeholder="e.g. Parque Espana, Condesa" placeholderTextColor="#333" />
-          </View>
-          <View style={styles.fieldWrap}>
-            <Text style={styles.fieldLabel}>Description for finders</Text>
-            <TextInput style={[styles.fieldInput, { height: 80, textAlignVertical: 'top' }]} value={description} onChangeText={setDescription} multiline placeholderTextColor="#333" />
-          </View>
-          <View style={styles.whatHappens}>
-            <Text style={styles.whatHappensTitle}>What happens instantly:</Text>
+
+          <Text style={s.fieldLabel}>{t('lastSeenLocation')}</Text>
+          <TextInput
+            style={s.input}
+            placeholder="e.g. Parque España, Condesa..."
+            placeholderTextColor={colors.textMuted}
+            value={lastSeen}
+            onChangeText={setLastSeen}
+          />
+
+          <Text style={s.fieldLabel}>{t('descriptionForFinders')}</Text>
+          <TextInput
+            style={[s.input, { height: 80, textAlignVertical: 'top' }]}
+            placeholder="Any identifying details, last seen wearing..."
+            placeholderTextColor={colors.textMuted}
+            value={description}
+            onChangeText={setDescription}
+            multiline
+          />
+
+          <View style={s.whatHappens}>
+            <Text style={s.whatHappensTitle}>{t('whatHappensInstantly')}</Text>
             {[
-              { icon: '📡', text: 'Push notification to all users within 5km' },
-              { icon: '🗺️', text: 'Red pin appears on the Dog Map' },
-              { icon: '📸', text: 'Emergency post pinned at top of feed' },
-              { icon: '🔗', text: 'Public sighting page — no app needed' },
-              { icon: '📄', text: 'Shareable poster with QR code' },
+              '🔔 Push notification to all nearby users',
+              '🗺️ Red alert dot appears on the live map',
+              '📋 Public sighting page created instantly',
+              '💬 Chat thread ready for finder coordination',
             ].map((item, i) => (
-              <View key={i} style={styles.whatRow}>
-                <Text style={styles.whatIcon}>{item.icon}</Text>
-                <Text style={styles.whatText}>{item.text}</Text>
+              <View key={i} style={s.whatHappensRow}>
+                <Text style={s.whatHappensText}>{item}</Text>
               </View>
             ))}
           </View>
-          <TouchableOpacity style={styles.emergencyBtn} onPress={triggerAlert}>
-            <Text style={styles.emergencyBtnEmoji}>🚨</Text>
-            <Text style={styles.emergencyBtnText}>{dog.name} IS LOST</Text>
-            <Text style={styles.emergencyBtnSub}>Tap to alert the community</Text>
-          </TouchableOpacity>
-          <View style={{ height: 40 }} />
-        </ScrollView>
-      )}
 
-      {step === 'active' && (
-        <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-          <View style={styles.activeSection}>
-            <View style={styles.radarWrap}>
-              <Animated.View style={[styles.radarRing, { transform: [{ scale: pulseAnim }], opacity: 0.15 }]} />
-              <Animated.View style={[styles.radarRing, { transform: [{ scale: pulseAnim2 }], opacity: 0.08 }]} />
-              <View style={styles.radarCenter}>
-                <Text style={styles.radarEmoji}>🚨</Text>
-                <Text style={styles.radarLabel}>ALERT ACTIVE</Text>
-              </View>
-            </View>
-            <Text style={styles.activeTitle}>{dog.name} is reported missing</Text>
-            <Text style={styles.activeSub}>Last seen: {lastSeen}</Text>
-            <View style={styles.counterCard}>
-              <Text style={styles.counterNum}>{notified}</Text>
-              <Text style={styles.counterLabel}>users notified nearby</Text>
-            </View>
-
-            <View style={styles.realWorldSection}>
-              <Text style={styles.realWorldTitle}>SPREAD THE WORD BEYOND THE APP</Text>
-              <TouchableOpacity style={styles.whatsappBtn} onPress={shareWhatsApp}>
-                <Text style={styles.actionIcon}>💬</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.actionTitle}>Share to WhatsApp groups</Text>
-                  <Text style={styles.actionSub}>Pre-written message + sighting link. No app needed for finders.</Text>
-                </View>
-                <Text style={styles.actionArrow}>↗</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.posterBtn} onPress={sharePoster}>
-                <Text style={styles.actionIcon}>🖨️</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.actionTitle}>Print emergency poster</Text>
-                  <Text style={styles.actionSub}>Auto-generated with sighting link. Print and post around the neighbourhood.</Text>
-                </View>
-                <Text style={styles.actionArrow}>↗</Text>
-              </TouchableOpacity>
-              {alertId && (
-                <View style={styles.qrInfoBox}>
-                  <Text style={styles.qrInfoTitle}>🔗 Public sighting page is live</Text>
-                  <Text style={styles.qrInfoText}>Anyone can report a sighting without downloading the app. Share the link or print the poster.</Text>
-                </View>
-              )}
-            </View>
-
-            <View style={styles.liveFeed}>
-              <View style={styles.liveFeedHeader}>
-                <View style={styles.liveDot} />
-                <Text style={styles.liveFeedTitle}>LIVE UPDATES</Text>
-              </View>
-              {responses.length === 0 && <Text style={styles.liveFeedEmpty}>Sending alerts...</Text>}
-              {responses.map((r, i) => (
-                <View key={i} style={[styles.liveRow, r.urgent && styles.liveRowUrgent]}>
-                  <Text style={styles.liveRowIcon}>{r.icon}</Text>
-                  <Text style={[styles.liveRowText, r.urgent && styles.liveRowTextUrgent]}>{r.msg}</Text>
-                </View>
-              ))}
-            </View>
-
-            <TouchableOpacity style={styles.foundBtn} onPress={cancelAlert}>
-              <Text style={styles.foundBtnText}>✅ {dog.name} has been found!</Text>
+          <Animated.View style={{ transform: [{ translateX: shakeAnim }] }}>
+            <TouchableOpacity
+              style={[s.triggerBtn, loading && { opacity: 0.6 }]}
+              onPress={triggerAlert}
+              disabled={loading}
+            >
+              <Text style={s.triggerBtnText}>{loading ? t('sendingAlerts') : `🚨 ${dog?.name} ${t('isLost')} — ALERT NOW`}</Text>
             </TouchableOpacity>
-            <View style={{ height: 40 }} />
-          </View>
+          </Animated.View>
         </ScrollView>
       )}
 
-      {step === 'found' && (
-        <View style={styles.foundSection}>
-          <Text style={styles.foundEmoji}>🎉</Text>
-          <Text style={styles.foundTitle}>{dog.name} is safe!</Text>
-          <Text style={styles.foundSub}>The alert has been cancelled. The community has been notified that {dog.name} was found.</Text>
-          <TouchableOpacity style={styles.shareFoundBtn} onPress={() => router.back()}>
-            <Text style={styles.shareFoundBtnText}>Back to SmartPet Tag</Text>
-          </TouchableOpacity>
+      {/* STEP 1 — ACTIVE ALERT */}
+      {step === 1 && (
+        <View style={s.activeContainer}>
+          {/* Pulsing ring */}
+          <Animated.View style={[s.ring, { transform: [{ scale: ringScale }], opacity: ringOpacity }]} />
+
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.activeContent}>
+            {/* Status */}
+            <View style={s.alertStatus}>
+              <Animated.View style={[s.alertStatusDot, { transform: [{ scale: pulseAnim }] }]} />
+              <Text style={s.alertStatusText}>{t('alertActive')}</Text>
+            </View>
+
+            {/* Dog card */}
+            <View style={s.activeDogCard}>
+              <View style={s.activeDogAvatar}>
+                <Text style={{ fontSize: 52 }}>{dog?.emoji || '🐕'}</Text>
+              </View>
+              <Text style={s.activeDogName}>{dog?.name}</Text>
+              <Text style={s.activeDogBreed}>{dog?.breed}</Text>
+              <Text style={s.activeDogLocation}>📍 {lastSeen || dog?.neighbourhood}</Text>
+            </View>
+
+            {/* Notified counter */}
+            <View style={s.notifiedCard}>
+              <Animated.Text style={s.notifiedNum}>
+                {countAnim.interpolate ? '47+' : notified}
+              </Animated.Text>
+              <Text style={s.notifiedLabel}>{t('usersNotifiedNearby')}</Text>
+            </View>
+
+            {/* Live updates */}
+            <Text style={s.liveTitle}>{t('liveUpdates')}</Text>
+            {sightings.length === 0 ? (
+              <View style={s.waitingCard}>
+                <View style={s.waitingDot} />
+                <Text style={s.waitingText}>Waiting for sightings...</Text>
+              </View>
+            ) : (
+              sightings.map((s_, i) => (
+                <View key={i} style={s.sightingCard}>
+                  <Text style={s.sightingName}>{s_.finder_name}</Text>
+                  <Text style={s.sightingMsg}>{s_.found_message}</Text>
+                  {s_.found_location && <Text style={s.sightingLoc}>📍 {s_.found_location}</Text>}
+                </View>
+              ))
+            )}
+
+            {/* Spread the word */}
+            <Text style={s.spreadTitle}>{t('spreadTheWord')}</Text>
+
+            <TouchableOpacity
+              style={s.whatsappBtn}
+              onPress={() => Linking.openURL(`https://wa.me/?text=${encodeURIComponent(whatsappMsg)}`)}
+            >
+              <Text style={s.whatsappBtnIcon}>💚</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={s.whatsappBtnTitle}>{t('shareToWhatsApp')}</Text>
+                <Text style={s.whatsappBtnSub}>{t('whatsappSubMsg')}</Text>
+              </View>
+              <Text style={s.whatsappBtnArrow}>→</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={s.posterBtn}
+              onPress={() => router.push({ pathname: '/poster', params: { alertId, dogName: dog?.name, breed: dog?.breed, neighbourhood: lastSeen || dog?.neighbourhood, ownerName: dog?.owner_name, ownerPhone: dog?.owner_phone } })}
+            >
+              <Text style={s.posterBtnIcon}>🖨️</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={s.posterBtnTitle}>{t('printPoster')}</Text>
+                <Text style={s.posterBtnSub}>{t('posterSubMsg')}</Text>
+              </View>
+              <Text style={s.posterBtnArrow}>→</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={s.foundBtn} onPress={resolveAlert}>
+              <Text style={s.foundBtnText}>✓ {dog?.name} {t('dogHasBeenFound')}!</Text>
+            </TouchableOpacity>
+          </ScrollView>
         </View>
       )}
-    </View>
+
+      {/* STEP 2 — FOUND */}
+      {step === 2 && (
+        <View style={s.foundScreen}>
+          <View style={s.foundConfetti}>
+            {['🎉','🐾','⭐','🎊','💛','🐕'].map((e, i) => (
+              <Text key={i} style={[s.confettiPiece, { left: `${10 + i * 14}%`, top: `${10 + (i % 3) * 20}%` }]}>{e}</Text>
+            ))}
+          </View>
+          <View style={s.foundContent}>
+            <View style={s.foundAvatarWrap}>
+              <Text style={{ fontSize: 80 }}>{dog?.emoji || '🐾'}</Text>
+            </View>
+            <Text style={s.foundTitle}>{dog?.name} is home safe! 🎉</Text>
+            <Text style={s.foundSub}>Share this moment — every reunion inspires others to help.</Text>
+            <TouchableOpacity style={s.foundShareBtn} onPress={() => Linking.openURL(`https://wa.me/?text=${encodeURIComponent(`🐾 ${dog?.name} fue encontrado gracias a la comunidad de SmartPet Tag en ${dog?.neighbourhood}! 🎉\n\nSmartPet Tag protege a los perros en CDMX. Únete gratis: smartpettag.app`)}`)}>
+              <Text style={s.foundShareBtnText}>💚 Share the story on WhatsApp</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.backHomeBtn} onPress={() => router.replace('/(tabs)/explore')}>
+              <Text style={s.backHomeBtnText}>{t('backToApp')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+    </Animated.View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#050508' },
-  loadingText: { color: '#fff', textAlign: 'center', marginTop: 100 },
-  backBtn: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
-  backBtnText: { color: '#555', fontSize: 14 },
-  scroll: { flex: 1 },
-  confirmSection: { alignItems: 'center', padding: 24, paddingTop: 8 },
-  warningBadge: { backgroundColor: '#1a0505', borderWidth: 0.5, borderColor: '#C0392B', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 5, marginBottom: 16 },
-  warningBadgeText: { color: '#C0392B', fontSize: 11, fontWeight: '700', letterSpacing: 1 },
-  confirmTitle: { fontSize: 26, fontWeight: '700', color: '#fff', textAlign: 'center', marginBottom: 10 },
-  confirmSub: { fontSize: 13, color: '#555', textAlign: 'center', lineHeight: 20 },
-  dogCard: { marginHorizontal: 16, backgroundColor: '#0d0d0d', borderRadius: 14, borderWidth: 0.5, borderColor: '#C0392B', padding: 14, marginBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  dogAvatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#1a0505', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#C0392B' },
-  dogAvatarEmoji: { fontSize: 24 },
-  dogCardName: { fontSize: 17, fontWeight: '700', color: '#fff', marginBottom: 2 },
-  dogCardBreed: { fontSize: 12, color: '#555' },
-  fieldWrap: { marginHorizontal: 16, marginBottom: 12 },
-  fieldLabel: { fontSize: 11, color: '#444', fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 8 },
-  fieldInput: { backgroundColor: '#0d0d0d', borderWidth: 0.5, borderColor: '#1a1a1a', borderRadius: 12, padding: 14, fontSize: 14, color: '#fff' },
-  whatHappens: { marginHorizontal: 16, backgroundColor: '#0d0d0d', borderRadius: 14, borderWidth: 0.5, borderColor: '#1a1a1a', padding: 14, marginBottom: 20 },
-  whatHappensTitle: { fontSize: 11, color: '#444', fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 12 },
-  whatRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 7, borderBottomWidth: 0.5, borderBottomColor: '#111' },
-  whatIcon: { fontSize: 16, width: 24 },
-  whatText: { fontSize: 13, color: '#666', flex: 1 },
-  emergencyBtn: { marginHorizontal: 16, backgroundColor: '#C0392B', borderRadius: 16, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: '#ff6b6b' },
-  emergencyBtnEmoji: { fontSize: 36, marginBottom: 8 },
-  emergencyBtnText: { fontSize: 20, fontWeight: '800', color: '#fff', letterSpacing: 1, marginBottom: 4 },
-  emergencyBtnSub: { fontSize: 12, color: 'rgba(255,255,255,0.6)' },
-  activeSection: { padding: 20, alignItems: 'center' },
-  radarWrap: { width: 180, height: 180, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
-  radarRing: { position: 'absolute', width: 160, height: 160, borderRadius: 80, backgroundColor: '#C0392B' },
-  radarCenter: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#1a0505', borderWidth: 2, borderColor: '#C0392B', alignItems: 'center', justifyContent: 'center' },
-  radarEmoji: { fontSize: 32, marginBottom: 4 },
-  radarLabel: { fontSize: 9, color: '#C0392B', fontWeight: '700', letterSpacing: 1 },
-  activeTitle: { fontSize: 22, fontWeight: '700', color: '#fff', marginBottom: 6, textAlign: 'center' },
-  activeSub: { fontSize: 13, color: '#555', marginBottom: 20 },
-  counterCard: { backgroundColor: '#1a0505', borderWidth: 1, borderColor: '#C0392B', borderRadius: 16, padding: 20, alignItems: 'center', marginBottom: 20, width: '100%' },
-  counterNum: { fontSize: 48, fontWeight: '800', color: '#C0392B', lineHeight: 52 },
-  counterLabel: { fontSize: 13, color: '#666', marginTop: 4 },
-  realWorldSection: { width: '100%', marginBottom: 16 },
-  realWorldTitle: { fontSize: 10, color: '#444', fontWeight: '700', letterSpacing: 1, marginBottom: 12 },
-  whatsappBtn: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#0a1a0a', borderWidth: 1, borderColor: '#25D366', borderRadius: 14, padding: 14, marginBottom: 10 },
-  posterBtn: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#0d0d0d', borderWidth: 0.5, borderColor: '#333', borderRadius: 14, padding: 14, marginBottom: 10 },
-  actionIcon: { fontSize: 28 },
-  actionTitle: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 2 },
-  actionSub: { fontSize: 11, color: '#555' },
-  actionArrow: { color: '#555', fontSize: 16 },
-  qrInfoBox: { backgroundColor: '#0d0d14', borderWidth: 0.5, borderColor: '#5856D6', borderRadius: 12, padding: 14 },
-  qrInfoTitle: { fontSize: 13, fontWeight: '700', color: '#fff', marginBottom: 6 },
-  qrInfoText: { fontSize: 12, color: '#555', lineHeight: 18 },
-  liveFeed: { width: '100%', backgroundColor: '#0d0d0d', borderRadius: 14, borderWidth: 0.5, borderColor: '#1a1a1a', padding: 14, marginBottom: 16, marginTop: 8 },
-  liveFeedHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#C0392B' },
-  liveFeedTitle: { fontSize: 11, color: '#444', fontWeight: '600', letterSpacing: 0.5 },
-  liveFeedEmpty: { fontSize: 12, color: '#333', fontStyle: 'italic' },
-  liveRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderBottomWidth: 0.5, borderBottomColor: '#111' },
-  liveRowUrgent: { backgroundColor: '#1a0e00', marginHorizontal: -14, paddingHorizontal: 14, borderRadius: 8 },
-  liveRowIcon: { fontSize: 16, width: 24 },
-  liveRowText: { fontSize: 12, color: '#555', flex: 1 },
-  liveRowTextUrgent: { color: '#F5A623', fontWeight: '600' },
-  foundBtn: { width: '100%', backgroundColor: '#051a10', borderWidth: 1, borderColor: '#1D9E75', borderRadius: 14, padding: 16, alignItems: 'center' },
-  foundBtnText: { color: '#1D9E75', fontSize: 15, fontWeight: '700' },
-  foundSection: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  foundEmoji: { fontSize: 72, marginBottom: 20 },
-  foundTitle: { fontSize: 28, fontWeight: '700', color: '#fff', marginBottom: 10 },
-  foundSub: { fontSize: 14, color: '#555', textAlign: 'center', lineHeight: 22, marginBottom: 24 },
-  shareFoundBtn: { backgroundColor: '#0d0d0d', borderWidth: 0.5, borderColor: '#333', borderRadius: 14, padding: 16, width: '100%', alignItems: 'center' },
-  shareFoundBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.bg },
+  backBtn: { paddingVertical: 8, marginBottom: 8 },
+  backBtnText: { color: colors.textMuted, fontSize: 14 },
+
+  confirmContent: { padding: 24, paddingTop: 60 },
+  confirmHeader: { alignItems: 'center', marginBottom: 24 },
+  confirmWarning: { fontSize: 52, marginBottom: 8 },
+  confirmTitle: { fontSize: 26, fontWeight: '900', color: colors.textPrimary, textAlign: 'center', letterSpacing: -0.5, marginBottom: 6 },
+  confirmSub: { fontSize: 14, color: colors.textMuted, textAlign: 'center' },
+
+  dogConfirmCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: colors.bgCard, borderRadius: 16, borderWidth: 0.5, borderColor: colors.bgBorder, padding: 16, marginBottom: 20 },
+  dogConfirmAvatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: colors.amberDim, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.amber },
+  dogConfirmName: { fontSize: 20, fontWeight: '800', color: colors.textPrimary, marginBottom: 2 },
+  dogConfirmBreed: { fontSize: 13, color: colors.textMuted },
+
+  fieldLabel: { fontSize: 11, color: colors.textMuted, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8, marginTop: 4 },
+  input: { backgroundColor: colors.bgCard, borderWidth: 0.5, borderColor: colors.bgBorder, borderRadius: 12, padding: 14, fontSize: 14, color: colors.textPrimary, marginBottom: 14 },
+
+  whatHappens: { backgroundColor: colors.bgCard, borderRadius: 14, padding: 16, marginBottom: 20, borderWidth: 0.5, borderColor: colors.bgBorder },
+  whatHappensTitle: { fontSize: 12, fontWeight: '700', color: colors.textMuted, letterSpacing: 0.5, marginBottom: 10, textTransform: 'uppercase' },
+  whatHappensRow: { paddingVertical: 5, borderBottomWidth: 0.5, borderBottomColor: colors.bgBorder },
+  whatHappensText: { fontSize: 13, color: colors.textSecondary },
+
+  triggerBtn: { backgroundColor: colors.emergency, borderRadius: 16, paddingVertical: 18, alignItems: 'center', ...shadows.emergency },
+  triggerBtnText: { color: '#fff', fontWeight: '900', fontSize: 16, letterSpacing: 0.5 },
+
+  // Active
+  activeContainer: { flex: 1, backgroundColor: '#0D0808' },
+  ring: { position: 'absolute', width: 200, height: 200, borderRadius: 100, borderWidth: 2, borderColor: colors.emergency, top: height * 0.25, alignSelf: 'center' },
+  activeContent: { padding: 24, paddingTop: 60, alignItems: 'center' },
+  alertStatus: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#1C0707', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, borderWidth: 1, borderColor: colors.emergency, marginBottom: 24 },
+  alertStatusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.emergency },
+  alertStatusText: { fontSize: 12, fontWeight: '800', color: colors.emergency, letterSpacing: 1 },
+  activeDogCard: { alignItems: 'center', marginBottom: 20 },
+  activeDogAvatar: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#1C0707', alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: colors.emergency, marginBottom: 12, ...shadows.emergency },
+  activeDogName: { fontSize: 32, fontWeight: '900', color: '#fff', letterSpacing: -1 },
+  activeDogBreed: { fontSize: 14, color: colors.textMuted, marginBottom: 4 },
+  activeDogLocation: { fontSize: 13, color: colors.textSecondary },
+  notifiedCard: { backgroundColor: '#1C0707', borderRadius: 16, borderWidth: 1, borderColor: colors.emergency + '60', paddingVertical: 16, paddingHorizontal: 32, alignItems: 'center', marginBottom: 24, width: '100%' },
+  notifiedNum: { fontSize: 52, fontWeight: '900', color: colors.emergency, letterSpacing: -2 },
+  notifiedLabel: { fontSize: 12, color: colors.textMuted },
+  liveTitle: { fontSize: 10, fontWeight: '800', color: colors.textMuted, letterSpacing: 1.5, alignSelf: 'flex-start', marginBottom: 10 },
+  waitingCard: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.bgCard, borderRadius: 12, borderWidth: 0.5, borderColor: colors.bgBorder, padding: 14, width: '100%', marginBottom: 20 },
+  waitingDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.textMuted },
+  waitingText: { fontSize: 13, color: colors.textMuted },
+  sightingCard: { backgroundColor: '#052016', borderRadius: 12, borderWidth: 0.5, borderColor: '#10B981' + '60', padding: 14, width: '100%', marginBottom: 8 },
+  sightingName: { fontSize: 13, fontWeight: '700', color: '#10B981', marginBottom: 2 },
+  sightingMsg: { fontSize: 13, color: colors.textSecondary },
+  sightingLoc: { fontSize: 11, color: colors.textMuted, marginTop: 4 },
+  spreadTitle: { fontSize: 10, fontWeight: '800', color: colors.textMuted, letterSpacing: 1.5, alignSelf: 'flex-start', marginBottom: 10, marginTop: 4 },
+  whatsappBtn: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#052016', borderRadius: 14, borderWidth: 1, borderColor: '#10B981' + '60', padding: 14, width: '100%', marginBottom: 10 },
+  whatsappBtnIcon: { fontSize: 24 },
+  whatsappBtnTitle: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 2 },
+  whatsappBtnSub: { fontSize: 11, color: colors.textMuted },
+  whatsappBtnArrow: { color: '#10B981', fontSize: 18 },
+  posterBtn: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.bgCard, borderRadius: 14, borderWidth: 0.5, borderColor: colors.bgBorder, padding: 14, width: '100%', marginBottom: 16 },
+  posterBtnIcon: { fontSize: 24 },
+  posterBtnTitle: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 2 },
+  posterBtnSub: { fontSize: 11, color: colors.textMuted },
+  posterBtnArrow: { color: colors.textMuted, fontSize: 18 },
+  foundBtn: { backgroundColor: '#052016', borderRadius: 14, borderWidth: 1, borderColor: '#10B981', paddingVertical: 14, alignItems: 'center', width: '100%' },
+  foundBtnText: { color: '#10B981', fontWeight: '700', fontSize: 14 },
+
+  // Found
+  foundScreen: { flex: 1, backgroundColor: '#052016', alignItems: 'center', justifyContent: 'center', padding: 28 },
+  foundConfetti: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  confettiPiece: { position: 'absolute', fontSize: 32 },
+  foundContent: { alignItems: 'center' },
+  foundAvatarWrap: { width: 140, height: 140, borderRadius: 70, backgroundColor: '#073d1a', alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#10B981', marginBottom: 20 },
+  foundTitle: { fontSize: 28, fontWeight: '900', color: '#fff', textAlign: 'center', marginBottom: 8, letterSpacing: -0.5 },
+  foundSub: { fontSize: 14, color: '#10B981', textAlign: 'center', lineHeight: 22, marginBottom: 28 },
+  foundShareBtn: { backgroundColor: '#10B981', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 24, width: '100%', alignItems: 'center', marginBottom: 10 },
+  foundShareBtnText: { color: '#052016', fontWeight: '800', fontSize: 15 },
+  backHomeBtn: { paddingVertical: 12 },
+  backHomeBtnText: { color: '#6B7280', fontSize: 13 },
 });

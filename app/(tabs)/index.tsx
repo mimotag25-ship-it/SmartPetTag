@@ -1,149 +1,62 @@
 import { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Animated, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Animated, RefreshControl, Dimensions } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../../lib/supabase';
 import { router } from 'expo-router';
-import { colors, spacing, radius, typography, shadows, energyConfig, parkStatus } from '../../lib/design';
+import { colors, spacing, shadows } from '../../lib/design';
 import { useLanguage } from '../../lib/i18n';
 
+const { width } = Dimensions.get('window');
+
 const PARKS = [
-  { name: 'Parque España', dogs: 8, energy: 4, friendly: 7, reactive: 1, peak: '6pm', status: 'medium', lat: 19.4148, lng: -99.1762 },
-  { name: 'Parque México', dogs: 14, energy: 3, friendly: 12, reactive: 2, peak: '7pm', status: 'high', lat: 19.4162, lng: -99.1748 },
-  { name: 'Parque Hundido', dogs: 3, energy: 2, friendly: 3, reactive: 0, peak: '5pm', status: 'low', lat: 19.3892, lng: -99.1728 },
-  { name: 'Parque Pushkin', dogs: 5, energy: 3, friendly: 5, reactive: 0, peak: '7pm', status: 'low', lat: 19.4122, lng: -99.1705 },
+  { name: 'Parque España', dogs: 8, energy: 4, friendly: 7, reactive: 1, status: 'medium', emoji: '🌳' },
+  { name: 'Parque México', dogs: 14, energy: 5, friendly: 10, reactive: 4, status: 'high', emoji: '🌲' },
+  { name: 'Parque Hundido', dogs: 3, energy: 2, friendly: 3, reactive: 0, status: 'low', emoji: '🌿' },
+  { name: 'Parque Pushkin', dogs: 5, energy: 3, friendly: 5, reactive: 0, status: 'low', emoji: '🍃' },
 ];
 
-function EnergyBar({ level, size = 'md' }) {
-  const barW = size === 'sm' ? 10 : 14;
-  const barH = size === 'sm' ? 4 : 6;
-  const config = energyConfig[level] || energyConfig[3];
-  return (
-    <View style={{ flexDirection: 'row', gap: 3, alignItems: 'center' }}>
-      {[1,2,3,4,5].map(i => (
-        <View key={i} style={{
-          width: barW, height: barH, borderRadius: 2,
-          backgroundColor: i <= level ? config.color : colors.bgBorder,
-        }} />
-      ))}
-    </View>
-  );
-}
+const STATUS_CONFIG = {
+  low: { color: '#10B981', label: 'Perfect time', bg: '#052016' },
+  medium: { color: '#F59E0B', label: 'Busy now', bg: '#1C1407' },
+  high: { color: '#EF4444', label: 'Very crowded', bg: '#1C0707' },
+};
+
+const ENERGY_COLORS = ['#6366F1', '#6366F1', '#10B981', '#F59E0B', '#F97316', '#EF4444'];
+
 
 function ParkCard({ park }) {
-  const status = parkStatus[park.status];
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-
+  const config = STATUS_CONFIG[park.status];
+  const pulseRef = useRef(new Animated.Value(1)).current;
   useEffect(() => {
-    if (park.status === 'medium' || park.status === 'high') {
+    if (park.status !== 'low') {
       Animated.loop(Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.2, duration: 1000, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
+        Animated.timing(pulseRef, { toValue: 1.3, duration: 800, useNativeDriver: true }),
+        Animated.timing(pulseRef, { toValue: 1, duration: 800, useNativeDriver: true }),
       ])).start();
     }
   }, []);
-
   return (
-    <TouchableOpacity style={[styles.parkCard, { borderColor: status.color + '40' }]}>
-      <View style={styles.parkCardHeader}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.parkName}>{park.name}</Text>
-          <View style={styles.parkStatusRow}>
-            <Animated.View style={[styles.parkDot, { backgroundColor: status.color, transform: [{ scale: pulseAnim }] }]} />
-            <Text style={[styles.parkStatusText, { color: status.color }]}>{status.label}</Text>
-          </View>
-        </View>
-        <View style={[styles.parkCountBadge, { backgroundColor: status.color + '20' }]}>
-          <Text style={[styles.parkCount, { color: status.color }]}>{park.dogs}</Text>
-          <Text style={[styles.parkCountLabel, { color: status.color }]}>dogs</Text>
+    <View style={[s.parkCard, { borderColor: config.color + '50', backgroundColor: config.bg }]}>
+      <View style={s.parkCardTop}>
+        <Text style={s.parkEmoji}>{park.emoji}</Text>
+        <View style={[s.parkCountBadge, { backgroundColor: config.color + '20' }]}>
+          <Text style={[s.parkCount, { color: config.color }]}>{park.dogs}</Text>
+          <Text style={[s.parkCountSub, { color: config.color }]}>dogs</Text>
         </View>
       </View>
-      <View style={styles.parkStats}>
-        <View style={styles.parkStat}>
-          <Text style={styles.parkStatIcon}>😊</Text>
-          <Text style={styles.parkStatText}>{park.friendly} friendly</Text>
-        </View>
-        {park.reactive > 0 && (
-          <View style={styles.parkStat}>
-            <Text style={styles.parkStatIcon}>⚠️</Text>
-            <Text style={[styles.parkStatText, { color: colors.amber }]}>{park.reactive} reactive</Text>
-          </View>
-        )}
-        <View style={styles.parkStat}>
-          <Text style={styles.parkStatIcon}>🕐</Text>
-          <Text style={styles.parkStatText}>Peak: {park.peak}</Text>
-        </View>
+      <Text style={s.parkName}>{park.name}</Text>
+      <View style={s.parkStatusRow}>
+        <Animated.View style={[s.parkDot, { backgroundColor: config.color, transform: [{ scale: pulseRef }] }]} />
+        <Text style={[s.parkStatus, { color: config.color }]}>{config.label}</Text>
       </View>
-      <EnergyBar level={park.energy} size="sm" />
-    </TouchableOpacity>
-  );
-}
-
-function PetCard({ dog, onEmergency, pendingAlert }) {
-  const shimmerAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.loop(Animated.sequence([
-      Animated.timing(shimmerAnim, { toValue: 1, duration: 2000, useNativeDriver: true }),
-      Animated.timing(shimmerAnim, { toValue: 0, duration: 2000, useNativeDriver: true }),
-    ])).start();
-  }, []);
-
-  const shimmerOpacity = shimmerAnim.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.8] });
-
-  return (
-    <View style={styles.petCard}>
-      {/* Holographic shimmer */}
-      <Animated.View style={[styles.shimmer, { opacity: shimmerOpacity }]} />
-
-      <View style={styles.petCardContent}>
-        <TouchableOpacity onPress={() => router.push('/edit-profile')}>
-          <View style={styles.petPhotoWrap}>
-            {dog.photo_url ? (
-              <Image source={{ uri: dog.photo_url }} style={styles.petPhoto} />
-            ) : (
-              <View style={styles.petPhotoPlaceholder}>
-                <Text style={styles.petEmoji}>{dog.emoji || '🐾'}</Text>
-              </View>
-            )}
-            <View style={styles.petOnlineDot} />
-          </View>
-        </TouchableOpacity>
-
-        <View style={styles.petInfo}>
-          <View style={styles.petNameRow}>
-            <Text style={styles.petName}>{dog.name}</Text>
-            <View style={styles.petSpeciesBadge}>
-              <Text style={styles.petSpeciesText}>{dog.breed?.split(' ')[0]}</Text>
-            </View>
-          </View>
-          <Text style={styles.petOwner}>by {dog.owner_name}</Text>
-          <EnergyBar level={5} />
-          <View style={styles.petTagsRow}>
-            {dog.personality?.split(',').slice(0, 3).map((tag, i) => (
-              <View key={i} style={styles.petTag}>
-                <Text style={styles.petTagText}>{tag.trim()}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
+      <View style={s.parkMeta}>
+        <Text style={s.parkMetaText}>😊 {park.friendly} friendly</Text>
+        {park.reactive > 0 && <Text style={[s.parkMetaText, { color: colors.amber }]}>⚠️ {park.reactive} reactive</Text>}
       </View>
-
-      <View style={styles.petCardFooter}>
-        <View style={styles.petStats}>
-          <View style={styles.petStat}>
-            <Text style={styles.petStatNum}>📍</Text>
-            <Text style={styles.petStatLabel}>{dog.neighbourhood}</Text>
-          </View>
-          <View style={styles.petStat}>
-            <Text style={styles.petStatNum}>{dog.age}</Text>
-            <Text style={styles.petStatLabel}>years</Text>
-          </View>
-          {dog.vaccinated !== false && (
-            <View style={styles.petStat}>
-              <Text style={styles.petStatNum}>💉</Text>
-              <Text style={styles.petStatLabel}>Vaccinated</Text>
-            </View>
-          )}
-        </View>
+      <View style={{ flexDirection: 'row', gap: 3, marginTop: 8 }}>
+        {[1,2,3,4,5].map(j => (
+          <View key={j} style={{ flex: 1, height: 3, borderRadius: 2, backgroundColor: j <= park.energy ? ENERGY_COLORS[park.energy] : colors.bgBorder }} />
+        ))}
       </View>
     </View>
   );
@@ -155,18 +68,42 @@ export default function HomeScreen() {
   const [pendingAlert, setPendingAlert] = useState(null);
   const [alerts, setAlerts] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [stats, setStats] = useState({ alerts: 0, found: 0, sightings: 0, posts: 0 });
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const { t } = useLanguage();
+
+  // Animations
+  const shimmerAnim = useRef(new Animated.Value(-width)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const glowAnim = useRef(new Animated.Value(0.4)).current;
+  const cardEntryAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     loadAll();
-    const interval = setInterval(loadPendingAlerts, 15000);
-    return () => clearInterval(interval);
+    startAnimations();
   }, []);
 
+  function startAnimations() {
+    // Shimmer sweep
+    Animated.loop(
+      Animated.timing(shimmerAnim, { toValue: width * 2, duration: 2400, useNativeDriver: true })
+    ).start();
+    // Emergency pulse
+    Animated.loop(Animated.sequence([
+      Animated.timing(pulseAnim, { toValue: 1.03, duration: 900, useNativeDriver: true }),
+      Animated.timing(pulseAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
+    ])).start();
+    // Glow breathe
+    Animated.loop(Animated.sequence([
+      Animated.timing(glowAnim, { toValue: 0.8, duration: 1800, useNativeDriver: true }),
+      Animated.timing(glowAnim, { toValue: 0.4, duration: 1800, useNativeDriver: true }),
+    ])).start();
+    // Card entry
+    Animated.spring(cardEntryAnim, { toValue: 1, tension: 50, friction: 10, useNativeDriver: true }).start();
+  }
+
   async function loadAll() {
-    await Promise.all([loadDog(), loadPendingAlerts(), loadAlerts(), loadStats()]);
+    await Promise.all([loadDog(), loadPendingAlerts(), loadAlerts()]);
     setLoading(false);
   }
 
@@ -174,20 +111,29 @@ export default function HomeScreen() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       const { data } = await supabase.from('dogs').select('*').single();
-      if (data) setDog(data);
+      if (data) { setDog(data); loadStats(data); }
       return;
     }
     const { data, error } = await supabase.from('dogs').select('*').eq('owner_email', user.email).single();
     if (error) {
       const { data: fallback } = await supabase.from('dogs').select('*').single();
-      if (fallback) setDog(fallback);
-    } else setDog(data);
+      if (fallback) { setDog(fallback); loadStats(fallback); }
+    } else { setDog(data); loadStats(data); }
+  }
+
+  async function loadStats(dogData) {
+    const { data: alertData } = await supabase.from('lost_alerts').select('id, status').eq('owner_name', dogData?.owner_name || '');
+    setStats({
+      alerts: alertData?.length || 0,
+      found: alertData?.filter(a => a.status === 'found').length || 0,
+      sightings: 3,
+      posts: 5,
+    });
   }
 
   async function loadPendingAlerts() {
     const { data } = await supabase.from('lost_alerts').select('*').eq('status_pending_owner', true).order('created_at', { ascending: false }).limit(1);
     if (data && data.length > 0) setPendingAlert(data[0]);
-    else setPendingAlert(null);
   }
 
   async function loadAlerts() {
@@ -195,21 +141,23 @@ export default function HomeScreen() {
     if (data) setAlerts(data);
   }
 
-  async function loadStats() {
-    const { data: alertData } = await supabase.from('lost_alerts').select('id, status').eq('owner_name', dog?.owner_name || '');
-    const { data: sightingData } = await supabase.from('activity').select('id').eq('type', 'sighting');
-    setStats({
-      alerts: alertData?.length || 0,
-      found: alertData?.filter(a => a.status === 'found').length || 0,
-      sightings: sightingData?.length || 0,
-      posts: 3,
-    });
-  }
-
-  async function onRefresh() {
-    setRefreshing(true);
-    await loadAll();
-    setRefreshing(false);
+  async function uploadDogPhoto() {
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, aspect: [1,1], quality: 0.8 });
+    if (result.canceled) return;
+    setUploadingPhoto(true);
+    try {
+      const response = await fetch(result.assets[0].uri);
+      const blob = await response.blob();
+      const fileName = `dog-${Date.now()}.jpg`;
+      const { error } = await supabase.storage.from('posts').upload(fileName, blob, { contentType: 'image/jpeg' });
+      if (!error) {
+        const { data } = supabase.storage.from('posts').getPublicUrl(fileName);
+        await supabase.from('dogs').update({ photo_url: data.publicUrl }).eq('id', dog.id);
+        await supabase.from('dog_locations').update({ photo_url: data.publicUrl }).eq('dog_name', dog.name);
+        setDog(d => ({ ...d, photo_url: data.publicUrl }));
+      }
+    } catch (e) {}
+    setUploadingPhoto(false);
   }
 
   function getTimeAgo(ts) {
@@ -219,250 +167,305 @@ export default function HomeScreen() {
     return `${Math.floor(mins / 60)}h ago`;
   }
 
+  const tags = dog?.personality?.split(',').map(t => t.trim()).filter(Boolean) || [];
+
   if (loading) return (
-    <View style={styles.loader}>
-      <Text style={styles.loaderEmoji}>🐾</Text>
-      <Text style={styles.loaderText}>Loading...</Text>
+    <View style={s.loader}>
+      <Text style={s.loaderEmoji}>🐾</Text>
     </View>
   );
 
   return (
     <ScrollView
-      style={styles.container}
+      style={s.container}
       showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.amber} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await loadAll(); setRefreshing(false); }} tintColor={colors.amber} />}
     >
-      {/* Header */}
-      <View style={styles.header}>
+      {/* Top bar */}
+      <View style={s.topBar}>
         <View>
-          <Text style={styles.headerGreeting}>Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'} 👋</Text>
-          <Text style={styles.headerTitle}>SmartPet Tag</Text>
+          <Text style={s.appName}>SmartPet Tag</Text>
+          <Text style={s.appSub}>Your pet's safety network</Text>
         </View>
-        <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.headerBtn} onPress={() => router.push('/chat')}>
-            <Text style={styles.headerBtnIcon}>💬</Text>
+        <View style={s.topBarActions}>
+          <TouchableOpacity style={s.iconBtn} onPress={() => router.push('/chat')}>
+            <Text style={s.iconBtnText}>💬</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerBtn} onPress={() => router.push('/emergency')}>
-            <Text style={styles.headerBtnIcon}>🚨</Text>
+          <TouchableOpacity style={[s.iconBtn, s.iconBtnAlert]} onPress={() => router.push('/emergency')}>
+            <Text style={s.iconBtnText}>🚨</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Pending alert banner */}
       {pendingAlert && (
-        <TouchableOpacity
-          style={styles.pendingBanner}
-          onPress={() => router.push({ pathname: '/confirm-found', params: { alertId: pendingAlert.id } })}
-        >
-          <Text style={styles.pendingBannerEmoji}>🔔</Text>
+        <TouchableOpacity style={s.pendingBanner} onPress={() => router.push({ pathname: '/confirm-found', params: { alertId: pendingAlert.id } })}>
+          <View style={s.pendingBannerDot} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.pendingBannerTitle}>Someone found {pendingAlert.dog_name}!</Text>
-            <Text style={styles.pendingBannerSub}>Tap to review and confirm — you have final say</Text>
+            <Text style={s.pendingBannerTitle}>Someone found {pendingAlert.dog_name}!</Text>
+            <Text style={s.pendingBannerSub}>Tap to confirm — you have final say</Text>
           </View>
-          <Text style={styles.pendingBannerArrow}>→</Text>
+          <Text style={s.pendingBannerArrow}>→</Text>
         </TouchableOpacity>
       )}
 
-      {/* Pet card */}
+      {/* POKEMON CARD */}
       {dog && (
-        <View style={styles.section}>
-          <PetCard dog={dog} pendingAlert={pendingAlert} />
-          <View style={styles.petActions}>
-            <TouchableOpacity style={styles.emergencyBtn} onPress={() => router.push('/emergency')}>
-              <Text style={styles.emergencyBtnEmoji}>🚨</Text>
-              <View>
-                <Text style={styles.emergencyBtnTitle}>{dog.name} Is Lost</Text>
-                <Text style={styles.emergencyBtnSub}>Alert the community instantly</Text>
+        <Animated.View style={[s.pokemonCard, { opacity: cardEntryAnim, transform: [{ scale: cardEntryAnim.interpolate({ inputRange: [0,1], outputRange: [0.95, 1] }) }] }]}>
+          {/* Holographic shimmer */}
+          <Animated.View style={[s.shimmerStrip, { transform: [{ translateX: shimmerAnim }] }]} />
+
+          {/* Card top — type and HP */}
+          <View style={s.cardTop}>
+            <View style={s.cardTypeBadge}>
+              <Text style={s.cardTypeText}>🐾 PET CARD</Text>
+            </View>
+            <View style={s.cardHpWrap}>
+              <Text style={s.cardHpLabel}>ENERGY</Text>
+              <View style={s.cardHpBars}>
+                {[1,2,3,4,5].map(i => (
+                  <View key={i} style={[s.hpBar, { backgroundColor: i <= 4 ? ENERGY_COLORS[4] : colors.bgBorder }]} />
+                ))}
               </View>
-              <Text style={styles.emergencyBtnArrow}>→</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/edit-profile')}>
-              <Text style={styles.editBtnText}>✏️ Edit profile</Text>
-            </TouchableOpacity>
+            </View>
           </View>
-        </View>
+
+          {/* Card name */}
+          <Text style={s.cardName}>{dog.name}</Text>
+          <Text style={s.cardSubName}>{dog.breed} · {dog.age} yrs · {dog.neighbourhood}</Text>
+
+          {/* Card photo — large and centered */}
+          <TouchableOpacity onPress={uploadDogPhoto} style={s.cardPhotoWrap}>
+            <Animated.View style={[s.cardPhotoGlow, { opacity: glowAnim }]} />
+            {dog.photo_url ? (
+              <Image source={{ uri: dog.photo_url }} style={s.cardPhoto} />
+            ) : (
+              <View style={s.cardPhotoPlaceholder}>
+                <Text style={s.cardPhotoEmoji}>{dog.emoji || '🐾'}</Text>
+                <Text style={s.cardPhotoHint}>{uploadingPhoto ? 'Uploading...' : 'Tap to add photo'}</Text>
+              </View>
+            )}
+            <View style={s.cardPhotoOnline} />
+          </TouchableOpacity>
+
+          {/* Card tags */}
+          <View style={s.cardTags}>
+            {tags.slice(0, 4).map((tag, i) => (
+              <View key={i} style={s.cardTag}>
+                <Text style={s.cardTagText}>{tag}</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Card stats */}
+          <View style={s.cardStats}>
+            <View style={s.cardStat}>
+              <Text style={s.cardStatNum}>{stats.alerts}</Text>
+              <Text style={s.cardStatLabel}>Alerts</Text>
+            </View>
+            <View style={s.cardStatDivider} />
+            <View style={s.cardStat}>
+              <Text style={s.cardStatNum}>{stats.found}</Text>
+              <Text style={s.cardStatLabel}>Found</Text>
+            </View>
+            <View style={s.cardStatDivider} />
+            <View style={s.cardStat}>
+              <Text style={s.cardStatNum}>{stats.sightings}</Text>
+              <Text style={s.cardStatLabel}>Sightings</Text>
+            </View>
+            <View style={s.cardStatDivider} />
+            <View style={s.cardStat}>
+              <Text style={s.cardStatNum}>{stats.posts}</Text>
+              <Text style={s.cardStatLabel}>Posts</Text>
+            </View>
+          </View>
+
+          {/* Card footer badges */}
+          <View style={s.cardBadges}>
+            {dog.vaccinated !== false && <View style={[s.cardBadge, { borderColor: '#10B981', backgroundColor: '#052016' }]}><Text style={[s.cardBadgeText, { color: '#10B981' }]}>💉 Vaccinated</Text></View>}
+            {dog.has_microchip && <View style={[s.cardBadge, { borderColor: '#6366F1', backgroundColor: '#0F0F2E' }]}><Text style={[s.cardBadgeText, { color: '#6366F1' }]}>📡 Chipped</Text></View>}
+            {dog.has_gps_tag && <View style={[s.cardBadge, { borderColor: colors.amber, backgroundColor: colors.amberDim }]}><Text style={[s.cardBadgeText, { color: colors.amber }]}>📍 GPS Tag</Text></View>}
+          </View>
+        </Animated.View>
       )}
+
+      {/* Action buttons */}
+      <View style={s.actions}>
+        <Animated.View style={[{ flex: 2, transform: [{ scale: pulseAnim }] }]}>
+          <TouchableOpacity style={s.emergencyBtn} onPress={() => router.push('/emergency')}>
+            <Text style={s.emergencyBtnIcon}>🚨</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={s.emergencyBtnTitle}>{dog?.name} Is Lost</Text>
+              <Text style={s.emergencyBtnSub}>Alert the entire neighbourhood</Text>
+            </View>
+            <Text style={s.emergencyBtnArrow}>→</Text>
+          </TouchableOpacity>
+        </Animated.View>
+        <TouchableOpacity style={s.editBtn} onPress={() => router.push('/edit-profile')}>
+          <Text style={s.editBtnIcon}>✏️</Text>
+          <Text style={s.editBtnText}>Edit</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Active alerts */}
       {alerts.length > 0 && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionDot} />
-            <Text style={styles.sectionTitle}>ACTIVE ALERTS NEARBY</Text>
-            <Text style={styles.sectionCount}>{alerts.length}</Text>
+        <View style={s.section}>
+          <View style={s.sectionHeader}>
+            <View style={s.sectionAlertDot} />
+            <Text style={s.sectionTitle}>ACTIVE ALERTS NEARBY</Text>
+            <View style={s.sectionBadge}><Text style={s.sectionBadgeText}>{alerts.length}</Text></View>
           </View>
           {alerts.map(alert => (
-            <TouchableOpacity key={alert.id} style={styles.alertCard} onPress={() => router.push('/(tabs)/explore')}>
-              <View style={styles.alertAvatar}>
-                {alert.dog_photo ? (
-                  <Image source={{ uri: alert.dog_photo }} style={styles.alertPhoto} />
-                ) : (
-                  <Text style={{ fontSize: 22 }}>🐕</Text>
-                )}
+            <TouchableOpacity key={alert.id} style={s.alertRow} onPress={() => router.push('/(tabs)/explore')}>
+              <View style={s.alertRowAvatar}>
+                {alert.dog_photo
+                  ? <Image source={{ uri: alert.dog_photo }} style={s.alertRowPhoto} />
+                  : <Text style={{ fontSize: 20 }}>🐕</Text>}
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.alertDogName}>{alert.dog_name}</Text>
-                <Text style={styles.alertLocation}>📍 {alert.neighbourhood}</Text>
-                <Text style={styles.alertTime}>{getTimeAgo(alert.created_at)}</Text>
+                <Text style={s.alertRowName}>{alert.dog_name}</Text>
+                <Text style={s.alertRowLoc}>📍 {alert.neighbourhood} · {getTimeAgo(alert.created_at)}</Text>
               </View>
-              <TouchableOpacity
-                style={styles.alertHelpBtn}
-                onPress={() => router.push({ pathname: '/found', params: { alertId: alert.id, dogName: alert.dog_name, ownerName: alert.owner_name, ownerPhone: alert.owner_phone, neighbourhood: alert.neighbourhood } })}
-              >
-                <Text style={styles.alertHelpBtnText}>Help</Text>
+              <TouchableOpacity style={s.alertHelpBtn} onPress={() => router.push({ pathname: '/found', params: { alertId: alert.id, dogName: alert.dog_name, ownerName: alert.owner_name, ownerPhone: alert.owner_phone, neighbourhood: alert.neighbourhood } })}>
+                <Text style={s.alertHelpBtnText}>Help</Text>
               </TouchableOpacity>
             </TouchableOpacity>
           ))}
         </View>
       )}
 
-      {/* Park intelligence */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionIcon}>🌳</Text>
-          <Text style={styles.sectionTitle}>PARKS NEAR YOU</Text>
+      {/* Park Intelligence */}
+      <View style={s.section}>
+        <View style={s.sectionHeader}>
+          <Text style={s.sectionIcon}>🌳</Text>
+          <Text style={s.sectionTitle}>PARK INTELLIGENCE</Text>
         </View>
-        <Text style={styles.sectionSub}>Live dog activity — updated every 5 minutes</Text>
+        <Text style={s.sectionSub}>Live dog activity — updated every 5 min</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 20 }}>
           {PARKS.map((park, i) => <ParkCard key={i} park={park} />)}
         </ScrollView>
       </View>
 
-      {/* Stats */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>YOUR ACTIVITY</Text>
-        <View style={styles.statsGrid}>
-          {[
-            { icon: '🚨', value: stats.alerts, label: t('alertsTriggered') },
-            { icon: '🐕', value: stats.found, label: t('dogsFound') },
-            { icon: '👀', value: stats.sightings, label: t('sightingsReported') },
-            { icon: '📸', value: stats.posts, label: t('postsMade') },
-          ].map((s, i) => (
-            <View key={i} style={styles.statCard}>
-              <Text style={styles.statIcon}>{s.icon}</Text>
-              <Text style={styles.statNum}>{s.value}</Text>
-              <Text style={styles.statLabel}>{s.label}</Text>
-            </View>
-          ))}
-        </View>
-      </View>
-
       {/* Bottom links */}
-      <View style={styles.bottomLinks}>
+      <View style={s.footer}>
         <TouchableOpacity onPress={() => router.push('/privacy')}>
-          <Text style={styles.bottomLink}>{t('privacyPolicy')}</Text>
+          <Text style={s.footerLink}>{t('privacyPolicy')}</Text>
         </TouchableOpacity>
-        <Text style={styles.bottomDot}>·</Text>
-        <View style={styles.langRow}>
-          <TouchableOpacity onPress={() => {}}>
-            <Text style={styles.bottomLink}>🇲🇽 ES</Text>
-          </TouchableOpacity>
-          <Text style={styles.bottomDot}>·</Text>
-          <TouchableOpacity onPress={() => {}}>
-            <Text style={styles.bottomLink}>🇺🇸 EN</Text>
-          </TouchableOpacity>
-        </View>
+        <Text style={s.footerDot}>·</Text>
+        <TouchableOpacity onPress={() => router.push('/guest')}>
+          <Text style={s.footerLink}>About</Text>
+        </TouchableOpacity>
       </View>
-
       <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  loader: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  loader: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
   loaderEmoji: { fontSize: 48 },
-  loaderText: { fontSize: 14, color: colors.textMuted },
 
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.xl, paddingTop: 20, paddingBottom: 16 },
-  headerGreeting: { fontSize: 12, color: colors.textMuted, marginBottom: 2 },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: colors.textPrimary, fontStyle: 'italic' },
-  headerActions: { flexDirection: 'row', gap: 8 },
-  headerBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.bgCard, alignItems: 'center', justifyContent: 'center', borderWidth: 0.5, borderColor: colors.bgBorder },
-  headerBtnIcon: { fontSize: 18 },
+  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16 },
+  appName: { fontSize: 22, fontWeight: '900', color: colors.textPrimary, letterSpacing: -0.5, fontStyle: 'italic' },
+  appSub: { fontSize: 11, color: colors.textMuted, marginTop: 1 },
+  topBarActions: { flexDirection: 'row', gap: 8 },
+  iconBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.bgCard, alignItems: 'center', justifyContent: 'center', borderWidth: 0.5, borderColor: colors.bgBorder },
+  iconBtnAlert: { backgroundColor: '#1C0707', borderColor: colors.emergency + '60' },
+  iconBtnText: { fontSize: 17 },
 
-  pendingBanner: { marginHorizontal: spacing.xl, marginBottom: 16, backgroundColor: '#1C1407', borderRadius: radius.lg, borderWidth: 1.5, borderColor: colors.amber, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12, ...shadows.amber },
-  pendingBannerEmoji: { fontSize: 24 },
-  pendingBannerTitle: { fontSize: 14, fontWeight: '700', color: colors.textPrimary, marginBottom: 2 },
+  pendingBanner: { marginHorizontal: 20, marginBottom: 16, backgroundColor: '#1C1407', borderRadius: 14, borderWidth: 1.5, borderColor: colors.amber, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  pendingBannerDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.amber },
+  pendingBannerTitle: { fontSize: 13, fontWeight: '700', color: colors.textPrimary, marginBottom: 1 },
   pendingBannerSub: { fontSize: 11, color: colors.amber },
-  pendingBannerArrow: { color: colors.amber, fontSize: 18 },
+  pendingBannerArrow: { color: colors.amber, fontSize: 16 },
 
-  section: { paddingHorizontal: spacing.xl, marginBottom: 24 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  sectionDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.emergency },
+  // POKEMON CARD
+  pokemonCard: {
+    marginHorizontal: 20, marginBottom: 16,
+    backgroundColor: '#131C2E',
+    borderRadius: 24, borderWidth: 1.5, borderColor: colors.amber + '60',
+    padding: 20, overflow: 'hidden',
+    shadowColor: colors.amber, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 12,
+  },
+  shimmerStrip: { position: 'absolute', top: 0, left: 0, width: 120, height: '100%', backgroundColor: 'rgba(245,158,11,0.06)', transform: [{ skewX: '-20deg' }] },
+  cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  cardTypeBadge: { backgroundColor: colors.amberDim, borderWidth: 0.5, borderColor: colors.amber, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  cardTypeText: { fontSize: 9, color: colors.amber, fontWeight: '800', letterSpacing: 1 },
+  cardHpWrap: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  cardHpLabel: { fontSize: 9, color: colors.textMuted, fontWeight: '700', letterSpacing: 1 },
+  cardHpBars: { flexDirection: 'row', gap: 3 },
+  hpBar: { width: 18, height: 6, borderRadius: 3 },
+  cardName: { fontSize: 32, fontWeight: '900', color: colors.textPrimary, letterSpacing: -1, marginBottom: 2 },
+  cardSubName: { fontSize: 12, color: colors.textMuted, marginBottom: 16 },
+
+  cardPhotoWrap: { alignItems: 'center', marginBottom: 16, position: 'relative' },
+  cardPhotoGlow: { position: 'absolute', width: 180, height: 180, borderRadius: 90, backgroundColor: colors.amber, top: -10, alignSelf: 'center', zIndex: 0 },
+  cardPhoto: { width: 160, height: 160, borderRadius: 80, borderWidth: 3, borderColor: colors.amber, zIndex: 1 },
+  cardPhotoPlaceholder: { width: 160, height: 160, borderRadius: 80, borderWidth: 3, borderColor: colors.amber, backgroundColor: colors.amberDim, alignItems: 'center', justifyContent: 'center', zIndex: 1, gap: 8 },
+  cardPhotoEmoji: { fontSize: 64 },
+  cardPhotoHint: { fontSize: 11, color: colors.amber },
+  cardPhotoOnline: { position: 'absolute', bottom: 8, right: '28%', width: 16, height: 16, borderRadius: 8, backgroundColor: '#10B981', borderWidth: 2.5, borderColor: '#131C2E', zIndex: 2 },
+
+  cardTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 },
+  cardTag: { backgroundColor: '#1F2937', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 0.5, borderColor: '#374151' },
+  cardTagText: { fontSize: 11, color: '#9CA3AF', fontWeight: '500' },
+
+  cardStats: { flexDirection: 'row', backgroundColor: '#0D1526', borderRadius: 14, padding: 14, marginBottom: 14 },
+  cardStat: { flex: 1, alignItems: 'center' },
+  cardStatNum: { fontSize: 22, fontWeight: '900', color: colors.amber, letterSpacing: -0.5 },
+  cardStatLabel: { fontSize: 10, color: colors.textMuted, marginTop: 1 },
+  cardStatDivider: { width: 0.5, backgroundColor: colors.bgBorder },
+
+  cardBadges: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
+  cardBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 0.5 },
+  cardBadgeText: { fontSize: 11, fontWeight: '600' },
+
+  // Actions
+  actions: { flexDirection: 'row', gap: 10, paddingHorizontal: 20, marginBottom: 24 },
+  emergencyBtn: { flex: 1, backgroundColor: '#1C0707', borderRadius: 16, borderWidth: 1.5, borderColor: colors.emergency, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10, shadowColor: colors.emergency, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6 },
+  emergencyBtnIcon: { fontSize: 26 },
+  emergencyBtnTitle: { fontSize: 14, fontWeight: '800', color: colors.textPrimary, marginBottom: 1 },
+  emergencyBtnSub: { fontSize: 10, color: '#9CA3AF' },
+  emergencyBtnArrow: { color: colors.emergency, fontSize: 16 },
+  editBtn: { width: 64, backgroundColor: colors.bgCard, borderRadius: 16, borderWidth: 0.5, borderColor: colors.bgBorder, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  editBtnIcon: { fontSize: 18 },
+  editBtnText: { fontSize: 10, color: colors.textMuted },
+
+  // Section
+  section: { paddingHorizontal: 20, marginBottom: 24 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  sectionAlertDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.emergency },
   sectionIcon: { fontSize: 14 },
-  sectionTitle: { fontSize: 11, fontWeight: '800', color: colors.textMuted, letterSpacing: 1.5, flex: 1 },
-  sectionCount: { width: 20, height: 20, borderRadius: 10, backgroundColor: colors.emergency, color: colors.white, fontSize: 11, fontWeight: '700', textAlign: 'center', lineHeight: 20 },
-  sectionSub: { fontSize: 12, color: colors.textMuted, marginBottom: 12, marginTop: -8 },
+  sectionTitle: { fontSize: 10, fontWeight: '800', color: '#6B7280', letterSpacing: 1.5, flex: 1 },
+  sectionBadge: { width: 18, height: 18, borderRadius: 9, backgroundColor: colors.emergency, alignItems: 'center', justifyContent: 'center' },
+  sectionBadgeText: { fontSize: 10, color: '#fff', fontWeight: '700' },
+  sectionSub: { fontSize: 11, color: '#4B5563', marginBottom: 12 },
 
-  // Pet card
-  petCard: { backgroundColor: colors.bgCard, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.amber + '40', padding: 16, marginBottom: 12, overflow: 'hidden', ...shadows.amber },
-  shimmer: { position: 'absolute', top: 0, left: 0, right: 0, height: 2, backgroundColor: colors.amber },
-  petCardContent: { flexDirection: 'row', gap: 14, marginBottom: 14 },
-  petPhotoWrap: { position: 'relative' },
-  petPhoto: { width: 80, height: 80, borderRadius: 40, borderWidth: 2, borderColor: colors.amber },
-  petPhotoPlaceholder: { width: 80, height: 80, borderRadius: 40, backgroundColor: colors.amberDim, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.amber },
-  petEmoji: { fontSize: 40 },
-  petOnlineDot: { position: 'absolute', bottom: 2, right: 2, width: 12, height: 12, borderRadius: 6, backgroundColor: colors.safe, borderWidth: 2, borderColor: colors.bgCard },
-  petInfo: { flex: 1, justifyContent: 'center', gap: 4 },
-  petNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  petName: { fontSize: 20, fontWeight: '800', color: colors.textPrimary },
-  petSpeciesBadge: { backgroundColor: colors.amberDim, borderWidth: 0.5, borderColor: colors.amber, borderRadius: radius.sm, paddingHorizontal: 8, paddingVertical: 2 },
-  petSpeciesText: { fontSize: 10, color: colors.amber, fontWeight: '700' },
-  petOwner: { fontSize: 11, color: colors.textMuted },
-  petTagsRow: { flexDirection: 'row', gap: 4, flexWrap: 'wrap', marginTop: 2 },
-  petTag: { backgroundColor: colors.bgBorder, borderRadius: radius.full, paddingHorizontal: 8, paddingVertical: 2 },
-  petTagText: { fontSize: 10, color: colors.textSecondary },
-  petCardFooter: { borderTopWidth: 0.5, borderTopColor: colors.bgBorder, paddingTop: 12 },
-  petStats: { flexDirection: 'row', gap: 16 },
-  petStat: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  petStatNum: { fontSize: 13 },
-  petStatLabel: { fontSize: 11, color: colors.textMuted },
+  // Alert row
+  alertRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#1C0707', borderRadius: 12, borderWidth: 0.5, borderColor: colors.emergency + '40', padding: 12, marginBottom: 8 },
+  alertRowAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#1C0707', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: colors.emergency },
+  alertRowPhoto: { width: 40, height: 40, borderRadius: 20 },
+  alertRowName: { fontSize: 14, fontWeight: '700', color: colors.textPrimary, marginBottom: 2 },
+  alertRowLoc: { fontSize: 11, color: '#6B7280' },
+  alertHelpBtn: { backgroundColor: colors.emergency, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  alertHelpBtnText: { fontSize: 12, fontWeight: '700', color: '#fff' },
 
-  petActions: { gap: 8 },
-  emergencyBtn: { backgroundColor: colors.emergencyDim, borderRadius: radius.lg, borderWidth: 1.5, borderColor: colors.emergency, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  emergencyBtnEmoji: { fontSize: 28 },
-  emergencyBtnTitle: { fontSize: 15, fontWeight: '800', color: colors.textPrimary, marginBottom: 2 },
-  emergencyBtnSub: { fontSize: 11, color: colors.textMuted },
-  emergencyBtnArrow: { color: colors.emergency, fontSize: 18, marginLeft: 'auto' },
-  editBtn: { backgroundColor: colors.bgCard, borderRadius: radius.md, borderWidth: 0.5, borderColor: colors.bgBorder, padding: 10, alignItems: 'center' },
-  editBtnText: { fontSize: 13, color: colors.textSecondary },
-
-  // Alerts
-  alertCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.emergencyDim, borderRadius: radius.md, borderWidth: 0.5, borderColor: colors.emergency + '60', padding: 12, marginBottom: 8 },
-  alertAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.emergencyDim, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: colors.emergency },
-  alertPhoto: { width: 44, height: 44, borderRadius: 22 },
-  alertDogName: { fontSize: 14, fontWeight: '700', color: colors.textPrimary, marginBottom: 2 },
-  alertLocation: { fontSize: 11, color: colors.textMuted, marginBottom: 1 },
-  alertTime: { fontSize: 10, color: colors.textMuted },
-  alertHelpBtn: { backgroundColor: colors.emergency, borderRadius: radius.sm, paddingHorizontal: 12, paddingVertical: 6 },
-  alertHelpBtnText: { fontSize: 12, fontWeight: '700', color: colors.white },
-
-  // Parks
-  parkCard: { backgroundColor: colors.bgCard, borderRadius: radius.lg, borderWidth: 0.5, padding: 14, width: 200 },
-  parkCardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 },
-  parkName: { fontSize: 13, fontWeight: '700', color: colors.textPrimary, marginBottom: 4 },
-  parkStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  // Park cards
+  parkCard: { width: 200, borderRadius: 18, borderWidth: 0.5, padding: 14 },
+  parkCardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  parkEmoji: { fontSize: 28 },
+  parkCountBadge: { borderRadius: 10, padding: 8, alignItems: 'center', minWidth: 48 },
+  parkCount: { fontSize: 22, fontWeight: '900', lineHeight: 24 },
+  parkCountSub: { fontSize: 9, fontWeight: '700' },
+  parkName: { fontSize: 13, fontWeight: '700', color: colors.textPrimary, marginBottom: 6 },
+  parkStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
   parkDot: { width: 6, height: 6, borderRadius: 3 },
-  parkStatusText: { fontSize: 11, fontWeight: '600' },
-  parkCountBadge: { borderRadius: radius.md, padding: 8, alignItems: 'center', minWidth: 44 },
-  parkCount: { fontSize: 20, fontWeight: '800', lineHeight: 22 },
-  parkCountLabel: { fontSize: 9, fontWeight: '600' },
-  parkStats: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
-  parkStat: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  parkStatIcon: { fontSize: 12 },
-  parkStatText: { fontSize: 11, color: colors.textSecondary },
+  parkStatus: { fontSize: 11, fontWeight: '700' },
+  parkMeta: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
+  parkMetaText: { fontSize: 11, color: '#6B7280' },
 
-  // Stats
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  statCard: { flex: 1, minWidth: '45%', backgroundColor: colors.bgCard, borderRadius: radius.lg, borderWidth: 0.5, borderColor: colors.bgBorder, padding: 14, alignItems: 'center', gap: 4 },
-  statIcon: { fontSize: 22 },
-  statNum: { fontSize: 24, fontWeight: '800', color: colors.amber },
-  statLabel: { fontSize: 10, color: colors.textMuted, textAlign: 'center' },
-
-  bottomLinks: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: spacing.xl, marginBottom: 8 },
-  bottomLink: { fontSize: 11, color: colors.textMuted },
-  bottomDot: { fontSize: 11, color: colors.textMuted },
-  langRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 20, marginBottom: 8 },
+  footerLink: { fontSize: 11, color: '#4B5563' },
+  footerDot: { fontSize: 11, color: '#374151' },
 });
