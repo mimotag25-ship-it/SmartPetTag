@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../../lib/supabase';
 import { resolveAlert } from '../../lib/alerts';
 import { router } from 'expo-router';
+import { useLanguage, t } from '../../lib/i18n';
 
 const { width } = Dimensions.get('window');
 const IS_WEB = width > 768;
@@ -11,7 +12,7 @@ const ACCENT = '#00D4AA';
 const ACCENT_DIM = '#003d30';
 
 const STORIES = [
-  { id: 1, name: 'your story', emoji: '🐕', isYou: true },
+  { id: 1, name: t('yourStory'), emoji: '🐕', isYou: true },
   { id: 2, name: 'Luna', emoji: '🐩' },
   { id: 3, name: 'Rocky', emoji: '🐾' },
   { id: 4, name: 'Coco', emoji: '🐕' },
@@ -21,11 +22,11 @@ const STORIES = [
 ];
 
 const POST_TYPES = [
-  { key: 'checkin', label: 'Check-in', icon: '📍', color: '#00D4AA' },
-  { key: 'lost', label: 'Lost', icon: '🚨', color: '#C0392B' },
-  { key: 'spotted', label: 'Spotted', icon: '👀', color: '#F5A623' },
-  { key: 'event', label: 'Event', icon: '🎉', color: '#5856D6' },
-  { key: 'warning', label: 'Warning', icon: '⚠️', color: '#E67E22' },
+  { key: 'checkin', label: t('checkin'), icon: '📍', color: '#00D4AA' },
+  { key: 'lost', label: t('lost'), icon: '🚨', color: '#C0392B' },
+  { key: 'spotted', label: t('spotted'), icon: '👀', color: '#F5A623' },
+  { key: 'event', label: t('event'), icon: '🎉', color: '#5856D6' },
+  { key: 'warning', label: t('warning'), icon: '⚠️', color: '#E67E22' },
 ];
 
 const SUGGESTED = [
@@ -35,14 +36,7 @@ const SUGGESTED = [
   { user: 'Max', owner: 'carlos.m', emoji: '🦮', breed: 'Golden', energy: 5, tags: ['Gentle', 'Loves kids'] },
 ];
 
-const NAV_ITEMS = [
-  { icon: '🏠', label: 'Home', route: '/(tabs)/explore' },
-  { icon: '🔍', label: 'Search', route: null },
-  { icon: '🗺️', label: 'Map', route: '/(tabs)/map' },
-  { icon: '❤️', label: 'Activity', route: null },
-  { icon: '➕', label: 'New post', route: null },
-  { icon: '🐕', label: 'Profile', route: '/(tabs)/index' },
-];
+
 
 const DEMO_POSTS = [
   {
@@ -76,11 +70,11 @@ const DEMO_POSTS = [
 
 function getTypeStyle(type) {
   switch(type) {
-    case 'lost': return { border: '#C0392B', bg: '#1a0505', label: '🚨 LOST DOG', labelColor: '#C0392B' };
-    case 'spotted': return { border: '#F5A623', bg: '#1a1200', label: '👀 SPOTTED', labelColor: '#F5A623' };
-    case 'event': return { border: '#5856D6', bg: '#0d0b1a', label: '🎉 EVENT', labelColor: '#5856D6' };
-    case 'checkin': return { border: '#00D4AA', bg: '#001a14', label: '📍 CHECK-IN', labelColor: '#00D4AA' };
-    case 'warning': return { border: '#E67E22', bg: '#1a0e00', label: '⚠️ WARNING', labelColor: '#E67E22' };
+    case 'lost': return { border: '#C0392B', bg: '#1a0505', label: '🚨 ' + t('lost').toUpperCase(), labelColor: '#C0392B' };
+    case 'spotted': return { border: '#F5A623', bg: '#1a1200', label: '👀 ' + t('spotted').toUpperCase(), labelColor: '#F5A623' };
+    case 'event': return { border: '#5856D6', bg: '#0d0b1a', label: '🎉 ' + t('event').toUpperCase(), labelColor: '#5856D6' };
+    case 'checkin': return { border: '#00D4AA', bg: '#001a14', label: '📍 ' + t('checkin').toUpperCase(), labelColor: '#00D4AA' };
+    case 'warning': return { border: '#E67E22', bg: '#1a0e00', label: '⚠️ ' + t('warning').toUpperCase(), labelColor: '#E67E22' };
     default: return { border: '#1a1a1a', bg: '#0d0d0d', label: null, labelColor: null };
   }
 }
@@ -155,7 +149,7 @@ function AlertCard({ alert, onResolved }) {
     <View style={alertStyles.card}>
       <View style={alertStyles.header}>
         <Animated.View style={[alertStyles.pulsingDot, { transform: [{ scale: pulseAnim }] }]} />
-        <Text style={alertStyles.headerText}>🚨 EMERGENCY — LOST DOG</Text>
+        <Text style={alertStyles.headerText}>{t('emergencyLostDog')}</Text>
         <Text style={alertStyles.timeText}>{getTimeAgo(alert.created_at)}</Text>
       </View>
       <View style={alertStyles.dogRow}>
@@ -178,7 +172,7 @@ function AlertCard({ alert, onResolved }) {
           disabled={resolving}
         >
           <Text style={alertStyles.foundBtnText}>
-            {resolving ? 'Resolving...' : '🙋 I Found This Dog'}
+            {resolving ? 'Resolving...' : t('iFoundThisDog')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity style={alertStyles.shareBtn}>
@@ -214,6 +208,7 @@ const alertStyles = StyleSheet.create({
 });
 
 function Post({ post }) {
+  const { t } = useLanguage();
   const [pawned, setPawned] = useState(false);
   const [paws, setPaws] = useState(post.paws);
   const [showComments, setShowComments] = useState(false);
@@ -318,7 +313,7 @@ function Post({ post }) {
       <View style={styles.postBody}>
         {comments.length > 0 && (
           <TouchableOpacity onPress={() => setShowComments(!showComments)}>
-            <Text style={styles.viewAll}>View all {comments.length} comments</Text>
+            <Text style={styles.viewAll}>{t('viewAll')} {comments.length} {t('comments')}</Text>
           </TouchableOpacity>
         )}
         {showComments && comments.map((c, i) => (
@@ -336,7 +331,7 @@ function Post({ post }) {
         <Text style={{ fontSize: 16, marginRight: 8 }}>🐕</Text>
         <TextInput
           style={styles.commentBox}
-          placeholder="Comment as Athena..."
+          placeholder='Comment as Athena...'
           placeholderTextColor="#333"
           value={commentText}
           onChangeText={setCommentText}
@@ -457,8 +452,17 @@ export default function FeedScreen() {
     loadActivity();
   }
 
+  const { t, lang } = useLanguage();
+  const NAV_ITEMS = [
+    { icon: '🏠', label: t('home'), route: '/(tabs)/explore' },
+    { icon: '🔍', label: t('search'), route: null },
+    { icon: '🗺️', label: t('map'), route: '/(tabs)/map' },
+    { icon: '❤️', label: t('activity'), route: null },
+    { icon: '➕', label: t('newPost'), route: null },
+    { icon: '🐕', label: t('profile'), route: '/(tabs)/index' },
+  ];
   return (
-    <View style={styles.container}>
+    <View key={lang} style={styles.container}>
       {IS_WEB && (
         <View style={styles.sidebar}>
           <View style={styles.sidebarLogoWrap}>
@@ -525,10 +529,10 @@ export default function FeedScreen() {
 
         <View style={styles.modeToggle}>
           <TouchableOpacity style={[styles.modeBtn, feedMode === 'feed' && styles.modeBtnActive]} onPress={() => setFeedMode('feed')}>
-            <Text style={[styles.modeBtnText, feedMode === 'feed' && styles.modeBtnTextActive]}>📸 Feed</Text>
+            <Text style={[styles.modeBtnText, feedMode === 'feed' && styles.modeBtnTextActive]}>{t('feed')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.modeBtn, feedMode === 'map' && styles.modeBtnActive]} onPress={() => setFeedMode('map')}>
-            <Text style={[styles.modeBtnText, feedMode === 'map' && styles.modeBtnTextActive]}>🗺️ Near me</Text>
+            <Text style={[styles.modeBtnText, feedMode === 'map' && styles.modeBtnTextActive]}>{t('nearMe')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -538,7 +542,7 @@ export default function FeedScreen() {
           <View style={styles.alertSection}>
             <View style={styles.alertSectionHeader}>
               <View style={styles.alertSectionDot} />
-              <Text style={styles.alertSectionTitle}>ACTIVE ALERTS NEAR YOU</Text>
+              <Text style={styles.alertSectionTitle}>{t('activeAlertsNearYou')}</Text>
               <Text style={styles.alertSectionCount}>{lostAlerts.length}</Text>
             </View>
             {lostAlerts.map(alert => (
@@ -549,7 +553,7 @@ export default function FeedScreen() {
 
         {showComposer && (
           <View style={styles.composer}>
-            <Text style={styles.composerTitle}>New post as Athena 🐕</Text>
+            <Text style={styles.composerTitle}>{t('newPostAs')} Athena 🐕</Text>
             <View style={styles.postTypeRow}>
               {POST_TYPES.map(pt => (
                 <TouchableOpacity key={pt.key}
@@ -566,19 +570,19 @@ export default function FeedScreen() {
               ) : (
                 <View style={styles.imagePickerEmpty}>
                   <Text style={styles.imagePickerIcon}>📷</Text>
-                  <Text style={styles.imagePickerText}>Tap to add a photo</Text>
+                  <Text style={styles.imagePickerText}>{t('tapAddPhoto')}</Text>
                 </View>
               )}
             </TouchableOpacity>
-            <TextInput style={styles.composerInput} placeholder="What's Athena up to?" placeholderTextColor="#333" value={newCaption} onChangeText={setNewCaption} multiline />
+            <TextInput style={styles.composerInput} placeholder={t('whatsUpTo')} placeholderTextColor="#333" value={newCaption} onChangeText={setNewCaption} multiline />
             <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 12 }}>
               <TouchableOpacity onPress={() => { setShowComposer(false); setNewImage(null); setNewCaption(''); }}>
-                <Text style={{ color: '#444', fontSize: 14 }}>Cancel</Text>
+                <Text style={{ color: '#444', fontSize: 14 }}>{t('cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.shareBtn, (!newCaption.trim() && !newImage) && { opacity: 0.3 }]}
                 onPress={submitPost} disabled={(!newCaption.trim() && !newImage) || uploading}>
-                <Text style={styles.shareBtnText}>{uploading ? 'Posting...' : 'Share'}</Text>
+                <Text style={styles.shareBtnText}>{uploading ? t('posting') : t('sharePost')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -587,10 +591,10 @@ export default function FeedScreen() {
         {feedMode === 'map' && (
           <View style={styles.mapModePlaceholder}>
             <Text style={styles.mapModeEmoji}>🗺️</Text>
-            <Text style={styles.mapModeTitle}>Live dog activity near you</Text>
-            <Text style={styles.mapModeSub}>Switch to the Map tab to see real-time activity around Condesa and Roma</Text>
+            <Text style={styles.mapModeTitle}>{t('liveActivity')}</Text>
+            <Text style={styles.mapModeSub}>{t('mapSub')}</Text>
             <TouchableOpacity style={styles.mapModeBtn} onPress={() => router.push('/(tabs)/map')}>
-              <Text style={styles.mapModeBtnText}>Open Dog Map</Text>
+              <Text style={styles.mapModeBtnText}>{t('openMap')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -625,10 +629,10 @@ export default function FeedScreen() {
                   </View>
                 </View>
               </View>
-              <TouchableOpacity><Text style={styles.followLink}>Follow</Text></TouchableOpacity>
+              <TouchableOpacity><Text style={styles.followLink}>{t('follow')}</Text></TouchableOpacity>
             </View>
           ))}
-          <Text style={styles.footer}>© 2026 SMARTPET TAG · MEXICO CITY</Text>
+          <Text style={styles.footer}>{t('footer')}</Text>
         </View>
       )}
     </View>

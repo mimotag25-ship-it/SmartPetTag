@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { router } from 'expo-router';
+import { useLanguage, t } from '../lib/i18n';
 
 const { width, height } = Dimensions.get('window');
 
@@ -98,6 +99,7 @@ export default function Onboarding() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const { t } = useLanguage();
   const [error, setError] = useState('');
 
   const fadeAnim = useRef(new Animated.Value(1)).current;

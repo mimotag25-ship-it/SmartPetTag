@@ -1,11 +1,16 @@
 import { useState } from 'react';
-import { LanguageContext, translations } from './i18n';
+import { LanguageContext, T, t as globalT, setLanguage, getLanguage } from './i18n';
 
 export default function LanguageProvider({ children }) {
-  const [lang, setLang] = useState('es');
+  const [lang, setLangState] = useState(getLanguage());
+
+  function setLang(newLang) {
+    setLanguage(newLang);
+    setLangState(newLang);
+  }
 
   function t(key) {
-    return translations[lang][key] || translations['en'][key] || key;
+    return T[lang]?.[key] || T['en']?.[key] || key;
   }
 
   return (

@@ -1,10 +1,13 @@
 import { Text } from 'react-native';
 import { Tabs } from 'expo-router';
 import React from 'react';
+import { useLanguage } from '../../lib/i18n';
 
 export default function TabLayout() {
+  const { lang, t } = useLanguage();
   return (
     <Tabs
+      key={lang}
       initialRouteName="explore"
       screenOptions={{
         tabBarActiveTintColor: '#00D4AA',
@@ -21,21 +24,21 @@ export default function TabLayout() {
       <Tabs.Screen
         name="explore"
         options={{
-          title: 'Feed',
+          title: t('feed'),
           tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📸</Text>,
         }}
       />
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Profile',
+          title: t('profile'),
           tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🐾</Text>,
         }}
       />
       <Tabs.Screen
         name="map"
         options={{
-          title: 'Map',
+          title: t('map'),
           tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🗺️</Text>,
         }}
       />

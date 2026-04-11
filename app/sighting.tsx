@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, ActivityIndicator } from 'react-native';
 import { supabase } from '../lib/supabase';
+import { useLanguage, t } from '../lib/i18n';
 import { useLocalSearchParams } from 'expo-router';
 
 export default function PublicSighting() {
   const { alertId } = useLocalSearchParams();
   const [alert, setAlert] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
   const [location, setLocation] = useState('');
   const [message, setMessage] = useState('');
   const [name, setName] = useState('');

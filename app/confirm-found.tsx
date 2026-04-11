@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useLanguage, t } from '../lib/i18n';
 
 export default function ConfirmFound() {
   const { alertId } = useLocalSearchParams();
   const [alert, setAlert] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
   const [confirming, setConfirming] = useState(false);
   const [done, setDone] = useState(false);
   const [howFound, setHowFound] = useState([]);

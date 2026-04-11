@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../../lib/supabase';
 import { router } from 'expo-router';
-import { useLanguage } from '../../lib/i18n';
+import { useLanguage, t } from '../../lib/i18n';
 
 export default function ProfileScreen() {
   const [dog, setDog] = useState(null);
@@ -133,7 +133,7 @@ export default function ProfileScreen() {
         <Text style={styles.dogName}>{dog.name}</Text>
         <Text style={styles.dogBreed}>{dog.breed}</Text>
         <TouchableOpacity style={styles.editProfileBtn} onPress={() => router.push('/edit-profile')}>
-          <Text style={styles.editProfileBtnText}>✏️ Edit full profile</Text>
+          <Text style={styles.editProfileBtnText}>{t('editFullProfile')}</Text>
         </TouchableOpacity>
         <View style={styles.badgeRow}>
           <View style={styles.badge}><Text style={styles.badgeText}>🐾 {dog.age} yrs</Text></View>
@@ -145,8 +145,8 @@ export default function ProfileScreen() {
       <TouchableOpacity style={styles.chatBtn} onPress={() => router.push('/chat')}>
         <Text style={styles.chatBtnEmoji}>💬</Text>
         <View>
-          <Text style={styles.chatBtnTitle}>Messages</Text>
-          <Text style={styles.chatBtnSub}>Chat with nearby dog owners</Text>
+          <Text style={styles.chatBtnTitle}>{t('chatMessages')}</Text>
+          <Text style={styles.chatBtnSub}>{t('chatWithOwners')}</Text>
         </View>
         <Text style={styles.chatBtnArrow}>→</Text>
       </TouchableOpacity>
@@ -154,8 +154,8 @@ export default function ProfileScreen() {
       <TouchableOpacity style={styles.emergencyBtn} onPress={() => router.push('/emergency')}>
         <Text style={styles.emergencyBtnEmoji}>🚨</Text>
         <View>
-          <Text style={styles.emergencyBtnTitle}>{dog.name} Is Lost</Text>
-          <Text style={styles.emergencyBtnSub}>Tap to instantly alert the community</Text>
+          <Text style={styles.emergencyBtnTitle}>{dog.name} {t('dogIsLost')}</Text>
+          <Text style={styles.emergencyBtnSub}>{t('tapToAlert')}</Text>
         </View>
         <Text style={styles.emergencyBtnArrow}>→</Text>
       </TouchableOpacity>
@@ -178,37 +178,37 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.infoCard}>
-        <Text style={styles.cardTitle}>Profile</Text>
+        <Text style={styles.cardTitle}>{t('profile')}</Text>
         <View style={styles.infoRow}>
           <Text style={styles.infoIcon}>👤</Text>
-          <Text style={styles.infoLabel}>Owner</Text>
+          <Text style={styles.infoLabel}>{t('owner')}</Text>
           <Text style={styles.infoValue}>{dog.owner_name}</Text>
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.infoIcon}>📞</Text>
-          <Text style={styles.infoLabel}>Phone</Text>
+          <Text style={styles.infoLabel}>{t('phone')}</Text>
           <Text style={styles.infoValue}>{dog.owner_phone || 'Not set'}</Text>
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.infoIcon}>🐾</Text>
-          <Text style={styles.infoLabel}>Personality</Text>
+          <Text style={styles.infoLabel}>{t('personality')}</Text>
           <Text style={styles.infoValue}>{dog.personality}</Text>
         </View>
         <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
           <Text style={styles.infoIcon}>📍</Text>
-          <Text style={styles.infoLabel}>Area</Text>
+          <Text style={styles.infoLabel}>{t('area')}</Text>
           <Text style={styles.infoValue}>{dog.neighbourhood}</Text>
         </View>
       </View>
 
       <View style={styles.infoCard}>
-        <Text style={styles.cardTitle}>Activity</Text>
+        <Text style={styles.cardTitle}>{t('activity')}</Text>
         <View style={styles.activityGrid}>
           {[
-            { icon: '🚨', value: stats.alerts, label: 'Alerts triggered' },
-            { icon: '🐕', value: stats.found, label: 'Dogs found' },
-            { icon: '👀', value: stats.sightings, label: 'Sightings reported' },
-            { icon: '📸', value: stats.posts, label: 'Posts made' },
+            { icon: '🚨', value: stats.alerts, label: t('alertsTriggered') },
+            { icon: '🐕', value: stats.found, label: t('dogsFound') },
+            { icon: '👀', value: stats.sightings, label: t('sightingsReported') },
+            { icon: '📸', value: stats.posts, label: t('postsMade') },
           ].map((s, i) => (
             <View key={i} style={styles.activityCard}>
               <Text style={styles.activityCardIcon}>{s.icon}</Text>

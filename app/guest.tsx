@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { router } from 'expo-router';
+import { useLanguage, t } from '../lib/i18n';
 
 export default function GuestScreen() {
   const [alerts, setAlerts] = useState([]);
@@ -17,6 +18,8 @@ export default function GuestScreen() {
       ])
     ).start();
   }, []);
+
+  const { t } = useLanguage();
 
   async function loadData() {
     const { data: alertData } = await supabase
@@ -57,7 +60,7 @@ export default function GuestScreen() {
           <View style={styles.statCard}>
             <Text style={[styles.statNum, alerts.length > 0 && { color: '#C0392B' }]}>{alerts.length}</Text>
             <Text style={[styles.statLabel, alerts.length > 0 && { color: '#C0392B' }]}>
-              {alerts.length > 0 ? 'Active alerts 🚨' : 'Active alerts'}
+              {alerts.length > 0 ? t('activeAlerts') + ' 🚨' : t('activeAlerts')}
             </Text>
           </View>
         </View>

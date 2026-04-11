@@ -1,11 +1,13 @@
 import { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated, TextInput, Share } from 'react-native';
 import { supabase } from '../lib/supabase';
+import { useLanguage, t } from '../lib/i18n';
 import { sendLostDogAlert } from '../lib/notifications';
 import { router } from 'expo-router';
 
 export default function Emergency() {
   const [dog, setDog] = useState(null);
+  const { t } = useLanguage();
   const [step, setStep] = useState('confirm');
   const [lastSeen, setLastSeen] = useState('');
   const [description, setDescription] = useState('');

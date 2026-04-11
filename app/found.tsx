@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image,
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useLanguage, t } from '../lib/i18n';
 
 export default function FoundDog() {
   const { alertId, dogName, ownerName, ownerPhone, neighbourhood } = useLocalSearchParams();
@@ -12,6 +13,7 @@ export default function FoundDog() {
   const [contacted, setContacted] = useState(false);
   const [finderName, setFinderName] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const { t } = useLanguage();
   const [createdConvId, setCreatedConvId] = useState(null);
   const [done, setDone] = useState(false);
 
@@ -138,7 +140,7 @@ export default function FoundDog() {
           <View style={styles.contactRow}>
             <TouchableOpacity style={styles.contactBtn}><Text style={styles.contactBtnText}>📞 Call {ownerPhone}</Text></TouchableOpacity>
             <TouchableOpacity style={[styles.confirmBtn, contacted && styles.confirmBtnDone]} onPress={() => setContacted(!contacted)}>
-              <Text style={[styles.confirmBtnText, contacted && styles.confirmBtnTextDone]}>{contacted ? '✓ Contacted' : 'Mark as contacted'}</Text>
+              <Text style={[styles.confirmBtnText, contacted && styles.confirmBtnTextDone]}>{contacted ? t('contacted') : t('markContacted')}</Text>
             </TouchableOpacity>
           </View>
         </View>

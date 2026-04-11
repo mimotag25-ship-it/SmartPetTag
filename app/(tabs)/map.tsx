@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated, Platform, Share } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated, Platform, Share, Image } from 'react-native';
+import { useLanguage, t } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { router } from 'expo-router';
 
@@ -13,6 +14,7 @@ export default function MapScreen() {
   const [selectedDog, setSelectedDog] = useState(null);
   const [myVisibility, setMyVisibility] = useState('public');
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const { t, lang } = useLanguage();
   const slideAnim = useRef(new Animated.Value(300)).current;
 
   useEffect(() => {
@@ -143,13 +145,13 @@ export default function MapScreen() {
   }, [dogs, alerts, radius]);
 
   const VISIBILITY_OPTIONS = [
-    { key: 'public', label: 'Public', icon: '🟢', desc: 'Everyone can see your dog on the map' },
-    { key: 'community', label: 'Community only', icon: '🟡', desc: 'Only verified SmartPet Tag users can see' },
-    { key: 'private', label: 'Private', icon: '🔴', desc: 'Only you can see your dog\'s location' },
+    { key: 'public', label: t('visible'), icon: '🟢', desc: t('visPublic') },
+    { key: 'community', label: t('communityOnly'), icon: '🟡', desc: t('visCommunity') },
+    { key: 'private', label: t('hidden'), icon: '🔴', desc: 'Only you can see your dog\'s location' },
   ];
 
   return (
-    <View style={styles.container}>
+    <View key={lang} style={styles.container}>
       <View style={styles.topBar}>
         <Text style={styles.appName}>SmartPet Tag</Text>
         <TouchableOpacity
@@ -166,7 +168,7 @@ export default function MapScreen() {
         </TouchableOpacity>
         <TouchableOpacity style={styles.privacyBtn} onPress={() => setShowPrivacy(!showPrivacy)}>
           <Text style={styles.privacyBtnIcon}>{myVisibility === 'public' ? '🟢' : myVisibility === 'community' ? '🟡' : '🔴'}</Text>
-          <Text style={styles.privacyBtnText}>{myVisibility === 'public' ? 'Visible' : myVisibility === 'community' ? 'Community' : 'Hidden'}</Text>
+          <Text style={styles.privacyBtnText}>{myVisibility === 'public' ? t('visible') : myVisibility === 'community' ? t('community') : t('hidden')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -189,7 +191,7 @@ export default function MapScreen() {
           {['all', 'dogs', 'lost', 'parks'].map(f => (
             <TouchableOpacity key={f} style={[styles.filterPill, filter === f && styles.filterPillActive]} onPress={() => setFilter(f)}>
               <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>
-                {f === 'all' ? '🗺️ All' : f === 'dogs' ? '🐶 Dogs' : f === 'lost' ? '🚨 Lost' : '🌳 Parks'}
+                {f === 'all' ? '🗺️ ' + t('all') : f === 'dogs' ? '🐶 ' + t('dogs') : f === 'lost' ? '🚨 ' + t('lost') : '🌳 ' + t('parks')}
               </Text>
             </TouchableOpacity>
           ))}
@@ -240,9 +242,9 @@ export default function MapScreen() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16, paddingHorizontal: 16 }}>
           {[
             { color: '#C0392B', label: 'You' },
-            { color: '#00D4AA', label: 'Public dogs' },
-            { color: '#F5A623', label: 'Community only' },
-            { color: '#C0392B', label: 'Lost alerts' },
+            { color: '#00D4AA', label: t('publicDogs') },
+            { color: '#F5A623', label: t('communityOnly') },
+            { color: '#C0392B', label: t('lostAlerts') },
           ].map((item, i) => (
             <View key={i} style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: item.color }]} />
@@ -252,47 +254,109 @@ export default function MapScreen() {
         </ScrollView>
       </View>
 
-      {/* Dog profile popup */}
+      {/* Dog profile popup — full card */}
       {selectedDog && (
         <Animated.View style={[styles.dogPopup, { transform: [{ translateY: slideAnim }] }]}>
           <View style={styles.popupHandle} />
-          <View style={styles.popupHeader}>
-            <View style={styles.popupAvatar}>
-              <Text style={styles.popupAvatarEmoji}>{selectedDog.emoji}</Text>
-              {selectedDog.is_moving && <View style={styles.movingDot} />}
+
+          {/* Close */}
+          <TouchableOpacity style={styles.popupCloseBtn} onPress={closeDogProfile}>
+            <Text style={styles.closeBtn}>✕</Text>
+          </TouchableOpacity>
+
+          {/* Hero section — photo + name */}
+          <View style={styles.popupHero}>
+            <View style={styles.popupPhotoWrap}>
+              {selectedDog.photo_url ? (
+                <Image source={{ uri: selectedDog.photo_url }} style={styles.popupPhoto} />
+              ) : (
+                <View style={styles.popupPhotoPlaceholder}>
+                  <Text style={styles.popupAvatarEmoji}>{selectedDog.emoji}</Text>
+                </View>
+              )}
+              {selectedDog.is_moving && (
+                <View style={styles.movingBadge}>
+                  <Text style={styles.movingBadgeText}>🟢 Moving</Text>
+                </View>
+              )}
             </View>
-            <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                <Text style={styles.popupDogName}>{selectedDog.dog_name}</Text>
+            <View style={styles.popupHeroInfo}>
+              <Text style={styles.popupDogName}>{selectedDog.dog_name}</Text>
+              <Text style={styles.popupBreed}>{selectedDog.breed}{selectedDog.age ? ` · ${selectedDog.age} yrs` : ''}</Text>
+              <View style={styles.popupBadgeRow}>
                 <View style={[styles.visibilityBadge, { backgroundColor: selectedDog.visibility === 'community' ? '#1a1200' : '#003d30' }]}>
                   <Text style={[styles.visibilityBadgeText, { color: selectedDog.visibility === 'community' ? '#F5A623' : '#00D4AA' }]}>
                     {selectedDog.visibility === 'community' ? '🟡 Community' : '🟢 Public'}
                   </Text>
                 </View>
+                {selectedDog.vaccinated && (
+                  <View style={styles.vaccineBadge}>
+                    <Text style={styles.vaccineBadgeText}>💉 Vaccinated</Text>
+                  </View>
+                )}
+                {selectedDog.has_microchip && (
+                  <View style={styles.microchipBadge}>
+                    <Text style={styles.microchipBadgeText}>📡 Chipped</Text>
+                  </View>
+                )}
               </View>
-              <Text style={styles.popupBreed}>{selectedDog.breed}</Text>
-              <Text style={styles.popupStatus}>{selectedDog.is_moving ? '🟢 Moving now' : '⚪ Stationary'}</Text>
             </View>
-            <TouchableOpacity onPress={closeDogProfile}>
-              <Text style={styles.closeBtn}>✕</Text>
+          </View>
+
+          {/* Personality tags */}
+          {selectedDog.tags && selectedDog.tags.length > 0 && (
+            <View style={styles.popupTagsRow}>
+              {selectedDog.tags.slice(0, 5).map((tag, i) => (
+                <View key={i} style={styles.popupTag}>
+                  <Text style={styles.popupTagText}>{tag}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Energy meter */}
+          <View style={styles.popupEnergyRow}>
+            <Text style={styles.popupEnergyLabel}>Energy</Text>
+            <View style={styles.popupEnergyBars}>
+              {[1,2,3,4,5].map(i => (
+                <View key={i} style={[styles.popupEnergyBar, i <= 4 && styles.popupEnergyBarFill]} />
+              ))}
+            </View>
+            <Text style={styles.popupStatus}>{selectedDog.is_moving ? '🟢 ' + t('movingNow') : '⚪ ' + t('resting')}</Text>
+          </View>
+
+          {/* Details */}
+          <View style={styles.popupDetails}>
+            <View style={styles.popupDetailRow}>
+              <Text style={styles.popupDetailIcon}>👤</Text>
+              <Text style={styles.popupDetailLabel}>Owner</Text>
+              <Text style={styles.popupDetailValue}>{selectedDog.owner_name}</Text>
+            </View>
+            {selectedDog.size && (
+              <View style={styles.popupDetailRow}>
+                <Text style={styles.popupDetailIcon}>📏</Text>
+                <Text style={styles.popupDetailLabel}>Size</Text>
+                <Text style={styles.popupDetailValue}>{selectedDog.size}</Text>
+              </View>
+            )}
+            {selectedDog.favourite_spots && (
+              <View style={styles.popupDetailRow}>
+                <Text style={styles.popupDetailIcon}>📍</Text>
+                <Text style={styles.popupDetailLabel}>Favourite spots</Text>
+                <Text style={styles.popupDetailValue} numberOfLines={2}>{selectedDog.favourite_spots}</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Actions */}
+          <View style={styles.popupActions}>
+            <TouchableOpacity
+              style={styles.popupChatBtn}
+              onPress={() => { closeDogProfile(); router.push({ pathname: '/message', params: { conversationId: 'new', otherDog: selectedDog.dog_name, otherOwner: '' } }); }}
+            >
+              <Text style={styles.popupChatBtnText}>💬 Say hello to {selectedDog.dog_name}</Text>
             </TouchableOpacity>
           </View>
-          <View style={styles.popupBody}>
-            <View style={styles.popupRow}>
-              <Text style={styles.popupLabel}>🐾 Personality</Text>
-              <Text style={styles.popupValue}>{selectedDog.personality}</Text>
-            </View>
-            <View style={styles.popupRow}>
-              <Text style={styles.popupLabel}>👤 Owner</Text>
-              <Text style={styles.popupValue}>{selectedDog.owner_name}</Text>
-            </View>
-          </View>
-          <TouchableOpacity
-            style={styles.popupChatBtn}
-            onPress={() => { closeDogProfile(); router.push({ pathname: '/message', params: { conversationId: 'new', otherDog: selectedDog.dog_name, otherOwner: '' } }); }}
-          >
-            <Text style={styles.popupChatBtnText}>💬 Say hello to {selectedDog.dog_name}</Text>
-          </TouchableOpacity>
         </Animated.View>
       )}
 
@@ -374,11 +438,38 @@ const styles = StyleSheet.create({
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
   legendText: { fontSize: 11, color: '#444' },
-  dogPopup: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#0d0d0d', borderTopLeftRadius: 24, borderTopRightRadius: 24, borderTopWidth: 0.5, borderColor: '#1a1a1a', padding: 20, paddingTop: 12 },
+  dogPopup: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#0d0d0d', borderTopLeftRadius: 24, borderTopRightRadius: 24, borderTopWidth: 0.5, borderColor: '#1a1a1a', padding: 20, paddingTop: 12, maxHeight: '85%' },
+  popupCloseBtn: { position: 'absolute', top: 16, right: 16, zIndex: 10 },
+  popupHero: { flexDirection: 'row', gap: 14, marginBottom: 12 },
+  popupPhotoWrap: { position: 'relative' },
+  popupPhoto: { width: 110, height: 110, borderRadius: 55, borderWidth: 3, borderColor: '#00D4AA' },
+  popupPhotoPlaceholder: { width: 110, height: 110, borderRadius: 55, backgroundColor: '#111', alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#00D4AA' },
+  movingBadge: { position: 'absolute', bottom: -4, left: 0, right: 0, alignItems: 'center' },
+  movingBadgeText: { fontSize: 9, color: '#00D4AA', fontWeight: '700', backgroundColor: '#050508', paddingHorizontal: 4, borderRadius: 6 },
+  popupHeroInfo: { flex: 1, justifyContent: 'center' },
+  popupBadgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 },
+  vaccineBadge: { backgroundColor: '#051a10', borderWidth: 0.5, borderColor: '#1D9E75', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+  vaccineBadgeText: { fontSize: 9, color: '#1D9E75', fontWeight: '600' },
+  microchipBadge: { backgroundColor: '#0d0b1a', borderWidth: 0.5, borderColor: '#5856D6', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+  microchipBadgeText: { fontSize: 9, color: '#5856D6', fontWeight: '600' },
+  popupTagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
+  popupTag: { backgroundColor: '#111', borderWidth: 0.5, borderColor: '#222', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
+  popupTagText: { fontSize: 11, color: '#555' },
+  popupEnergyRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+  popupEnergyLabel: { fontSize: 11, color: '#444', width: 50 },
+  popupEnergyBars: { flexDirection: 'row', gap: 3 },
+  popupEnergyBar: { width: 16, height: 6, borderRadius: 3, backgroundColor: '#1a1a1a' },
+  popupEnergyBarFill: { backgroundColor: '#00D4AA' },
+  popupDetails: { borderTopWidth: 0.5, borderTopColor: '#1a1a1a', paddingTop: 10, marginBottom: 10 },
+  popupDetailRow: { flexDirection: 'row', alignItems: 'flex-start', paddingVertical: 6, borderBottomWidth: 0.5, borderBottomColor: '#111' },
+  popupDetailIcon: { fontSize: 13, width: 24 },
+  popupDetailLabel: { fontSize: 12, color: '#555', width: 100 },
+  popupDetailValue: { fontSize: 12, color: '#ccc', flex: 1 },
+  popupActions: { gap: 8 },
   popupHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#222', alignSelf: 'center', marginBottom: 16 },
   popupHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
   popupAvatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#111', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#00D4AA', position: 'relative' },
-  popupAvatarEmoji: { fontSize: 26 },
+  popupAvatarEmoji: { fontSize: 52 },
   movingDot: { position: 'absolute', top: 0, right: 0, width: 12, height: 12, borderRadius: 6, backgroundColor: '#00D4AA', borderWidth: 2, borderColor: '#0d0d0d' },
   popupDogName: { fontSize: 18, fontWeight: '700', color: '#fff' },
   visibilityBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },

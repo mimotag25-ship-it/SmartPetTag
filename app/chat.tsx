@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { router } from 'expo-router';
+import { useLanguage, t } from '../lib/i18n';
 
 export default function ChatList() {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     loadConversations();
