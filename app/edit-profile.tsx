@@ -71,10 +71,8 @@ export default function EditProfile() {
       if_found_instructions: ifFoundInstructions,
       responds_to: respondsTo,
     }).eq('id', dog.id);
-    console.log('Save result:', error);
     setSaving(false);
     if (!error) setSaved(true);
-    else console.log('Save error:', error.message);
     setTimeout(() => setSaved(false), 2000);
   }
 

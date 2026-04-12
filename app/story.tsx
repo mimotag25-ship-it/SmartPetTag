@@ -93,7 +93,7 @@ export default function StoryScreen() {
 
       const { data: dog } = await supabase.from('dogs').select('*').single();
       await supabase.from('stories').insert({
-        dog_name: dog?.name || 'Athena',
+        dog_name: dog?.name || '',
         owner_name: dog?.owner_name || '',
         emoji: dog?.emoji || '🐕',
         photo_url: urlData.publicUrl,
@@ -101,7 +101,7 @@ export default function StoryScreen() {
       });
       router.back();
     } catch (e) {
-      console.log('Story upload error:', e.message);
+      
     }
     setUploading(false);
   }

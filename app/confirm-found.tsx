@@ -58,7 +58,7 @@ export default function ConfirmFound() {
       message: `${alert?.dog_name} is still missing — false report dismissed`,
       neighbourhood: alert?.neighbourhood || 'Nearby', urgent: true,
     });
-    router.replace('/(tabs)/index');
+    router.replace('/(tabs)/explore');
   }
 
   if (loading) return (
@@ -79,7 +79,7 @@ export default function ConfirmFound() {
           <Text style={styles.statsLine}>🦸 Found by: {alert?.finder_name}</Text>
           <Text style={styles.statsLine}>✓ Confirmed by: You (owner)</Text>
         </View>
-        <TouchableOpacity style={styles.doneBtn} onPress={() => router.replace('/(tabs)/index')}>
+        <TouchableOpacity style={styles.doneBtn} onPress={() => router.replace('/(tabs)/explore')}>
           <Text style={styles.doneBtnText}>Back to profile</Text>
         </TouchableOpacity>
       </View>

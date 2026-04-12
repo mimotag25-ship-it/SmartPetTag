@@ -54,7 +54,7 @@ function Post({ post }) {
 
   async function submitComment() {
     if (!commentText.trim()) return;
-    await supabase.from('comments').insert({ post_id: post.id, author: post.dog_name || 'Athena', text: commentText });
+    await supabase.from('comments').insert({ post_id: post.id, author: currentDog?.name || post.dog_name || 'Anonymous', text: commentText });
     setCommentText('');
     loadComments();
   }
@@ -84,7 +84,7 @@ function Post({ post }) {
         </View>
         <View style={{ flex: 1 }}>
           <View style={styles.postMeta}>
-            <Text style={styles.postDogName}>{post.dog_name || 'Athena'}</Text>
+            <Text style={styles.postDogName}>{post.dog_name || 'Unknown'}</Text>
             {post.breed && <View style={styles.breedBadge}><Text style={styles.breedBadgeText}>{post.breed}</Text></View>}
             {post.energy && (
               <View style={{ flexDirection: 'row', gap: 2 }}>
@@ -95,7 +95,7 @@ function Post({ post }) {
             )}
           </View>
           <View style={styles.postSubMeta}>
-            <Text style={styles.postOwner}>by {post.owner_name || 'liliana.gutierrez'}</Text>
+            <Text style={styles.postOwner}>by {post.owner_name || ''}</Text>
             {post.location && <Text style={styles.postLocation}>📍 {post.location}</Text>}
             <Text style={styles.postTime}>{getTimeAgo(post.created_at)}</Text>
           </View>
@@ -146,7 +146,7 @@ function Post({ post }) {
           <View style={styles.commentInput}>
             <TextInput
               style={styles.commentBox}
-              placeholder={t('commentAs') + ' Athena...'}
+              placeholder={t('commentAs') + ' ' + (currentDog?.name || 'your pet') + '...'}
               placeholderTextColor={colors.textMuted}
               value={commentText}
               onChangeText={setCommentText}
@@ -215,11 +215,20 @@ export default function CommunityScreen() {
   const [posting, setPosting] = useState(false);
   const [feedMode, setFeedMode] = useState('feed');
   const [refreshing, setRefreshing] = useState(false);
+  const [currentDog, setCurrentDog] = useState(null);
   const { t, lang } = useLanguage();
 
   useEffect(() => {
     loadAll();
+    loadCurrentDog();
   }, []);
+
+  async function loadCurrentDog() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { const { data } = await supabase.from('dogs').select('*').single(); if (data) setCurrentDog(data); return; }
+    const { data } = await supabase.from('dogs').select('*').eq('owner_email', user.email).single();
+    if (data) setCurrentDog(data);
+  }
 
   async function loadAll() {
     await Promise.all([loadAlerts(), loadPosts()]);
@@ -264,8 +273,8 @@ export default function CommunityScreen() {
     }
     await supabase.from('posts').insert({
       type: postType, text: postText, image: imageUrl,
-      dog_name: 'Athena', owner_name: 'liliana.gutierrez',
-      location: 'Portales, CDMX', paws: 0,
+      dog_name: currentDog?.name || 'Anonymous', owner_name: currentDog?.owner_name || '',
+      location: currentDog?.neighbourhood || 'CDMX', paws: 0,
     });
     setPostText(''); setPostImage(null); setShowComposer(false); setPosting(false);
     loadPosts();
@@ -304,7 +313,7 @@ export default function CommunityScreen() {
         {/* Composer */}
         {showComposer && (
           <View style={styles.composer}>
-            <Text style={styles.composerTitle}>{t('newPostAs')} Athena 🐾</Text>
+            <Text style={styles.composerTitle}>{t('newPostAs')} {currentDog?.name || 'your pet'} 🐾</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 14 }}>
               {POST_TYPES.map(pt => (
                 <TouchableOpacity

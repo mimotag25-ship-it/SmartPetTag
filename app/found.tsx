@@ -36,7 +36,7 @@ export default function FoundDog() {
         const fileName = `found-${Date.now()}.jpg`;
         const { error } = await supabase.storage.from('posts').upload(fileName, blob, { contentType: 'image/jpeg' });
         if (!error) { const { data } = supabase.storage.from('posts').getPublicUrl(fileName); photoUrl = data.publicUrl; }
-      } catch (e) { console.log('Upload error:', e.message); }
+      } catch (e) {}
     }
 
     await supabase.from('lost_alerts').update({

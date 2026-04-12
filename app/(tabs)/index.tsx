@@ -257,34 +257,40 @@ export default function HomeScreen() {
             ))}
           </View>
 
-          {/* Card stats */}
+          {/* Card stats — meaningful metrics */}
           <View style={s.cardStats}>
             <View style={s.cardStat}>
-              <Text style={s.cardStatNum}>{stats.alerts}</Text>
-              <Text style={s.cardStatLabel}>Alerts</Text>
+              <Text style={s.cardStatNum}>{Math.floor((new Date() - new Date(dog.created_at || Date.now())) / 86400000) || 1}</Text>
+              <Text style={s.cardStatLabel}>Days protected</Text>
             </View>
             <View style={s.cardStatDivider} />
             <View style={s.cardStat}>
-              <Text style={s.cardStatNum}>{stats.found}</Text>
-              <Text style={s.cardStatLabel}>Found</Text>
+              <Text style={s.cardStatNum}>{stats.found > 0 ? '🦸' : stats.alerts > 0 ? '⚡' : '🌱'}</Text>
+              <Text style={s.cardStatLabel}>{stats.found > 0 ? 'Hero' : stats.alerts > 0 ? 'Active' : 'Member'}</Text>
             </View>
             <View style={s.cardStatDivider} />
             <View style={s.cardStat}>
-              <Text style={s.cardStatNum}>{stats.sightings}</Text>
-              <Text style={s.cardStatLabel}>Sightings</Text>
-            </View>
-            <View style={s.cardStatDivider} />
-            <View style={s.cardStat}>
-              <Text style={s.cardStatNum}>{stats.posts}</Text>
-              <Text style={s.cardStatLabel}>Posts</Text>
+              <Text style={s.cardStatNum}>🟢</Text>
+              <Text style={s.cardStatLabel}>Network live</Text>
             </View>
           </View>
 
-          {/* Card footer badges */}
-          <View style={s.cardBadges}>
-            {dog.vaccinated !== false && <View style={[s.cardBadge, { borderColor: '#10B981', backgroundColor: '#052016' }]}><Text style={[s.cardBadgeText, { color: '#10B981' }]}>💉 Vaccinated</Text></View>}
-            {dog.has_microchip && <View style={[s.cardBadge, { borderColor: '#6366F1', backgroundColor: '#0F0F2E' }]}><Text style={[s.cardBadgeText, { color: '#6366F1' }]}>📡 Chipped</Text></View>}
-            {dog.has_gps_tag && <View style={[s.cardBadge, { borderColor: colors.amber, backgroundColor: colors.amberDim }]}><Text style={[s.cardBadgeText, { color: colors.amber }]}>📍 GPS Tag</Text></View>}
+          {/* Card actions */}
+          <View style={s.cardActions}>
+            <TouchableOpacity style={s.cardActionBtn} onPress={async () => { try { const { Share } = require('react-native'); await Share.share({ message: `🐾 Meet ${dog?.name}! SmartPet Tag profile: smartpettag.app` }); } catch(e) {} }}>
+              <Text style={s.cardActionIcon}>🔗</Text>
+              <Text style={s.cardActionText}>Share profile</Text>
+            </TouchableOpacity>
+            <View style={s.cardActionDivider} />
+            <TouchableOpacity style={s.cardActionBtn} onPress={() => router.push('/edit-profile')}>
+              <Text style={s.cardActionIcon}>📋</Text>
+              <Text style={s.cardActionText}>Medical info</Text>
+            </TouchableOpacity>
+            <View style={s.cardActionDivider} />
+            <TouchableOpacity style={s.cardActionBtn} onPress={() => router.push('/emergency')}>
+              <Text style={s.cardActionIcon}>🚨</Text>
+              <Text style={s.cardActionText}>Alert</Text>
+            </TouchableOpacity>
           </View>
         </Animated.View>
       )}
@@ -352,8 +358,8 @@ export default function HomeScreen() {
           <Text style={s.footerLink}>{t('privacyPolicy')}</Text>
         </TouchableOpacity>
         <Text style={s.footerDot}>·</Text>
-        <TouchableOpacity onPress={() => router.push('/guest')}>
-          <Text style={s.footerLink}>About</Text>
+        <TouchableOpacity onPress={() => router.push('/privacy')}>
+          <Text style={s.footerLink}>About SmartPet Tag</Text>
         </TouchableOpacity>
       </View>
       <View style={{ height: 40 }} />
@@ -417,9 +423,11 @@ const s = StyleSheet.create({
   cardStatLabel: { fontSize: 10, color: colors.textMuted, marginTop: 1 },
   cardStatDivider: { width: 0.5, backgroundColor: colors.bgBorder },
 
-  cardBadges: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
-  cardBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 0.5 },
-  cardBadgeText: { fontSize: 11, fontWeight: '600' },
+  cardActions: { flexDirection: 'row', backgroundColor: '#0D1526', borderRadius: 14, overflow: 'hidden', marginTop: 2 },
+  cardActionBtn: { flex: 1, alignItems: 'center', paddingVertical: 12, gap: 4 },
+  cardActionDivider: { width: 0.5, backgroundColor: colors.bgBorder },
+  cardActionIcon: { fontSize: 18 },
+  cardActionText: { fontSize: 10, color: colors.textMuted, fontWeight: '600' },
 
   // Actions
   actions: { flexDirection: 'row', gap: 10, paddingHorizontal: 20, marginBottom: 24 },

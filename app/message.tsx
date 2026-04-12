@@ -5,13 +5,23 @@ import { router, useLocalSearchParams } from 'expo-router';
 
 export default function MessageScreen() {
   const { conversationId, otherDog, otherOwner } = useLocalSearchParams();
+
+  useEffect(() => {
+    async function loadMyDogName() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { const { data } = await supabase.from('dogs').select('name').single(); if (data) setMyDogName(data.name); return; }
+      const { data } = await supabase.from('dogs').select('name').eq('owner_email', user.email).single();
+      if (data) setMyDogName(data.name);
+    }
+    loadMyDogName();
+  }, []);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [convId, setConvId] = useState(conversationId !== 'new' ? conversationId : null);
   const scrollRef = useRef(null);
-  const MY_DOG = 'Athena';
+  const [myDogName, setMyDogName] = useState('Me');
   const MY_NAME = 'Liliana Gutierrez';
 
   useEffect(() => {
@@ -48,14 +58,14 @@ export default function MessageScreen() {
     if (!activeConvId) {
       const { data: newConv } = await supabase
         .from('conversations')
-        .insert({ dog1_name: MY_DOG, dog2_name: otherDog, owner1_phone: '', owner2_phone: otherOwner || '', last_message: msgText })
+        .insert({ dog1_name: myDogName, dog2_name: otherDog, owner1_phone: '', owner2_phone: otherOwner || '', last_message: msgText })
         .select()
         .single();
       if (newConv) { activeConvId = newConv.id; setConvId(newConv.id); }
     }
 
     if (activeConvId) {
-      const newMsg = { conversation_id: activeConvId, sender_dog: MY_DOG, sender_name: MY_NAME, text: msgText, created_at: new Date().toISOString() };
+      const newMsg = { conversation_id: activeConvId, sender_dog: myDogName, sender_name: MY_NAME, text: msgText, created_at: new Date().toISOString() };
       setMessages(prev => [...prev, { ...newMsg, id: Date.now() }]);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
 
@@ -106,7 +116,7 @@ export default function MessageScreen() {
             </View>
           )}
           {messages.map((msg, i) => {
-            const isMe = msg.sender_dog === MY_DOG;
+            const isMe = msg.sender_dog === myDogName;
             return (
               <View key={msg.id || i} style={[styles.msgRow, isMe && styles.msgRowMe, { marginBottom: 8 }]}>
                 {!isMe && (
@@ -131,7 +141,7 @@ export default function MessageScreen() {
         </View>
         <TextInput
           style={styles.input}
-          placeholder={`Message as ${MY_DOG}...`}
+          placeholder={`Message as ${myDogName}...`}
           placeholderTextColor="#333"
           value={text}
           onChangeText={setText}

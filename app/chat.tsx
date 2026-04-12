@@ -7,13 +7,22 @@ import { useLanguage, t } from '../lib/i18n';
 export default function ChatList() {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [myDog, setMyDog] = useState(null);
   const { t } = useLanguage();
 
   useEffect(() => {
+    loadMyDog();
     loadConversations();
     const interval = setInterval(loadConversations, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  async function loadMyDog() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { const { data } = await supabase.from('dogs').select('*').single(); if (data) setMyDog(data); return; }
+    const { data } = await supabase.from('dogs').select('*').eq('owner_email', user.email).single();
+    if (data) setMyDog(data);
+  }
 
   async function loadConversations() {
     const { data } = await supabase
@@ -39,8 +48,8 @@ export default function ChatList() {
     const { data } = await supabase
       .from('conversations')
       .insert({
-        dog1_name: 'Athena',
-        dog2_name: 'Luna',
+        dog1_name: myDog?.name || 'Me',
+        dog2_name: otherDog || 'Unknown',
         owner1_phone: '+52 55 4532-0981',
         owner2_phone: '',
         last_message: '',
@@ -51,7 +60,7 @@ export default function ChatList() {
     if (data) {
       router.push({
         pathname: '/message',
-        params: { conversationId: data.id, otherDog: 'Luna', otherOwner: '' }
+        params: { conversationId: data.id, otherDog: '', otherOwner: '' }
       });
     }
   }
@@ -74,7 +83,7 @@ export default function ChatList() {
           <Text style={styles.emptyTitle}>No conversations yet</Text>
           <Text style={styles.emptySub}>Chats start when you connect with other dog owners — through lost alerts, found reports, or meetups.</Text>
           <TouchableOpacity style={styles.startBtn} onPress={startNewChat}>
-            <Text style={styles.startBtnText}>Start a test chat with Luna 🐩</Text>
+            <Text style={styles.startBtnText}>Start a new conversation</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -88,8 +97,8 @@ export default function ChatList() {
               pathname: '/message',
               params: {
                 conversationId: conv.id,
-                otherDog: conv.dog1_name === 'Athena' ? conv.dog2_name : conv.dog1_name,
-                otherOwner: conv.dog1_name === 'Athena' ? conv.owner2_phone : conv.owner1_phone,
+                otherDog: conv.dog1_name === (myDog?.name || 'Me') ? conv.dog2_name : conv.dog1_name,
+                otherOwner: conv.dog1_name === (myDog?.name || 'Me') ? conv.owner2_phone : conv.owner1_phone,
               }
             })}
           >
@@ -99,7 +108,7 @@ export default function ChatList() {
             <View style={styles.convBody}>
               <View style={styles.convHeader}>
                 <Text style={styles.convDogName}>
-                  {conv.dog1_name === 'Athena' ? conv.dog2_name : conv.dog1_name}
+                  {conv.dog1_name === (myDog?.name || 'Me') ? conv.dog2_name : conv.dog1_name}
                 </Text>
                 <Text style={styles.convTime}>{getTimeAgo(conv.last_message_at)}</Text>
               </View>
