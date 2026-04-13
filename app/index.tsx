@@ -7,7 +7,7 @@ export default function Index() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        router.replace('/(tabs)/index');
+        router.replace('/(tabs)/');
       } else {
         router.replace('/guest');
       }

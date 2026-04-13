@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated, Platform, Share, Image } from 'react-native';
 import { supabase } from '../../lib/supabase';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { colors, spacing, radius, shadows, energyConfig } from '../../lib/design';
 import { useLanguage, t } from '../../lib/i18n';
 
@@ -23,6 +23,8 @@ export default function MapScreen() {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const slideAnim = useRef(new Animated.Value(400)).current;
   const { t, lang } = useLanguage();
+  const params = typeof useLocalSearchParams === 'function' ? useLocalSearchParams() : {};
+  const focusPark = params?.park || null;
 
   useEffect(() => {
     loadAlerts();
@@ -173,6 +175,14 @@ export default function MapScreen() {
         </View>
       </View>
 
+      {/* Park focus banner */}
+      {focusPark && (
+        <View style={{ backgroundColor: '#052016', borderBottomWidth: 0.5, borderBottomColor: '#10B981', paddingHorizontal: 20, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Text style={{ fontSize: 14 }}>🌳</Text>
+          <Text style={{ fontSize: 13, color: '#10B981', fontWeight: '600', flex: 1 }}>Showing dogs near {focusPark}</Text>
+          <Text style={{ fontSize: 11, color: '#10B981' }}>Live</Text>
+        </View>
+      )}
       {/* Alert strip */}
       {alerts.length > 0 && (
         <View style={styles.alertStrip}>
