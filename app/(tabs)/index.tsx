@@ -36,7 +36,7 @@ function ParkCard({ park }) {
     }
   }, []);
   return (
-    <View style={[s.parkCard, { borderColor: config.color + '50', backgroundColor: config.bg }]}>
+    <TouchableOpacity style={[s.parkCard, { borderColor: config.color + '50', backgroundColor: config.bg }]} onPress={() => router.push({ pathname: '/(tabs)/map', params: { park: park.name } })}>
       <View style={s.parkCardTop}>
         <Text style={s.parkEmoji}>{park.emoji}</Text>
         <View style={[s.parkCountBadge, { backgroundColor: config.color + '20' }]}>
@@ -58,7 +58,8 @@ function ParkCard({ park }) {
           <View key={j} style={{ flex: 1, height: 3, borderRadius: 2, backgroundColor: j <= park.energy ? ENERGY_COLORS[park.energy] : colors.bgBorder }} />
         ))}
       </View>
-    </View>
+      <Text style={{ fontSize: 10, color: config.color, marginTop: 8, textAlign: 'right', fontWeight: '600' }}>View on map →</Text>
+    </TouchableOpacity>
   );
 }
 

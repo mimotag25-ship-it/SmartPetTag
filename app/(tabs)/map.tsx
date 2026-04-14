@@ -63,17 +63,17 @@ export default function MapScreen() {
         center: { lat: 19.4136, lng: -99.1716 }, zoom: 15,
         disableDefaultUI: true, zoomControl: true,
         styles: [
-          { elementType: 'geometry', stylers: [{ color: '#0A0F1E' }] },
-          { elementType: 'labels.text.stroke', stylers: [{ color: '#0A0F1E' }] },
-          { elementType: 'labels.text.fill', stylers: [{ color: '#4B5563' }] },
-          { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#111827' }] },
-          { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#0D1526' }] },
-          { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#131C2E' }] },
-          { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#374151' }] },
-          { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#060A14' }] },
-          { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#0A1A12' }] },
+          { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#a2daf2' }] },
+          { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#f5f5f0' }] },
+          { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+          { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+          { featureType: 'road.local', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+          { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#c5e8c5' }] },
+          { featureType: 'poi.park', elementType: 'labels', stylers: [{ visibility: 'on' }] },
           { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
           { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+          { featureType: 'administrative', elementType: 'labels.text.fill', stylers: [{ color: '#444444' }] },
+          { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#666666' }] },
         ],
       });
 
@@ -101,7 +101,7 @@ export default function MapScreen() {
       `).join('')}
 
       // Dog markers
-      ${dogs.map((d, i) => {
+      ${dogs.map((d, i) => { const safeName = (d.dog_name || '').replace(/'/g, '').replace(/"/g, ''); const safeBreed = (d.breed || '').replace(/'/g, '').replace(/"/g, ''); 
         const color = d.visibility === 'community' ? '#6366F1' : '#F59E0B';
         const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='48' height='56'><circle cx='24' cy='24' r='22' fill='%23111827' stroke='${color}' stroke-width='2.5'/><text x='24' y='31' text-anchor='middle' font-size='20'>${d.emoji || '🐾'}</text>${d.is_moving ? `<circle cx='24' cy='2' r='5' fill='%2310B981'/>` : ''}</svg>`;
         return `
@@ -117,9 +117,9 @@ export default function MapScreen() {
       // Alert markers
       ${alerts.map((a, i) => `
       new google.maps.Marker({
-        position: { lat: 19.4148, lng: -99.1728 }, map: map,
+        position: { lat: ${a.lat || 19.4148}, lng: ${a.lng || -99.1728} }, map: map,
         icon: { path: google.maps.SymbolPath.CIRCLE, scale: 14, fillColor: '#EF4444', fillOpacity: 1, strokeColor: '#FCA5A5', strokeWeight: 3 },
-        title: '${a.dog_name} is lost!'
+        title: '${(a.dog_name || '').replace(/'/g, '')} is lost!'
       });
       `).join('')}
     }
