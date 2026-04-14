@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Switch, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Switch, ActivityIndicator, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
 import { router } from 'expo-router';
 
@@ -11,6 +12,8 @@ export default function EditProfile() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [photos, setPhotos] = useState([]);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const [color, setColor] = useState('');
   const [size, setSize] = useState('');
@@ -51,11 +54,41 @@ export default function EditProfile() {
         setFavouriteSpots(data.favourite_spots || '');
         setIfFoundInstructions(data.if_found_instructions || '');
         setRespondsTo(data.responds_to || '');
+        setPhotos(data.photos || []);
       }
       setLoading(false);
     }
     load();
   }, []);
+
+  async function addPhoto() {
+    if (photos.length >= 6) { alert('Maximum 6 photos allowed'); return; }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, quality: 0.8 });
+    if (result.canceled) return;
+    setUploadingPhoto(true);
+    try {
+      const response = await fetch(result.assets[0].uri);
+      const blob = await response.blob();
+      const fileName = `pet-${Date.now()}.jpg`;
+      const { error } = await supabase.storage.from('posts').upload(fileName, blob, { contentType: 'image/jpeg' });
+      if (!error) {
+        const { data } = supabase.storage.from('posts').getPublicUrl(fileName);
+        setPhotos(prev => [...prev, data.publicUrl]);
+      }
+    } catch (e) {}
+    setUploadingPhoto(false);
+  }
+
+  function removePhoto(index) {
+    setPhotos(prev => prev.filter((_, i) => i !== index));
+  }
+
+  function setProfilePhoto(index) {
+    const newPhotos = [...photos];
+    const [selected] = newPhotos.splice(index, 1);
+    newPhotos.unshift(selected);
+    setPhotos(newPhotos);
+  }
 
   async function save() {
     if (!dog) return;
@@ -70,6 +103,7 @@ export default function EditProfile() {
       favourite_spots: favouriteSpots,
       if_found_instructions: ifFoundInstructions,
       responds_to: respondsTo,
+      photos,
     }).eq('id', dog.id);
     setSaving(false);
     if (!error) setSaved(true);
@@ -95,6 +129,49 @@ export default function EditProfile() {
       </View>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+
+        {/* Photos section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>📸 Pet Photos</Text>
+          <Text style={styles.sectionSub}>First photo is the profile picture. Add up to 6 for identification.</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 8 }}>
+            {photos.map((photo, i) => (
+              <View key={i} style={{ position: 'relative' }}>
+                <Image source={{ uri: photo }} style={{ width: 90, height: 90, borderRadius: 10, borderWidth: i === 0 ? 2.5 : 0.5, borderColor: i === 0 ? '#F59E0B' : '#1F2937' }} />
+                {i === 0 && (
+                  <View style={{ position: 'absolute', top: 4, left: 4, backgroundColor: '#F59E0B', borderRadius: 8, paddingHorizontal: 5, paddingVertical: 2 }}>
+                    <Text style={{ fontSize: 9, color: '#050508', fontWeight: '800' }}>PROFILE</Text>
+                  </View>
+                )}
+                {i !== 0 && (
+                  <TouchableOpacity
+                    style={{ position: 'absolute', top: 4, left: 4, backgroundColor: 'rgba(245,158,11,0.9)', borderRadius: 8, paddingHorizontal: 5, paddingVertical: 2 }}
+                    onPress={() => setProfilePhoto(i)}
+                  >
+                    <Text style={{ fontSize: 9, color: '#050508', fontWeight: '800' }}>SET MAIN</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  style={{ position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: 10, backgroundColor: '#EF4444', alignItems: 'center', justifyContent: 'center' }}
+                  onPress={() => removePhoto(i)}
+                >
+                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+            {photos.length < 6 && (
+              <TouchableOpacity
+                style={{ width: 90, height: 90, borderRadius: 10, backgroundColor: '#111827', borderWidth: 1.5, borderColor: '#F59E0B', borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+                onPress={addPhoto}
+                disabled={uploadingPhoto}
+              >
+                <Text style={{ fontSize: 24 }}>📷</Text>
+                <Text style={{ fontSize: 10, color: '#F59E0B', fontWeight: '600' }}>{uploadingPhoto ? 'Uploading...' : `Add photo`}</Text>
+                <Text style={{ fontSize: 9, color: '#4B5563' }}>{photos.length}/6</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
 
         {/* Physical description */}
         <View style={styles.section}>

@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { useEffect, useState, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions, FlatList } from 'react-native';
+
+const { width } = Dimensions.get('window');
 import { supabase } from '../lib/supabase';
 import { router, useLocalSearchParams } from 'expo-router';
 import { colors, shadows } from '../lib/design';
@@ -46,6 +48,7 @@ export default function PetProfile() {
   const [dog, setDog] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
+  const [activePhoto, setActivePhoto] = useState(0);
   const energyLevel = 4;
 
   useEffect(() => { loadDog(); }, []);
@@ -79,16 +82,46 @@ export default function PetProfile() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={s.heroWrap}>
-          {dog.photo_url
-            ? <Image source={{ uri: dog.photo_url }} style={s.heroPhoto} resizeMode="cover" />
-            : <View style={s.heroPlaceholder}><Text style={{ fontSize: 100 }}>{dog.emoji || '🐾'}</Text></View>
-          }
-          <View style={s.onlineIndicator}>
-            <View style={s.onlineDot} />
-            <Text style={s.onlineText}>{dog.is_moving ? 'Moving now' : 'Online'}</Text>
-          </View>
-        </View>
+        {/* Photo carousel */}
+        {(() => {
+          const allPhotos = [dog.photo_url, ...(dog.photos || [])].filter(Boolean);
+          if (allPhotos.length === 0) return (
+            <View style={s.heroPlaceholder}>
+              <Text style={{ fontSize: 100 }}>{dog.emoji || '🐾'}</Text>
+            </View>
+          );
+          return (
+            <View>
+              <View style={s.heroWrap}>
+                <Image source={{ uri: allPhotos[activePhoto] }} style={s.heroPhoto} resizeMode="cover" />
+                <View style={s.onlineIndicator}>
+                  <View style={s.onlineDot} />
+                  <Text style={s.onlineText}>{dog.is_moving ? 'Moving now' : 'Online'}</Text>
+                </View>
+                {allPhotos.length > 1 && (
+                  <View style={s.photoCounter}>
+                    <Text style={s.photoCounterText}>{activePhoto + 1} / {allPhotos.length}</Text>
+                  </View>
+                )}
+                {activePhoto === 0 && (
+                  <View style={s.profilePicBadge}>
+                    <Text style={s.profilePicBadgeText}>⭐ Profile photo</Text>
+                  </View>
+                )}
+              </View>
+              {allPhotos.length > 1 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.thumbnailRow}>
+                  {allPhotos.map((photo, i) => (
+                    <TouchableOpacity key={i} onPress={() => setActivePhoto(i)} style={[s.thumbnailWrap, activePhoto === i && s.thumbnailWrapActive]}>
+                      <Image source={{ uri: photo }} style={s.thumbnail} resizeMode="cover" />
+                      {i === 0 && <View style={s.thumbnailBadge}><Text style={s.thumbnailBadgeText}>⭐</Text></View>}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
+            </View>
+          );
+        })()}
 
         <View style={s.nameSection}>
           <View>
@@ -185,7 +218,17 @@ const s = StyleSheet.create({
   headerTitle: { fontSize: 17, fontWeight: '700', color: colors.textPrimary },
   headerEdit: { backgroundColor: colors.amberDim, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 0.5, borderColor: colors.amber },
   headerEditText: { color: colors.amber, fontSize: 13, fontWeight: '600' },
-  heroWrap: { width: '100%', height: 280, position: 'relative' },
+  heroWrap: { width: '100%', height: 260, position: 'relative' },
+  photoCounter: { position: 'absolute', top: 12, right: 12, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
+  photoCounterText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  profilePicBadge: { position: 'absolute', top: 12, left: 12, backgroundColor: 'rgba(245,158,11,0.85)', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
+  profilePicBadgeText: { color: '#050508', fontSize: 11, fontWeight: '700' },
+  thumbnailRow: { gap: 8, paddingHorizontal: 16, paddingVertical: 10 },
+  thumbnailWrap: { width: 72, height: 72, borderRadius: 10, overflow: 'hidden', borderWidth: 2, borderColor: 'transparent', position: 'relative' },
+  thumbnailWrapActive: { borderColor: colors.amber },
+  thumbnail: { width: '100%', height: '100%' },
+  thumbnailBadge: { position: 'absolute', top: 3, right: 3, width: 18, height: 18, borderRadius: 9, backgroundColor: colors.amber, alignItems: 'center', justifyContent: 'center' },
+  thumbnailBadgeText: { fontSize: 9 },
   heroPhoto: { width: '100%', height: '100%' },
   heroPlaceholder: { width: '100%', height: '100%', backgroundColor: colors.amberDim, alignItems: 'center', justifyContent: 'center' },
   onlineIndicator: { position: 'absolute', bottom: 12, left: 12, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5 },
