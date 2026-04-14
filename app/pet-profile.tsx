@@ -93,7 +93,7 @@ export default function PetProfile() {
           return (
             <View>
               <View style={s.heroWrap}>
-                <Image source={{ uri: allPhotos[activePhoto] }} style={s.heroPhoto} resizeMode="cover" />
+                <Image source={{ uri: allPhotos[activePhoto] }} style={s.heroPhoto} resizeMode="contain" />
                 <View style={s.onlineIndicator}>
                   <View style={s.onlineDot} />
                   <Text style={s.onlineText}>{dog.is_moving ? 'Moving now' : 'Online'}</Text>
@@ -114,7 +114,7 @@ export default function PetProfile() {
                   {allPhotos.map((photo, i) => (
                     <TouchableOpacity key={i} onPress={() => setActivePhoto(i)} style={[s.thumbnailWrap, activePhoto === i && s.thumbnailWrapActive]}>
                       <Image source={{ uri: photo }} style={s.thumbnail} resizeMode="cover" />
-                      {i === 0 && <View style={s.thumbnailBadge}><Text style={s.thumbnailBadgeText}>⭐</Text></View>}
+                      {i === 0 && <View style={s.thumbnailBadge}><Text style={s.thumbnailBadgeText}>MAIN</Text></View>}
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
@@ -218,24 +218,24 @@ const s = StyleSheet.create({
   headerTitle: { fontSize: 17, fontWeight: '700', color: colors.textPrimary },
   headerEdit: { backgroundColor: colors.amberDim, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 0.5, borderColor: colors.amber },
   headerEditText: { color: colors.amber, fontSize: 13, fontWeight: '600' },
-  heroWrap: { width: '100%', height: 260, position: 'relative' },
-  photoCounter: { position: 'absolute', top: 12, right: 12, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
+  heroWrap: { width: '100%', height: 320, position: 'relative', backgroundColor: '#0D1526' },
+  photoCounter: { position: 'absolute', top: 16, right: 16, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5 },
   photoCounterText: { color: '#fff', fontSize: 12, fontWeight: '600' },
-  profilePicBadge: { position: 'absolute', top: 12, left: 12, backgroundColor: 'rgba(245,158,11,0.85)', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
-  profilePicBadgeText: { color: '#050508', fontSize: 11, fontWeight: '700' },
-  thumbnailRow: { gap: 8, paddingHorizontal: 16, paddingVertical: 10 },
-  thumbnailWrap: { width: 72, height: 72, borderRadius: 10, overflow: 'hidden', borderWidth: 2, borderColor: 'transparent', position: 'relative' },
+  profilePicBadge: { position: 'absolute', top: 16, left: 16, backgroundColor: 'rgba(245,158,11,0.9)', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5, flexDirection: 'row', alignItems: 'center', gap: 4 },
+  profilePicBadgeText: { color: '#050508', fontSize: 11, fontWeight: '800' },
+  thumbnailRow: { gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.bgCard, flexDirection: 'row' },
+  thumbnailWrap: { width: 64, height: 64, borderRadius: 12, overflow: 'hidden', borderWidth: 2.5, borderColor: 'transparent', position: 'relative' },
   thumbnailWrapActive: { borderColor: colors.amber },
   thumbnail: { width: '100%', height: '100%' },
-  thumbnailBadge: { position: 'absolute', top: 3, right: 3, width: 18, height: 18, borderRadius: 9, backgroundColor: colors.amber, alignItems: 'center', justifyContent: 'center' },
-  thumbnailBadgeText: { fontSize: 9 },
+  thumbnailBadge: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(245,158,11,0.85)', alignItems: 'center', paddingVertical: 2 },
+  thumbnailBadgeText: { fontSize: 8, color: '#050508', fontWeight: '800' },
   heroPhoto: { width: '100%', height: '100%' },
-  heroPlaceholder: { width: '100%', height: '100%', backgroundColor: colors.amberDim, alignItems: 'center', justifyContent: 'center' },
+  heroPlaceholder: { width: '100%', height: 320, backgroundColor: colors.amberDim, alignItems: 'center', justifyContent: 'center' },
   onlineIndicator: { position: 'absolute', bottom: 12, left: 12, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5 },
   onlineDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#10B981' },
   onlineText: { fontSize: 11, color: '#fff', fontWeight: '600' },
-  nameSection: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
-  petName: { fontSize: 30, fontWeight: '900', color: colors.textPrimary, letterSpacing: -0.5 },
+  nameSection: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 10 },
+  petName: { fontSize: 34, fontWeight: '900', color: colors.textPrimary, letterSpacing: -1 },
   petBreed: { fontSize: 14, color: colors.textMuted, marginTop: 2 },
   chatBtn: { backgroundColor: colors.amberDim, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, borderWidth: 1, borderColor: colors.amber },
   chatBtnText: { color: colors.amber, fontSize: 13, fontWeight: '700' },

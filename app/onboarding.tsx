@@ -211,10 +211,10 @@ export default function Onboarding() {
               <Text style={s.heroTitle}>Your pet deserves{'\n'}a safety network</Text>
               <Text style={s.heroSub}>Join the community keeping pets safe across Ciudad de México</Text>
               <TouchableOpacity style={s.heroBtn} onPress={() => animateStep('next')}>
-                <Text style={s.heroBtnText}>{t('protectMyDog')}</Text>
+                <Text style={s.heroBtnText}>{'Protect my pet →'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.heroLoginBtn} onPress={() => router.push('/login')}>
-                <Text style={s.heroLoginText}>{t('alreadyMember')}</Text>
+                <Text style={s.heroLoginText}>{'Already a member? Sign in'}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -225,8 +225,8 @@ export default function Onboarding() {
           <KeyboardAvoidingView style={s.stepScreen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.stepContent}>
               <Text style={s.stepNum}>01 / 05</Text>
-              <Text style={s.stepTitle}>{t('tellUsAbout')}</Text>
-              <Text style={s.stepSub}>{t('thisBecomesProfile')}</Text>
+              <Text style={s.stepTitle}>{'Tell us about your pet'}</Text>
+              <Text style={s.stepSub}>{'This becomes their profile on SmartPet Tag'}</Text>
 
               {/* Large photo upload */}
               <TouchableOpacity style={s.photoUploadWrap} onPress={pickPhoto}>
@@ -254,10 +254,10 @@ export default function Onboarding() {
                 ))}
               </View>
 
-              <Text style={s.fieldLabel}>{t('dogName')}</Text>
-              <TextInput style={s.input} placeholder={t('dogNamePlaceholder')} placeholderTextColor={colors.textMuted} value={dogName} onChangeText={setDogName} autoFocus />
+              <Text style={s.fieldLabel}>{'Pet name *'}</Text>
+              <TextInput style={s.input} placeholder={'e.g. Athena, Rocky, Luna...'} placeholderTextColor={colors.textMuted} value={dogName} onChangeText={setDogName} autoFocus />
 
-              <Text style={s.fieldLabel}>{t('age')}</Text>
+              <Text style={s.fieldLabel}>{'Age (years)'}</Text>
               <TextInput style={s.input} placeholder="e.g. 3" placeholderTextColor={colors.textMuted} value={age} onChangeText={setAge} keyboardType="numeric" />
             </ScrollView>
           </KeyboardAvoidingView>
@@ -296,6 +296,15 @@ export default function Onboarding() {
                   </View>
                 </TouchableOpacity>
               ))}
+            </View>
+            <View style={{ marginTop: 14 }}>
+              <Text style={s.fieldLabel}>Not listed? Enter breed manually</Text>
+              <TextInput
+                style={s.input}
+                placeholder="Type breed name..."
+                placeholderTextColor={colors.textMuted}
+                onChangeText={(text) => text.trim() && setBreed({ name: text.trim(), energy: 3, emoji: '🐾' })}
+              />
             </View>
           </ScrollView>
         )}
@@ -366,15 +375,15 @@ export default function Onboarding() {
                   <Text style={s.accountPreviewBreed}>{breed?.name} · {neighbourhood}</Text>
                 </View>
               </View>
-              <Text style={s.stepTitle}>{t('almostThere')}</Text>
-              <Text style={s.stepSub}>{t('contactShared')} {dogName} {t('goesMissing')}</Text>
-              <Text style={s.fieldLabel}>{t('yourNameLabel')}</Text>
-              <TextInput style={s.input} placeholder="Full name" placeholderTextColor={colors.textMuted} value={ownerName} onChangeText={setOwnerName} />
-              <Text style={s.fieldLabel}>{t('phoneNumber')}</Text>
+              <Text style={s.stepTitle}>{'Almost there'}</Text>
+              <Text style={s.stepSub}>{'Your contact is only shared if'} {dogName} {'goes missing'}</Text>
+              <Text style={s.fieldLabel}>{'Your full name *'}</Text>
+              <TextInput style={s.input} placeholder="First and last name" placeholderTextColor={colors.textMuted} value={ownerName} onChangeText={setOwnerName} />
+              <Text style={s.fieldLabel}>{'Phone number'}</Text>
               <TextInput style={s.input} placeholder="+52 55 XXXX XXXX" placeholderTextColor={colors.textMuted} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
-              <Text style={s.fieldLabel}>{t('email')}</Text>
+              <Text style={s.fieldLabel}>{'Email address *'}</Text>
               <TextInput style={s.input} placeholder="your@email.com" placeholderTextColor={colors.textMuted} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
-              <Text style={s.fieldLabel}>{t('password')}</Text>
+              <Text style={s.fieldLabel}>{'Password *'}</Text>
               <TextInput style={s.input} placeholder="Min 6 characters" placeholderTextColor={colors.textMuted} value={password} onChangeText={setPassword} secureTextEntry />
               {error ? <Text style={s.errorText}>{error}</Text> : null}
               <View style={s.privacyNote}>
@@ -391,6 +400,7 @@ export default function Onboarding() {
             {confettiAnims.map((c, i) => (
               <Animated.View key={i} style={[s.confetti, { left: c.x, transform: [{ translateY: c.y }, { rotate: c.rotate.interpolate({ inputRange: [0,360], outputRange: ['0deg','360deg'] }) }], opacity: c.opacity, backgroundColor: CONFETTI_COLORS[i % CONFETTI_COLORS.length] }]} />
             ))}
+            <View style={{ alignItems: 'center', width: '100%', zIndex: 1 }}>
             <Animated.View style={[s.doneAvatarWrap, { transform: [{ translateY: dogDropAnim }] }]}>
               {photoUrl ? (
                 <Image source={{ uri: photoUrl }} style={s.doneAvatarPhoto} />
@@ -401,8 +411,8 @@ export default function Onboarding() {
               )}
               <View style={s.doneOnlineDot} />
             </Animated.View>
-            <Text style={s.doneTitle}>{dogName} {t('isProtected')}</Text>
-            <Text style={s.doneSub}>{t('welcomeTo')} {ownerName.split(' ')[0]}. {dogName} is now part of the {neighbourhood} pet network.</Text>
+            <Text style={s.doneTitle}>{dogName} {'is protected 🎉'}</Text>
+            <Text style={s.doneSub}>{'Welcome to SmartPet Tag,'} {ownerName.split(' ')[0]}. {dogName} is now part of the {neighbourhood} pet network.</Text>
             <View style={s.doneStats}>
               {[{ icon: '🐾', value: '6+', label: 'Nearby pets' }, { icon: '🛡️', value: '24/7', label: 'Protection' }, { icon: '🚨', value: '< 1m', label: 'Alert speed' }].map((stat, i) => (
                 <View key={i} style={s.doneStat}>
@@ -421,8 +431,9 @@ export default function Onboarding() {
               ))}
             </View>
             <TouchableOpacity style={s.enterBtn} onPress={() => router.replace('/(tabs)/')}>
-              <Text style={s.enterBtnText}>{t('enterApp')}</Text>
+              <Text style={s.enterBtnText}>{'Enter SmartPet Tag 🐾'}</Text>
             </TouchableOpacity>
+            </View>
           </View>
         )}
       </Animated.View>
@@ -567,8 +578,8 @@ const s = StyleSheet.create({
   privacyNoteText: { fontSize: 12, color: colors.textMuted, lineHeight: 18, flex: 1 },
 
   // Done
-  doneScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, overflow: 'hidden' },
-  confetti: { position: 'absolute', width: 10, height: 10, borderRadius: 2 },
+  doneScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28 },
+  confetti: { position: 'absolute', width: 12, height: 12, borderRadius: 2, zIndex: 0 },
   doneAvatarWrap: { marginBottom: 20, position: 'relative' },
   doneAvatarPhoto: { width: 120, height: 120, borderRadius: 60, borderWidth: 3, borderColor: colors.amber },
   doneAvatarPlaceholder: { width: 120, height: 120, borderRadius: 60, backgroundColor: colors.amberDim, borderWidth: 3, borderColor: colors.amber, alignItems: 'center', justifyContent: 'center' },

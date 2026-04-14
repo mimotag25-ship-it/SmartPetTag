@@ -45,6 +45,11 @@ export default function MapScreen() {
     if (data) setDogs(data);
   }
 
+  const filteredDogs = filter === 'all' ? dogs
+    : filter === 'dogs' ? dogs.filter(d => d.visibility !== 'private')
+    : filter === 'lost' ? dogs.filter(d => alerts.some(a => a.dog_name === d.dog_name))
+    : dogs;
+
   function openDogProfile(dog) {
     setSelectedDog(dog);
     Animated.spring(slideAnim, { toValue: 0, tension: 50, friction: 10, useNativeDriver: true }).start();
@@ -61,6 +66,7 @@ export default function MapScreen() {
       name: String(d.dog_name || '').replace(/['"\\`]/g, ''),
       moving: Boolean(d.is_moving),
       community: d.visibility === 'community',
+      photo: d.photo_url || null,
     }));
     const safeAlerts = alerts.map(a => ({
       lat: 19.4148, lng: -99.1728,
@@ -107,11 +113,24 @@ function initMap(){
   });
   DOGS.forEach(function(d){
     var c=d.community?'#6366F1':'#F59E0B';
-    new google.maps.Marker({
-      position:{lat:d.lat,lng:d.lng},map:map,
-      icon:{path:google.maps.SymbolPath.CIRCLE,scale:14,fillColor:c,fillOpacity:1,strokeColor:'#fff',strokeWeight:2.5},
-      title:d.name
-    });
+    if(d.photo){
+      var icon={
+        url:d.photo,
+        scaledSize:new google.maps.Size(44,44),
+        anchor:new google.maps.Point(22,22)
+      };
+      var marker=new google.maps.Marker({
+        position:{lat:d.lat,lng:d.lng},map:map,
+        icon:icon,title:d.name,
+        shape:{type:'circle',coords:[22,22,22]}
+      });
+    } else {
+      new google.maps.Marker({
+        position:{lat:d.lat,lng:d.lng},map:map,
+        icon:{path:google.maps.SymbolPath.CIRCLE,scale:16,fillColor:c,fillOpacity:1,strokeColor:'#fff',strokeWeight:2.5},
+        title:d.name
+      });
+    }
   });
   ALERTS.forEach(function(a){
     new google.maps.Marker({
@@ -190,7 +209,7 @@ function initMap(){
 
       <View style={styles.chipsWrap}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 20, paddingVertical: 12 }}>
-          {dogs.map((dog, i) => (
+          {filteredDogs.map((dog, i) => (
             <TouchableOpacity key={i} style={[styles.dogChip, dog.is_moving && styles.dogChipMoving]} onPress={() => router.push({ pathname: '/pet-profile', params: { dogName: dog.dog_name } })}>
               {dog.photo_url ? <Image source={{ uri: dog.photo_url }} style={styles.dogChipPhoto} /> : <Text style={{ fontSize: 24 }}>{dog.emoji}</Text>}
               <View>

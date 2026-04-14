@@ -1,230 +1,301 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, Linking, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useLanguage, t } from '../lib/i18n';
+import { colors, shadows } from '../lib/design';
 
-export default function FoundDog() {
+export default function Found() {
   const { alertId, dogName, ownerName, ownerPhone, neighbourhood } = useLocalSearchParams();
-  const [photo, setPhoto] = useState(null);
+  const [finderName, setFinderName] = useState('');
   const [message, setMessage] = useState('');
   const [location, setLocation] = useState('');
-  const [contacted, setContacted] = useState(false);
-  const [finderName, setFinderName] = useState('');
+  const [photo, setPhoto] = useState(null);
+  const [photoUrl, setPhotoUrl] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const { t } = useLanguage();
-  const [createdConvId, setCreatedConvId] = useState(null);
-  const [done, setDone] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [step, setStep] = useState(1);
 
-  const isValid = (photo || contacted || (message.trim() && location.trim())) && finderName.trim();
+  const phone = Array.isArray(ownerPhone) ? ownerPhone[0] : ownerPhone;
+  const name = Array.isArray(dogName) ? dogName[0] : dogName;
+  const owner = Array.isArray(ownerName) ? ownerName[0] : ownerName;
+  const aid = Array.isArray(alertId) ? alertId[0] : alertId;
 
   async function pickPhoto() {
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, aspect: [1,1], quality: 0.8 });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, quality: 0.8 });
     if (!result.canceled) setPhoto(result.assets[0].uri);
   }
 
   async function submit() {
-    if (!isValid) return;
+    if (!finderName.trim()) return;
     setSubmitting(true);
-
-    let photoUrl = null;
+    let uploadedUrl = null;
     if (photo) {
       try {
         const response = await fetch(photo);
         const blob = await response.blob();
         const fileName = `found-${Date.now()}.jpg`;
         const { error } = await supabase.storage.from('posts').upload(fileName, blob, { contentType: 'image/jpeg' });
-        if (!error) { const { data } = supabase.storage.from('posts').getPublicUrl(fileName); photoUrl = data.publicUrl; }
-      } catch (e) {}
+        if (!error) {
+          const { data } = supabase.storage.from('posts').getPublicUrl(fileName);
+          uploadedUrl = data.publicUrl;
+        }
+      } catch(e) {}
     }
 
     await supabase.from('lost_alerts').update({
-      status: 'pending_owner', status_pending_owner: true,
-      found_photo: photoUrl, found_message: message,
-      found_location: location, found_contacted: contacted,
       finder_name: finderName,
-    }).eq('id', alertId);
+      found_message: message,
+      found_location: location,
+      found_photo: uploadedUrl,
+      status_pending_owner: true,
+      found_contacted: true,
+    }).eq('id', aid);
 
     await supabase.from('activity').insert({
-      type: 'pending', icon: '🔔',
-      message: `${dogName} may have been found — owner confirmation pending`,
-      neighbourhood: neighbourhood || 'Nearby', urgent: true,
+      type: 'sighting', message: `👀 ${name} spotted by ${finderName} near ${location || neighbourhood}`,
+      icon: '👀', neighbourhood: location || neighbourhood, urgent: true,
     });
 
-    const { data: conv } = await supabase
-      .from('conversations')
-      .insert({
-        dog1_name: finderName,
-        dog2_name: dogName,
-        owner1_phone: '',
-        owner2_phone: ownerPhone || '',
-        last_message: `Hi! I found ${dogName} 🐾`,
-        last_message_at: new Date().toISOString(),
-        alert_id: alertId,
-      })
-      .select()
-      .single();
+    const { data: conv } = await supabase.from('conversations').insert({
+      dog1_name: name, dog2_name: finderName,
+      owner1_phone: phone, owner2_phone: '',
+      last_message: `Hi! I found ${name}`, alert_id: String(aid),
+    }).select().single();
 
     if (conv) {
       await supabase.from('messages').insert({
-        conversation_id: conv.id,
-        sender_dog: finderName,
-        sender_name: finderName,
-        text: `Hi! I found ${dogName} 🐾 I'm at ${location || 'nearby'}. ${message || ''}`.trim(),
+        conversation_id: conv.id, sender_dog: finderName,
+        sender_name: finderName, text: `Hi! I found ${name}. ${message}`,
       });
-      setSubmitting(false);
-      router.push({ pathname: '/message', params: { conversationId: conv.id, otherDog: dogName, otherOwner: ownerPhone } });
-    } else {
-      setSubmitting(false);
-      setDone(true);
+    }
+
+    setPhotoUrl(uploadedUrl);
+    setSubmitting(false);
+    setSubmitted(true);
+
+    if (conv) {
+      setTimeout(() => router.push({ pathname: '/message', params: { conversationId: conv.id, otherDog: name, otherOwner: phone } }), 1500);
     }
   }
 
-  if (done) return (
-    <View style={styles.container}>
-      <View style={styles.doneSection}>
-        <Text style={styles.doneEmoji}>🔔</Text>
-        <Text style={styles.doneTitle}>Report submitted!</Text>
-        <Text style={styles.doneSub}>{ownerName} has been notified and will confirm once they connect with you.</Text>
-        <View style={styles.pendingBox}>
-          <Text style={styles.pendingIcon}>⏳</Text>
-          <View><Text style={styles.pendingTitle}>Waiting for owner confirmation</Text><Text style={styles.pendingSub}>{ownerName} needs to confirm on their end</Text></View>
+  if (submitted) return (
+    <View style={s.container}>
+      <View style={s.successScreen}>
+        <Text style={s.successEmoji}>🎉</Text>
+        <Text style={s.successTitle}>Report sent!</Text>
+        <Text style={s.successSub}>The owner has been notified. A chat has been opened so you can coordinate the handoff.</Text>
+        <View style={s.successSteps}>
+          <Text style={s.successStep}>✓ Owner notified via push notification</Text>
+          <Text style={s.successStep}>✓ Alert marked as pending confirmation</Text>
+          <Text style={s.successStep}>✓ Chat thread opened</Text>
         </View>
-        <View style={styles.heroUnlock}>
-          <Text style={styles.heroIcon}>🦸</Text>
-          <View><Text style={styles.heroTitle}>Badge pending: Lost Dog Hero</Text><Text style={styles.heroSub}>Unlocks when owner confirms 🐾</Text></View>
-        </View>
-        <TouchableOpacity style={styles.doneBtn} onPress={() => router.replace('/(tabs)/explore')}>
-          <Text style={styles.doneBtnText}>Back to feed</Text>
+        <TouchableOpacity style={s.chatNowBtn} onPress={() => router.replace('/(tabs)/explore')}>
+          <Text style={s.chatNowBtnText}>Back to feed →</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}><Text style={styles.backBtnText}>← Back</Text></TouchableOpacity>
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <View style={styles.headerBadge}><Text style={styles.headerBadgeText}>🐕 FOUND DOG REPORT</Text></View>
-          <Text style={styles.title}>I found {dogName}!</Text>
-          <Text style={styles.sub}>Provide your details and at least one verification. The owner confirms before the alert closes.</Text>
-        </View>
-        <View style={styles.dogCard}>
-          <View style={styles.dogAvatar}><Text style={styles.dogEmoji}>🐕</Text></View>
-          <View><Text style={styles.dogName}>{dogName}</Text><Text style={styles.dogOwner}>Owner: {ownerName}</Text><Text style={styles.dogPhone}>📞 {ownerPhone}</Text></View>
-        </View>
-        <View style={styles.optionCard}>
-          <Text style={styles.optionTitle}>👤 Your name</Text>
-          <Text style={styles.optionDesc}>So the owner knows who found their dog</Text>
-          <TextInput style={[styles.input, { marginTop: 10 }]} placeholder="Your name" placeholderTextColor="#333" value={finderName} onChangeText={setFinderName} />
-        </View>
-        <Text style={styles.sectionTitle}>Provide at least one verification</Text>
-        <View style={styles.optionCard}>
-          <View style={styles.optionHeader}>
-            <Text style={styles.optionNum}>1</Text>
-            <View style={{ flex: 1 }}><Text style={styles.optionTitle}>📷 Photo of {dogName} safe</Text><Text style={styles.optionDesc}>Best verification</Text></View>
-            {photo && <Text style={styles.checkMark}>✓</Text>}
-          </View>
-          <TouchableOpacity style={[styles.photoBtn, photo && styles.photoBtnDone]} onPress={pickPhoto}>
-            {photo ? <Image source={{ uri: photo }} style={styles.photoPreview} resizeMode="cover" /> : <View style={styles.photoEmpty}><Text style={styles.photoEmptyIcon}>📷</Text><Text style={styles.photoEmptyText}>Tap to add a photo</Text></View>}
-          </TouchableOpacity>
-        </View>
-        <View style={styles.optionCard}>
-          <View style={styles.optionHeader}>
-            <Text style={styles.optionNum}>2</Text>
-            <View style={{ flex: 1 }}><Text style={styles.optionTitle}>📞 Contact the owner</Text><Text style={styles.optionDesc}>Call or message {ownerName}</Text></View>
-            {contacted && <Text style={styles.checkMark}>✓</Text>}
-          </View>
-          <View style={styles.contactRow}>
-            <TouchableOpacity style={styles.contactBtn}><Text style={styles.contactBtnText}>📞 Call {ownerPhone}</Text></TouchableOpacity>
-            <TouchableOpacity style={[styles.confirmBtn, contacted && styles.confirmBtnDone]} onPress={() => setContacted(!contacted)}>
-              <Text style={[styles.confirmBtnText, contacted && styles.confirmBtnTextDone]}>{contacted ? t('contacted') : t('markContacted')}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-        <View style={styles.optionCard}>
-          <View style={styles.optionHeader}>
-            <Text style={styles.optionNum}>3</Text>
-            <View style={{ flex: 1 }}><Text style={styles.optionTitle}>📍 Location + message</Text><Text style={styles.optionDesc}>Tell the owner where you are</Text></View>
-            {location.trim() && message.trim() && <Text style={styles.checkMark}>✓</Text>}
-          </View>
-          <TextInput style={styles.input} placeholder="Your location" placeholderTextColor="#333" value={location} onChangeText={setLocation} />
-          <TextInput style={[styles.input, { height: 70, textAlignVertical: 'top', marginTop: 8 }]} placeholder="Message for owner" placeholderTextColor="#333" value={message} onChangeText={setMessage} multiline />
-        </View>
-        {!finderName.trim() && <View style={styles.warningBox}><Text style={styles.warningText}>⚠️ Please enter your name</Text></View>}
-        {finderName.trim() && !isValid && <View style={styles.warningBox}><Text style={styles.warningText}>⚠️ Please complete at least one verification</Text></View>}
-        <View style={styles.ownerConfirmBox}>
-          <Text style={styles.ownerConfirmIcon}>🔒</Text>
-          <Text style={styles.ownerConfirmText}>Alert stays active until {ownerName} confirms. This protects against false reports.</Text>
-        </View>
-        <TouchableOpacity style={[styles.submitBtn, !isValid && styles.submitBtnDisabled]} onPress={submit} disabled={!isValid || submitting}>
-          {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>Submit report → open chat with owner</Text>}
+    <View style={s.container}>
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+          <Text style={s.backBtnText}>‹</Text>
         </TouchableOpacity>
-        <View style={{ height: 40 }} />
+        <Text style={s.headerTitle}>Found a pet</Text>
+        <View style={{ width: 36 }} />
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>
+
+        {/* Dog info */}
+        <View style={s.dogCard}>
+          <View style={s.dogCardAvatar}>
+            <Text style={{ fontSize: 32 }}>🐕</Text>
+          </View>
+          <View>
+            <Text style={s.dogCardName}>{name}</Text>
+            <Text style={s.dogCardOwner}>Owner: {owner}</Text>
+          </View>
+        </View>
+
+        {/* Step indicators */}
+        <View style={s.steps}>
+          {[1,2,3].map(i => (
+            <View key={i} style={s.stepItem}>
+              <View style={[s.stepDot, step >= i && s.stepDotActive, step > i && s.stepDotDone]}>
+                <Text style={s.stepDotText}>{step > i ? '✓' : i}</Text>
+              </View>
+              <Text style={[s.stepLabel, step >= i && s.stepLabelActive]}>
+                {i === 1 ? 'Call owner' : i === 2 ? 'Take photo' : 'Send report'}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        {/* STEP 1 — Call owner */}
+        {step === 1 && (
+          <View style={s.stepContent}>
+            <Text style={s.stepTitle}>Step 1 — Contact the owner</Text>
+            <Text style={s.stepSub}>Call them directly — the fastest way to reunite {name} with their family.</Text>
+
+            <TouchableOpacity style={s.callBtn} onPress={() => { Linking.openURL(`tel:${phone}`); setTimeout(() => setStep(2), 2000); }}>
+              <Text style={s.callBtnIcon}>📞</Text>
+              <View>
+                <Text style={s.callBtnTitle}>Call {owner}</Text>
+                <Text style={s.callBtnNumber}>{phone}</Text>
+              </View>
+              <Text style={s.callBtnArrow}>→</Text>
+            </TouchableOpacity>
+
+            <View style={s.whatsappRow}>
+              <TouchableOpacity style={s.whatsappBtn} onPress={() => { Linking.openURL(`https://wa.me/${phone?.replace(/\D/g,'')}?text=${encodeURIComponent(`Hola! Encontré a ${name}. ¿Puedes contactarme?`)}`); setTimeout(() => setStep(2), 1000); }}>
+                <Text style={s.whatsappBtnText}>💚 WhatsApp instead</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity style={s.skipBtn} onPress={() => setStep(2)}>
+              <Text style={s.skipBtnText}>No answer — continue →</Text>
+            </TouchableOpacity>
+
+            <View style={s.tipsCard}>
+              <Text style={s.tipsTitle}>💡 While you wait</Text>
+              <Text style={s.tipText}>• Keep {name} calm and in a safe place</Text>
+              <Text style={s.tipText}>• Don't feed them — they may have dietary restrictions</Text>
+              <Text style={s.tipText}>• Stay in the area if you can</Text>
+            </View>
+          </View>
+        )}
+
+        {/* STEP 2 — Take photo */}
+        {step === 2 && (
+          <View style={s.stepContent}>
+            <Text style={s.stepTitle}>Step 2 — Photo verification</Text>
+            <Text style={s.stepSub}>A photo helps the owner confirm it's their pet and gives them peace of mind.</Text>
+
+            <TouchableOpacity style={s.photoPickerBtn} onPress={pickPhoto}>
+              {photo ? (
+                <Image source={{ uri: photo }} style={s.pickedPhoto} resizeMode="cover" />
+              ) : (
+                <View style={s.photoPickerPlaceholder}>
+                  <Text style={{ fontSize: 40 }}>📷</Text>
+                  <Text style={s.photoPickerText}>Take or choose a photo</Text>
+                  <Text style={s.photoPickerSub}>Show the pet clearly — include surroundings if possible</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            {photo && (
+              <TouchableOpacity style={s.retakeBtn} onPress={pickPhoto}>
+                <Text style={s.retakeBtnText}>Retake photo</Text>
+              </TouchableOpacity>
+            )}
+
+            <View style={s.stepNavRow}>
+              <TouchableOpacity style={s.prevBtn} onPress={() => setStep(1)}>
+                <Text style={s.prevBtnText}>← Back</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[s.nextBtn, !photo && s.nextBtnDim]} onPress={() => setStep(3)}>
+                <Text style={s.nextBtnText}>{photo ? 'Next →' : 'Skip for now →'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* STEP 3 — Send report */}
+        {step === 3 && (
+          <View style={s.stepContent}>
+            <Text style={s.stepTitle}>Step 3 — Send your report</Text>
+            <Text style={s.stepSub}>Your details help the owner find you quickly.</Text>
+
+            <Text style={s.fieldLabel}>Your name *</Text>
+            <TextInput style={s.input} placeholder="First and last name" placeholderTextColor={colors.textMuted} value={finderName} onChangeText={setFinderName} />
+
+            <Text style={s.fieldLabel}>Your current location</Text>
+            <TextInput style={s.input} placeholder="e.g. Parque España, near the fountain" placeholderTextColor={colors.textMuted} value={location} onChangeText={setLocation} />
+
+            <Text style={s.fieldLabel}>Any other details</Text>
+            <TextInput style={[s.input, { height: 80, textAlignVertical: 'top' }]} placeholder={`e.g. ${name} seems calm and friendly, wearing a red collar`} placeholderTextColor={colors.textMuted} value={message} onChangeText={setMessage} multiline />
+
+            <View style={s.stepNavRow}>
+              <TouchableOpacity style={s.prevBtn} onPress={() => setStep(2)}>
+                <Text style={s.prevBtnText}>← Back</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.submitBtn, (!finderName.trim() || submitting) && s.submitBtnDim]}
+                onPress={submit}
+                disabled={!finderName.trim() || submitting}
+              >
+                <Text style={s.submitBtnText}>{submitting ? 'Sending...' : '✓ Send report'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#050508' },
-  backBtn: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
-  backBtnText: { color: '#555', fontSize: 14 },
-  scroll: { flex: 1 },
-  header: { alignItems: 'center', padding: 24, paddingTop: 8 },
-  headerBadge: { backgroundColor: '#051a10', borderWidth: 0.5, borderColor: '#1D9E75', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 5, marginBottom: 14 },
-  headerBadgeText: { color: '#1D9E75', fontSize: 11, fontWeight: '700', letterSpacing: 1 },
-  title: { fontSize: 26, fontWeight: '700', color: '#fff', textAlign: 'center', marginBottom: 8 },
-  sub: { fontSize: 13, color: '#555', textAlign: 'center', lineHeight: 20 },
-  dogCard: { flexDirection: 'row', alignItems: 'center', gap: 14, marginHorizontal: 16, backgroundColor: '#0d0d0d', borderRadius: 14, borderWidth: 0.5, borderColor: '#1a1a1a', padding: 14, marginBottom: 20 },
-  dogAvatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#051a10', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#1D9E75' },
-  dogEmoji: { fontSize: 24 },
-  dogName: { fontSize: 16, fontWeight: '700', color: '#fff', marginBottom: 2 },
-  dogOwner: { fontSize: 12, color: '#555' },
-  dogPhone: { fontSize: 12, color: '#1D9E75', marginTop: 2 },
-  sectionTitle: { fontSize: 11, color: '#444', fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', marginHorizontal: 16, marginBottom: 12 },
-  optionCard: { marginHorizontal: 16, backgroundColor: '#0d0d0d', borderRadius: 14, borderWidth: 0.5, borderColor: '#1a1a1a', padding: 14, marginBottom: 12 },
-  optionHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
-  optionNum: { width: 24, height: 24, borderRadius: 12, backgroundColor: '#1a1a1a', color: '#555', fontSize: 12, fontWeight: '700', textAlign: 'center', lineHeight: 24 },
-  optionTitle: { fontSize: 14, fontWeight: '600', color: '#fff', marginBottom: 2 },
-  optionDesc: { fontSize: 12, color: '#555' },
-  checkMark: { color: '#1D9E75', fontSize: 18, fontWeight: '700' },
-  photoBtn: { width: '100%', aspectRatio: 2, borderRadius: 12, overflow: 'hidden', backgroundColor: '#111', borderWidth: 0.5, borderColor: '#1a1a1a' },
-  photoBtnDone: { borderColor: '#1D9E75' },
-  photoPreview: { width: '100%', height: '100%' },
-  photoEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
-  photoEmptyIcon: { fontSize: 32 },
-  photoEmptyText: { color: '#333', fontSize: 12 },
-  contactRow: { flexDirection: 'row', gap: 8 },
-  contactBtn: { flex: 1, backgroundColor: '#111', borderRadius: 10, paddingVertical: 10, alignItems: 'center', borderWidth: 0.5, borderColor: '#1a1a1a' },
-  contactBtnText: { color: '#ccc', fontSize: 13, fontWeight: '500' },
-  confirmBtn: { flex: 1, backgroundColor: '#111', borderRadius: 10, paddingVertical: 10, alignItems: 'center', borderWidth: 0.5, borderColor: '#1a1a1a' },
-  confirmBtnDone: { backgroundColor: '#051a10', borderColor: '#1D9E75' },
-  confirmBtnText: { color: '#555', fontSize: 13, fontWeight: '500' },
-  confirmBtnTextDone: { color: '#1D9E75' },
-  input: { backgroundColor: '#111', borderWidth: 0.5, borderColor: '#1a1a1a', borderRadius: 10, padding: 12, fontSize: 13, color: '#fff' },
-  warningBox: { marginHorizontal: 16, backgroundColor: '#1a1200', borderRadius: 12, borderWidth: 0.5, borderColor: '#F5A623', padding: 12, marginBottom: 12 },
-  warningText: { color: '#F5A623', fontSize: 12, textAlign: 'center' },
-  ownerConfirmBox: { marginHorizontal: 16, backgroundColor: '#0d0d14', borderRadius: 12, borderWidth: 0.5, borderColor: '#333', padding: 14, marginBottom: 16, flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
-  ownerConfirmIcon: { fontSize: 16 },
-  ownerConfirmText: { fontSize: 12, color: '#444', lineHeight: 18, flex: 1 },
-  submitBtn: { marginHorizontal: 16, backgroundColor: '#1D9E75', borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 8 },
-  submitBtnDisabled: { opacity: 0.3 },
-  submitBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  doneSection: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  doneEmoji: { fontSize: 72, marginBottom: 16 },
-  doneTitle: { fontSize: 28, fontWeight: '700', color: '#fff', marginBottom: 10 },
-  doneSub: { fontSize: 14, color: '#555', textAlign: 'center', lineHeight: 22, marginBottom: 24 },
-  pendingBox: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#1a1200', borderWidth: 0.5, borderColor: '#F5A623', borderRadius: 14, padding: 16, marginBottom: 16, width: '100%' },
-  pendingIcon: { fontSize: 28 },
-  pendingTitle: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 2 },
-  pendingSub: { fontSize: 12, color: '#F5A623' },
-  heroUnlock: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#051a10', borderWidth: 0.5, borderColor: '#1D9E75', borderRadius: 14, padding: 16, marginBottom: 24, width: '100%' },
-  heroIcon: { fontSize: 32 },
-  heroTitle: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 2 },
-  heroSub: { fontSize: 12, color: '#1D9E75' },
-  doneBtn: { backgroundColor: '#0d0d0d', borderWidth: 0.5, borderColor: '#333', borderRadius: 14, padding: 16, width: '100%', alignItems: 'center' },
-  doneBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.bg },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: colors.bgBorder },
+  backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.bgCard, alignItems: 'center', justifyContent: 'center' },
+  backBtnText: { color: colors.textPrimary, fontSize: 24, fontWeight: '300', lineHeight: 28 },
+  headerTitle: { fontSize: 17, fontWeight: '700', color: colors.textPrimary },
+  content: { padding: 20, paddingBottom: 40 },
+  dogCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: colors.bgCard, borderRadius: 16, borderWidth: 0.5, borderColor: colors.bgBorder, padding: 16, marginBottom: 20 },
+  dogCardAvatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.amberDim, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.amber },
+  dogCardName: { fontSize: 18, fontWeight: '800', color: colors.textPrimary, marginBottom: 2 },
+  dogCardOwner: { fontSize: 12, color: colors.textMuted },
+  steps: { flexDirection: 'row', alignItems: 'center', marginBottom: 24, gap: 0 },
+  stepItem: { flex: 1, alignItems: 'center', gap: 6 },
+  stepDot: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.bgCard, borderWidth: 1.5, borderColor: colors.bgBorder, alignItems: 'center', justifyContent: 'center' },
+  stepDotActive: { borderColor: colors.amber, backgroundColor: colors.amberDim },
+  stepDotDone: { borderColor: colors.safe, backgroundColor: colors.safeDim },
+  stepDotText: { fontSize: 12, fontWeight: '700', color: colors.textMuted },
+  stepLabel: { fontSize: 10, color: colors.textMuted, textAlign: 'center' },
+  stepLabelActive: { color: colors.amber },
+  stepContent: { gap: 12 },
+  stepTitle: { fontSize: 20, fontWeight: '800', color: colors.textPrimary, letterSpacing: -0.3 },
+  stepSub: { fontSize: 13, color: colors.textMuted, lineHeight: 20, marginBottom: 4 },
+  callBtn: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: colors.safeDim, borderRadius: 16, borderWidth: 1.5, borderColor: colors.safe, padding: 18, ...shadows.amber },
+  callBtnIcon: { fontSize: 28 },
+  callBtnTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary, marginBottom: 2 },
+  callBtnNumber: { fontSize: 14, color: colors.safe },
+  callBtnArrow: { color: colors.safe, fontSize: 20, marginLeft: 'auto' },
+  whatsappRow: { marginTop: 4 },
+  whatsappBtn: { backgroundColor: '#052016', borderRadius: 12, borderWidth: 0.5, borderColor: '#10B981', paddingVertical: 12, alignItems: 'center' },
+  whatsappBtnText: { color: '#10B981', fontSize: 14, fontWeight: '600' },
+  skipBtn: { alignItems: 'center', paddingVertical: 10 },
+  skipBtnText: { color: colors.textMuted, fontSize: 13 },
+  tipsCard: { backgroundColor: colors.bgCard, borderRadius: 14, borderWidth: 0.5, borderColor: colors.bgBorder, padding: 16, gap: 6 },
+  tipsTitle: { fontSize: 13, fontWeight: '700', color: colors.amber, marginBottom: 4 },
+  tipText: { fontSize: 12, color: colors.textSecondary, lineHeight: 20 },
+  photoPickerBtn: { borderRadius: 16, overflow: 'hidden', height: 200, backgroundColor: colors.bgCard, borderWidth: 1, borderColor: colors.bgBorder },
+  pickedPhoto: { width: '100%', height: '100%' },
+  photoPickerPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
+  photoPickerText: { fontSize: 15, fontWeight: '600', color: colors.textSecondary },
+  photoPickerSub: { fontSize: 12, color: colors.textMuted, textAlign: 'center', paddingHorizontal: 20 },
+  retakeBtn: { alignItems: 'center', paddingVertical: 8 },
+  retakeBtnText: { color: colors.textMuted, fontSize: 13 },
+  fieldLabel: { fontSize: 11, color: colors.textMuted, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 6, marginTop: 4 },
+  input: { backgroundColor: colors.bgCard, borderWidth: 0.5, borderColor: colors.bgBorder, borderRadius: 12, padding: 14, fontSize: 14, color: colors.textPrimary, marginBottom: 4 },
+  stepNavRow: { flexDirection: 'row', gap: 10, marginTop: 8 },
+  prevBtn: { flex: 1, paddingVertical: 13, alignItems: 'center', borderRadius: 12, borderWidth: 0.5, borderColor: colors.bgBorder },
+  prevBtnText: { color: colors.textMuted, fontSize: 14 },
+  nextBtn: { flex: 2, paddingVertical: 13, alignItems: 'center', borderRadius: 12, backgroundColor: colors.amberDim, borderWidth: 1, borderColor: colors.amber },
+  nextBtnDim: { opacity: 0.6 },
+  nextBtnText: { color: colors.amber, fontWeight: '700', fontSize: 14 },
+  submitBtn: { flex: 2, paddingVertical: 13, alignItems: 'center', borderRadius: 12, backgroundColor: colors.safe },
+  submitBtnDim: { opacity: 0.5 },
+  submitBtnText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  successScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
+  successEmoji: { fontSize: 64, marginBottom: 16 },
+  successTitle: { fontSize: 28, fontWeight: '900', color: colors.textPrimary, marginBottom: 8 },
+  successSub: { fontSize: 14, color: colors.textMuted, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
+  successSteps: { alignSelf: 'stretch', backgroundColor: colors.safeDim, borderRadius: 14, padding: 16, marginBottom: 24, gap: 8, borderWidth: 0.5, borderColor: colors.safe },
+  successStep: { fontSize: 13, color: '#10B981' },
+  chatNowBtn: { backgroundColor: colors.safe, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 32, alignItems: 'center' },
+  chatNowBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
 });

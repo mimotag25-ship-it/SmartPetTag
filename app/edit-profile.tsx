@@ -104,7 +104,11 @@ export default function EditProfile() {
       if_found_instructions: ifFoundInstructions,
       responds_to: respondsTo,
       photos,
+      photo_url: photos[0] || dog.photo_url,
     }).eq('id', dog.id);
+    if (!error && photos[0]) {
+      await supabase.from('dog_locations').update({ photo_url: photos[0] }).eq('dog_name', dog.name);
+    }
     setSaving(false);
     if (!error) setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -137,7 +141,7 @@ export default function EditProfile() {
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 8 }}>
             {photos.map((photo, i) => (
               <View key={i} style={{ position: 'relative' }}>
-                <Image source={{ uri: photo }} style={{ width: 90, height: 90, borderRadius: 10, borderWidth: i === 0 ? 2.5 : 0.5, borderColor: i === 0 ? '#F59E0B' : '#1F2937' }} />
+                <Image source={{ uri: photo }} style={{ width: 90, height: 90, borderRadius: 10, borderWidth: i === 0 ? 2.5 : 0.5, borderColor: i === 0 ? '#F59E0B' : '#1F2937' }} resizeMode='contain' />
                 {i === 0 && (
                   <View style={{ position: 'absolute', top: 4, left: 4, backgroundColor: '#F59E0B', borderRadius: 8, paddingHorizontal: 5, paddingVertical: 2 }}>
                     <Text style={{ fontSize: 9, color: '#050508', fontWeight: '800' }}>PROFILE</Text>
