@@ -9,10 +9,10 @@ import { useLanguage } from '../../lib/i18n';
 const { width } = Dimensions.get('window');
 
 const PARKS = [
-  { name: 'Parque España', dogs: 8, energy: 4, friendly: 7, reactive: 1, status: 'medium', emoji: '🌳' },
-  { name: 'Parque México', dogs: 14, energy: 5, friendly: 10, reactive: 4, status: 'high', emoji: '🌲' },
-  { name: 'Parque Hundido', dogs: 3, energy: 2, friendly: 3, reactive: 0, status: 'low', emoji: '🌿' },
-  { name: 'Parque Pushkin', dogs: 5, energy: 3, friendly: 5, reactive: 0, status: 'low', emoji: '🍃' },
+  { name: 'Parque España', dogs: 8, energy: 4, friendly: 7, reactive: 1, status: 'medium', emoji: '🌳', lat: 19.4150, lng: -99.1714 },
+  { name: 'Parque México', dogs: 14, energy: 5, friendly: 10, reactive: 4, status: 'high', emoji: '🌲', lat: 19.4119, lng: -99.1691 },
+  { name: 'Parque Hundido', dogs: 3, energy: 2, friendly: 3, reactive: 0, status: 'low', emoji: '🌿', lat: 19.3782, lng: -99.1793 },
+  { name: 'Jardín Pushkin', dogs: 5, energy: 3, friendly: 5, reactive: 0, status: 'low', emoji: '🍃', lat: 19.4186, lng: -99.1580 },
 ];
 
 const STATUS_CONFIG = {
@@ -36,7 +36,7 @@ function ParkCard({ park }) {
     }
   }, []);
   return (
-    <TouchableOpacity style={[s.parkCard, { borderColor: config.color + '50', backgroundColor: config.bg }]} onPress={() => router.push({ pathname: '/(tabs)/map', params: { park: park.name } })}>
+    <TouchableOpacity style={[s.parkCard, { borderColor: config.color + '50', backgroundColor: config.bg }]} onPress={() => router.push({ pathname: '/(tabs)/map', params: { park: park.name, lat: park.lat, lng: park.lng } })}>
       <View style={s.parkCardTop}>
         <Text style={s.parkEmoji}>{park.emoji}</Text>
         <View style={[s.parkCountBadge, { backgroundColor: config.color + '20' }]}>
