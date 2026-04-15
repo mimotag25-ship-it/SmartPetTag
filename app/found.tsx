@@ -151,7 +151,12 @@ export default function Found() {
 
             <View style={s.whatsappRow}>
               <TouchableOpacity style={s.whatsappBtn} onPress={() => { Linking.openURL(`https://wa.me/${phone?.replace(/\D/g,'')}?text=${encodeURIComponent(`Hola! Encontré a ${name}. ¿Puedes contactarme?`)}`); setTimeout(() => setStep(2), 1000); }}>
-                <Text style={s.whatsappBtnText}>💚 WhatsApp instead</Text>
+                <View style={s.whatsappLogo}><Text style={s.whatsappLogoText}>W</Text></View>
+                <Text style={s.whatsappBtnText}>WhatsApp</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={s.inAppMsgBtn} onPress={() => { router.push({ pathname: '/message', params: { conversationId: 'new', otherDog: name, otherOwner: phone } }); }}>
+                <Text style={s.inAppMsgIcon}>💬</Text>
+                <Text style={s.inAppMsgText}>In-app message</Text>
               </TouchableOpacity>
             </View>
 
@@ -264,9 +269,14 @@ const s = StyleSheet.create({
   callBtnTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary, marginBottom: 2 },
   callBtnNumber: { fontSize: 14, color: colors.safe },
   callBtnArrow: { color: colors.safe, fontSize: 20, marginLeft: 'auto' },
-  whatsappRow: { marginTop: 4 },
-  whatsappBtn: { backgroundColor: '#052016', borderRadius: 12, borderWidth: 0.5, borderColor: '#10B981', paddingVertical: 12, alignItems: 'center' },
-  whatsappBtnText: { color: '#10B981', fontSize: 14, fontWeight: '600' },
+  whatsappRow: { flexDirection: 'row', gap: 10, marginTop: 4 },
+  whatsappBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#052016', borderRadius: 12, borderWidth: 0.5, borderColor: '#10B981', paddingVertical: 12 },
+  whatsappLogo: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#25D366', alignItems: 'center', justifyContent: 'center' },
+  whatsappLogoText: { color: '#fff', fontSize: 11, fontWeight: '900' },
+  whatsappBtnText: { color: '#10B981', fontSize: 13, fontWeight: '600' },
+  inAppMsgBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#0F0F2E', borderRadius: 12, borderWidth: 0.5, borderColor: '#6366F1', paddingVertical: 12 },
+  inAppMsgIcon: { fontSize: 16 },
+  inAppMsgText: { color: '#6366F1', fontSize: 13, fontWeight: '600' },
   skipBtn: { alignItems: 'center', paddingVertical: 10 },
   skipBtnText: { color: colors.textMuted, fontSize: 13 },
   tipsCard: { backgroundColor: colors.bgCard, borderRadius: 14, borderWidth: 0.5, borderColor: colors.bgBorder, padding: 16, gap: 6 },

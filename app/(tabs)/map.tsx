@@ -60,7 +60,11 @@ export default function MapScreen() {
   }
 
   function buildMapHTML() {
-    const safeArr = dogs.map(d => ({
+    const filteredForMap = filter === 'all' ? dogs
+      : filter === 'dogs' ? dogs.filter(d => !alerts.some(a => a.dog_name === d.dog_name))
+      : filter === 'lost' ? dogs.filter(d => alerts.some(a => a.dog_name === d.dog_name))
+      : dogs;
+    const safeArr = filteredForMap.map(d => ({
       lat: d.lat || 19.4136,
       lng: d.lng || -99.1716,
       name: String(d.dog_name || '').replace(/['"\\`]/g, ''),
@@ -106,24 +110,39 @@ function initMap(){
     icon:{path:google.maps.SymbolPath.CIRCLE,scale:14,fillColor:'#F59E0B',fillOpacity:1,strokeColor:'#fff',strokeWeight:3},
     title:'You'
   });
-  PARKS.forEach(function(p){
+  var showParks = '${filter}' === 'all' || '${filter}' === 'parks';
+  var showDogs = '${filter}' === 'all' || '${filter}' === 'dogs' || '${filter}' === 'lost';
+  if(showParks) PARKS.forEach(function(p){
     var c=p.status==='high'?'#EF4444':p.status==='medium'?'#F59E0B':'#10B981';
     new google.maps.Circle({map:map,center:{lat:p.lat,lng:p.lng},radius:120,fillColor:c,fillOpacity:0.12,strokeColor:c,strokeOpacity:0.5,strokeWeight:1.5});
     new google.maps.Marker({position:{lat:p.lat,lng:p.lng},map:map,icon:{path:google.maps.SymbolPath.CIRCLE,scale:8,fillColor:c,fillOpacity:1,strokeColor:'#fff',strokeWeight:2},title:p.name});
   });
+  if(showDogs) {
   DOGS.forEach(function(d){
     var c=d.community?'#6366F1':'#F59E0B';
     if(d.photo){
-      var icon={
-        url:d.photo,
-        scaledSize:new google.maps.Size(44,44),
-        anchor:new google.maps.Point(22,22)
+      var canvas=document.createElement('canvas');
+      canvas.width=48;canvas.height=48;
+      var ctx=canvas.getContext('2d');
+      var img=new Image();
+      img.crossOrigin='anonymous';
+      img.onload=function(){
+        ctx.beginPath();
+        ctx.arc(24,24,22,0,Math.PI*2);
+        ctx.clip();
+        ctx.drawImage(img,0,0,48,48);
+        ctx.beginPath();
+        ctx.arc(24,24,22,0,Math.PI*2);
+        ctx.strokeStyle=d.community?'#6366F1':'#F59E0B';
+        ctx.lineWidth=3;
+        ctx.stroke();
+        new google.maps.Marker({
+          position:{lat:d.lat,lng:d.lng},map:map,
+          icon:{url:canvas.toDataURL(),scaledSize:new google.maps.Size(48,48),anchor:new google.maps.Point(24,24)},
+          title:d.name
+        });
       };
-      var marker=new google.maps.Marker({
-        position:{lat:d.lat,lng:d.lng},map:map,
-        icon:icon,title:d.name,
-        shape:{type:'circle',coords:[22,22,22]}
-      });
+      img.src=d.photo;
     } else {
       new google.maps.Marker({
         position:{lat:d.lat,lng:d.lng},map:map,
@@ -132,6 +151,7 @@ function initMap(){
       });
     }
   });
+  }
   ALERTS.forEach(function(a){
     new google.maps.Marker({
       position:{lat:a.lat,lng:a.lng},map:map,

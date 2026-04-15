@@ -52,6 +52,8 @@ export default function Onboarding() {
   const [selectedEmoji, setSelectedEmoji] = useState('🐕');
   const [age, setAge] = useState('');
   const [breed, setBreed] = useState(null);
+  const [customBreed, setCustomBreed] = useState('');
+  const [showCustomBreed, setShowCustomBreed] = useState(false);
   const [selectedTags, setSelectedTags] = useState([]);
   const [neighbourhood, setNeighbourhood] = useState('');
   const [ownerName, setOwnerName] = useState('');
@@ -288,7 +290,7 @@ export default function Onboarding() {
             )}
             <View style={s.breedGrid}>
               {BREEDS.map(b => (
-                <TouchableOpacity key={b.name} style={[s.breedCard, breed?.name === b.name && s.breedCardActive]} onPress={() => setBreed(b)}>
+                <TouchableOpacity key={b.name} style={[s.breedCard, breed?.name === b.name && s.breedCardActive]} onPress={() => { setBreed(b); if (b.name === 'Other') setShowCustomBreed(true); else setShowCustomBreed(false); }}>
                   <Text style={s.breedCardEmoji}>{b.emoji}</Text>
                   <Text style={[s.breedCardName, breed?.name === b.name && { color: colors.textPrimary }]}>{b.name}</Text>
                   <View style={{ flexDirection: 'row', gap: 2 }}>
@@ -297,15 +299,21 @@ export default function Onboarding() {
                 </TouchableOpacity>
               ))}
             </View>
-            <View style={{ marginTop: 14 }}>
-              <Text style={s.fieldLabel}>Not listed? Enter breed manually</Text>
-              <TextInput
-                style={s.input}
-                placeholder="Type breed name..."
-                placeholderTextColor={colors.textMuted}
-                onChangeText={(text) => text.trim() && setBreed({ name: text.trim(), energy: 3, emoji: '🐾' })}
-              />
-            </View>
+            {showCustomBreed && (
+              <View style={{ marginTop: 14 }}>
+                <Text style={s.fieldLabel}>Enter your pet's breed</Text>
+                <TextInput
+                  style={s.input}
+                  placeholder="e.g. Xoloitzcuintli, Pitbull mix..."
+                  placeholderTextColor={colors.textMuted}
+                  value={customBreed}
+                  autoFocus
+                  onChangeText={(text) => setCustomBreed(text)}
+                  onBlur={() => { if (customBreed.trim()) setBreed({ name: customBreed.trim(), energy: 3, emoji: '🐾' }); }}
+                  onSubmitEditing={() => { if (customBreed.trim()) setBreed({ name: customBreed.trim(), energy: 3, emoji: '🐾' }); }}
+                />
+              </View>
+            )}
           </ScrollView>
         )}
 
@@ -337,18 +345,34 @@ export default function Onboarding() {
             <Text style={s.stepNum}>04 / 05</Text>
             <Text style={s.stepTitle}>Where does {dogName} roam?</Text>
             <Text style={s.stepSub}>Connect with pet owners in your colonia</Text>
-            {neighbourhood && (
-              <View style={s.selectedNeighbourhood}>
-                <Text style={s.selectedNeighbourhoodIcon}>📍</Text>
-                <View>
-                  <Text style={s.selectedNeighbourhoodName}>{neighbourhood}</Text>
-                  <Text style={s.selectedNeighbourhoodSub}>6 pets already walk here</Text>
-                </View>
-                <View style={s.activeDot} />
+            <Text style={s.fieldLabel}>Street or neighbourhood name</Text>
+            <TextInput
+              style={s.input}
+              placeholder="e.g. Parque España, Condesa..."
+              placeholderTextColor={colors.textMuted}
+              value={neighbourhood}
+              onChangeText={setNeighbourhood}
+              autoFocus
+            />
+            {neighbourhood.length > 0 && (
+              <View style={s.suggestionsWrap}>
+                {NEIGHBOURHOODS.filter(n => n.toLowerCase().includes(neighbourhood.toLowerCase())).slice(0, 4).map(n => (
+                  <TouchableOpacity key={n} style={s.suggestionRow} onPress={() => setNeighbourhood(n)}>
+                    <Text style={s.suggestionIcon}>📍</Text>
+                    <Text style={s.suggestionText}>{n}</Text>
+                  </TouchableOpacity>
+                ))}
+                {!NEIGHBOURHOODS.some(n => n.toLowerCase() === neighbourhood.toLowerCase()) && neighbourhood.length > 2 && (
+                  <TouchableOpacity style={[s.suggestionRow, { borderColor: colors.amber }]} onPress={() => setNeighbourhood(neighbourhood)}>
+                    <Text style={s.suggestionIcon}>✓</Text>
+                    <Text style={[s.suggestionText, { color: colors.amber }]}>Use "{neighbourhood}"</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             )}
+            <Text style={s.fieldLabel} >Or choose a popular colonia</Text>
             <View style={s.neighbourhoodGrid}>
-              {NEIGHBOURHOODS.map(n => (
+              {NEIGHBOURHOODS.slice(0, 8).map(n => (
                 <TouchableOpacity key={n} style={[s.neighbourhoodBtn, neighbourhood === n && s.neighbourhoodBtnActive]} onPress={() => setNeighbourhood(n)}>
                   <Text style={[s.neighbourhoodBtnText, neighbourhood === n && s.neighbourhoodBtnTextActive]}>
                     {neighbourhood === n ? '📍 ' : ''}{n}
@@ -561,6 +585,10 @@ const s = StyleSheet.create({
   selectedNeighbourhoodName: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
   selectedNeighbourhoodSub: { fontSize: 12, color: colors.amber, marginTop: 2 },
   activeDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.amber, marginLeft: 'auto' },
+  suggestionsWrap: { backgroundColor: colors.bgCard, borderRadius: 12, borderWidth: 0.5, borderColor: colors.bgBorder, marginBottom: 12, overflow: 'hidden' },
+  suggestionRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 14, borderBottomWidth: 0.5, borderBottomColor: colors.bgBorder },
+  suggestionIcon: { fontSize: 14, color: colors.amber },
+  suggestionText: { fontSize: 14, color: colors.textPrimary, fontWeight: '500' },
   neighbourhoodGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   neighbourhoodBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: colors.bgCard, borderWidth: 0.5, borderColor: colors.bgBorder },
   neighbourhoodBtnActive: { backgroundColor: colors.amberDim, borderColor: colors.amber },
