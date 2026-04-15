@@ -107,6 +107,7 @@ export default function Emergency() {
 
   const ringScale = ringAnim.interpolate({ inputRange: [0,1], outputRange: [1, 2.8] });
   const ringOpacity = ringAnim.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0.5, 0.15, 0] });
+  const profileUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://smartpettag.app'}/public-profile?dogName=${dog?.name}`;
   const sightingUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://smartpettag.app'}/sighting?alertId=${alertId}`;
   const whatsappMsg = `🚨 PERRO PERDIDO — ${dog?.name}!\n\nRaza: ${dog?.breed}\nÚltima ubicación: ${lastSeen || dog?.neighbourhood}\nDueño: ${dog?.owner_name} · ${dog?.owner_phone}\n\n¿Lo viste? Reporta aquí → ${sightingUrl}`;
 

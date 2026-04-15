@@ -36,7 +36,7 @@ export default function PosterScreen() {
     </View>
   );
 
-  const sightingUrl = `http://localhost:8081/sighting?alertId=${alertId}`;
+  const sightingUrl = `http://localhost:8081/public-profile?dogName=${alertId}`;
 
   const posterHTML = `
     <!DOCTYPE html>
