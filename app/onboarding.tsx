@@ -72,9 +72,9 @@ export default function Onboarding() {
   const counterAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const dogDropAnim = useRef(new Animated.Value(-200)).current;
-  const confettiAnims = useRef([...Array(14)].map(() => ({
-    y: new Animated.Value(-60),
-    x: new Animated.Value(Math.random() * width),
+  const confettiAnims = useRef([...Array(20)].map((_, i) => ({
+    y: new Animated.Value(-60 - Math.random() * 100),
+    x: new Animated.Value((width / 20) * i + Math.random() * (width / 20)),
     opacity: new Animated.Value(1),
     rotate: new Animated.Value(0),
   }))).current;
@@ -606,8 +606,8 @@ const s = StyleSheet.create({
   privacyNoteText: { fontSize: 12, color: colors.textMuted, lineHeight: 18, flex: 1 },
 
   // Done
-  doneScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28 },
-  confetti: { position: 'absolute', width: 12, height: 12, borderRadius: 2, zIndex: 0 },
+  doneScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, position: 'relative' },
+  confetti: { position: 'absolute', width: 12, height: 12, borderRadius: 2, zIndex: 0, pointerEvents: 'none' },
   doneAvatarWrap: { marginBottom: 20, position: 'relative' },
   doneAvatarPhoto: { width: 120, height: 120, borderRadius: 60, borderWidth: 3, borderColor: colors.amber },
   doneAvatarPlaceholder: { width: 120, height: 120, borderRadius: 60, backgroundColor: colors.amberDim, borderWidth: 3, borderColor: colors.amber, alignItems: 'center', justifyContent: 'center' },

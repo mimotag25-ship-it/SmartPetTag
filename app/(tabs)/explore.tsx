@@ -302,7 +302,7 @@ export default function CommunityScreen() {
           style={[styles.modeBtn, feedMode === 'nearby' && styles.modeBtnActive]}
           onPress={() => setFeedMode('nearby')}
         >
-          <Text style={[styles.modeBtnText, feedMode === 'nearby' && styles.modeBtnTextActive]}>🗺️ {t('nearMe')}</Text>
+          <Text style={[styles.modeBtnText, feedMode === 'nearby' && styles.modeBtnTextActive]}>📍 {t('nearMe')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -367,16 +367,34 @@ export default function CommunityScreen() {
           </View>
         )}
 
-        {/* Posts */}
+        {/* Posts or Near Me */}
         <View style={styles.postsSection}>
-          {posts.length === 0 ? (
-            <View style={styles.emptyFeed}>
-              <Text style={styles.emptyFeedEmoji}>🐾</Text>
-              <Text style={styles.emptyFeedTitle}>No posts yet</Text>
-              <Text style={styles.emptyFeedSub}>Be the first to share something with the community</Text>
+          {feedMode === 'nearby' ? (
+            <View>
+              <View style={styles.nearMeHeader}>
+                <Text style={styles.nearMeTitle}>📍 Activity near you</Text>
+                <Text style={styles.nearMeSub}>Check-ins, warnings and sightings in your area</Text>
+              </View>
+              {posts.filter(p => ['checkin','warning','spotted'].includes(p.type)).length === 0 ? (
+                <View style={styles.emptyFeed}>
+                  <Text style={styles.emptyFeedEmoji}>📍</Text>
+                  <Text style={styles.emptyFeedTitle}>Nothing nearby yet</Text>
+                  <Text style={styles.emptyFeedSub}>Be the first to check in at a park or report a sighting</Text>
+                </View>
+              ) : (
+                posts.filter(p => ['checkin','warning','spotted'].includes(p.type)).map(post => <Post key={post.id} post={post} />)
+              )}
             </View>
           ) : (
-            posts.map(post => <Post key={post.id} post={post} />)
+            posts.length === 0 ? (
+              <View style={styles.emptyFeed}>
+                <Text style={styles.emptyFeedEmoji}>🐾</Text>
+                <Text style={styles.emptyFeedTitle}>No posts yet</Text>
+                <Text style={styles.emptyFeedSub}>Be the first to share something with the community</Text>
+              </View>
+            ) : (
+              posts.map(post => <Post key={post.id} post={post} />)
+            )
           )}
         </View>
 
@@ -475,6 +493,9 @@ const styles = StyleSheet.create({
   commentSend: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.amber, alignItems: 'center', justifyContent: 'center' },
   commentSendText: { color: colors.bg, fontSize: 16, fontWeight: '700' },
 
+  nearMeHeader: { marginBottom: 16 },
+  nearMeTitle: { fontSize: 17, fontWeight: '800', color: colors.textPrimary, marginBottom: 4 },
+  nearMeSub: { fontSize: 13, color: colors.textMuted },
   emptyFeed: { alignItems: 'center', paddingVertical: 40, gap: 8 },
   emptyFeedEmoji: { fontSize: 48 },
   emptyFeedTitle: { fontSize: 18, fontWeight: '700', color: colors.textPrimary },
