@@ -154,12 +154,14 @@ export default function Onboarding() {
         } catch (e) {}
       }
 
-      await supabase.from('dogs').insert({
+      const { error: dogError } = await supabase.from('dogs').insert({
         name: dogName, breed: breed?.name || '', age: parseInt(age) || 0,
         personality: selectedTags.join(', '), neighbourhood, owner_name: ownerName,
         owner_phone: phone, emoji: selectedEmoji, owner_email: email,
         photo_url: uploadedPhotoUrl,
       });
+      if (dogError) { setError('Failed to create profile: ' + dogError.message); setLoading(false); return; }
+      
       await supabase.from('dog_locations').insert({
         dog_name: dogName, owner_name: ownerName, breed: breed?.name || '',
         personality: selectedTags.join(', '), lat: 19.4136, lng: -99.1716,
