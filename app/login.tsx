@@ -1,27 +1,26 @@
 import { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { supabase } from '../lib/supabase';
+import { router } from 'expo-router';
+import { colors } from '../lib/design';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
 
-  async function handleAuth() {
+  async function handleLogin() {
+    if (!email.trim() || !password.trim()) { setMessage('Please enter email and password'); return; }
     setLoading(true);
     setMessage('');
-    if (isSignUp) {
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) setMessage('Error: ' + error.message);
-      else setMessage('Account created! Check your email to confirm.');
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setMessage('Error: ' + error.message);
+      setLoading(false);
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) setMessage('Error: ' + error.message);
-      else setMessage('Logged in successfully!');
+      router.replace('/(tabs)/');
     }
-    setLoading(false);
   }
 
   return (
@@ -29,17 +28,35 @@ export default function Login() {
       <View style={styles.header}>
         <Text style={styles.emoji}>🐾</Text>
         <Text style={styles.title}>SmartPet Tag</Text>
-        <Text style={styles.subtitle}>{isSignUp ? 'Create your account' : 'Welcome back'}</Text>
+        <Text style={styles.subtitle}>Welcome back</Text>
       </View>
       <View style={styles.form}>
-        <TextInput style={styles.input} placeholder="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address"/>
-        <TextInput style={styles.input} placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry/>
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          placeholderTextColor="#555"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          placeholderTextColor="#555"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
         {message ? <Text style={styles.message}>{message}</Text> : null}
-        <TouchableOpacity style={styles.button} onPress={handleAuth} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{isSignUp ? 'Create Account' : 'Log In'}</Text>}
+        <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+          {loading ? <ActivityIndicator color={colors.bg} /> : <Text style={styles.buttonText}>Sign in →</Text>}
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => setIsSignUp(!isSignUp)}>
-          <Text style={styles.switchText}>{isSignUp ? 'Already have an account? Log in' : "Don't have an account? Sign up"}</Text>
+        <TouchableOpacity style={styles.signupLink} onPress={() => router.push('/onboarding')}>
+          <Text style={styles.signupLinkText}>No account yet? Create one free 🐾</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.backLink} onPress={() => router.replace('/guest')}>
+          <Text style={styles.backLinkText}>← Back</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -47,15 +64,18 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5', justifyContent: 'center', padding: 24 },
+  container: { flex: 1, backgroundColor: '#0A0F1E', justifyContent: 'center', padding: 24 },
   header: { alignItems: 'center', marginBottom: 40 },
   emoji: { fontSize: 56, marginBottom: 12 },
-  title: { fontSize: 28, fontWeight: '700', color: '#222', marginBottom: 6 },
-  subtitle: { fontSize: 15, color: '#888' },
-  form: { backgroundColor: '#fff', borderRadius: 16, padding: 24, borderWidth: 0.5, borderColor: '#e0e0e0' },
-  input: { borderWidth: 0.5, borderColor: '#ddd', borderRadius: 10, padding: 14, fontSize: 14, marginBottom: 12, backgroundColor: '#fafafa' },
-  message: { fontSize: 13, color: '#E8640A', marginBottom: 12, textAlign: 'center' },
-  button: { backgroundColor: '#E8640A', borderRadius: 10, paddingVertical: 14, alignItems: 'center', marginBottom: 16 },
-  buttonText: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  switchText: { textAlign: 'center', color: '#888', fontSize: 13 },
+  title: { fontSize: 28, fontWeight: '800', color: '#F9FAFB', marginBottom: 6, fontStyle: 'italic' },
+  subtitle: { fontSize: 15, color: '#6B7280' },
+  form: { backgroundColor: '#111827', borderRadius: 20, padding: 24, borderWidth: 0.5, borderColor: '#1F2937' },
+  input: { borderWidth: 0.5, borderColor: '#1F2937', borderRadius: 12, padding: 14, fontSize: 14, marginBottom: 12, backgroundColor: '#0A0F1E', color: '#F9FAFB' },
+  message: { fontSize: 13, color: '#EF4444', marginBottom: 12, textAlign: 'center' },
+  button: { backgroundColor: '#F59E0B', borderRadius: 12, paddingVertical: 15, alignItems: 'center', marginBottom: 16 },
+  buttonText: { color: '#0A0F1E', fontSize: 16, fontWeight: '800' },
+  signupLink: { alignItems: 'center', paddingVertical: 8 },
+  signupLinkText: { color: '#F59E0B', fontSize: 13 },
+  backLink: { alignItems: 'center', paddingVertical: 8 },
+  backLinkText: { color: '#6B7280', fontSize: 13 },
 });
