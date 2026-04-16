@@ -168,7 +168,8 @@ export default function Onboarding() {
       });
       setPhotoUrl(uploadedPhotoUrl);
       setLoading(false);
-      animateStep('next');
+      // Small delay to ensure DB write completes before navigation
+      setTimeout(() => animateStep('next'), 500);
     } catch (e) { setError('Something went wrong.'); setLoading(false); }
   }
 
@@ -454,7 +455,7 @@ export default function Onboarding() {
                 </View>
               ))}
             </View>
-            <TouchableOpacity style={s.enterBtn} onPress={() => router.replace('/(tabs)/')}>
+            <TouchableOpacity style={s.enterBtn} onPress={() => router.replace('/(tabs)/explore')}>
               <Text style={s.enterBtnText}>{'Enter SmartPet Tag 🐾'}</Text>
             </TouchableOpacity>
             </View>

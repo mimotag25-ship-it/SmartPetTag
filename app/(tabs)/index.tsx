@@ -116,10 +116,15 @@ export default function HomeScreen() {
 
   async function loadDog() {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setLoading(false); return; }
-    const { data, error } = await supabase.from('dogs').select('*').eq('owner_email', user.email).single();
-    if (error || !data) {
-      // No dog found for this user — send to onboarding
+    if (!user) { setLoading(false); router.replace('/guest'); return; }
+    // Try up to 3 times with delay — onboarding DB write may still be in progress
+    let data = null;
+    for (let i = 0; i < 3; i++) {
+      const { data: result } = await supabase.from('dogs').select('*').eq('owner_email', user.email).single();
+      if (result) { data = result; break; }
+      if (i < 2) await new Promise(r => setTimeout(r, 1000));
+    }
+    if (!data) {
       router.replace('/onboarding');
       return;
     }
@@ -176,6 +181,12 @@ export default function HomeScreen() {
   const tags = dog?.personality?.split(',').map(t => t.trim()).filter(Boolean) || [];
 
   if (loading) return (
+    <View style={s.loader}>
+      <Text style={s.loaderEmoji}>🐾</Text>
+    </View>
+  );
+
+  if (!dog) return (
     <View style={s.loader}>
       <Text style={s.loaderEmoji}>🐾</Text>
     </View>
