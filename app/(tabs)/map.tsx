@@ -133,9 +133,14 @@ function initMap(){
     ]
   });
   new google.maps.Marker({
-    position:{lat:19.4136,lng:-99.1716},map:map,
+    position:{lat:${userLat},lng:${userLng}},map:map,
     icon:{path:google.maps.SymbolPath.CIRCLE,scale:14,fillColor:'#F59E0B',fillOpacity:1,strokeColor:'#fff',strokeWeight:3},
     title:'You'
+  });
+  new google.maps.Circle({
+    map:map,center:{lat:${userLat},lng:${userLng}},
+    radius:5000,fillColor:'#F59E0B',fillOpacity:0.04,
+    strokeColor:'#F59E0B',strokeOpacity:0.2,strokeWeight:1
   });
   var showParks = '${filter}' === 'all' || '${filter}' === 'parks';
   var showDogs = '${filter}' === 'all' || '${filter}' === 'dogs' || '${filter}' === 'lost';
