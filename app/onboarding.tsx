@@ -135,10 +135,16 @@ export default function Onboarding() {
     if (!email.trim() || !password.trim() || !ownerName.trim()) { setError('Please fill in all fields'); return; }
     setLoading(true); setError('');
     try {
+      // Try sign up first
       const { error: signUpError } = await supabase.auth.signUp({ email, password });
-      if (signUpError && !signUpError.message.includes('already')) { setError(signUpError.message); setLoading(false); return; }
+      
+      // If email exists, just sign in instead
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-      if (signInError) { setError(signInError.message); setLoading(false); return; }
+      if (signInError) {
+        setError('Could not sign in. Please check your email and password.');
+        setLoading(false);
+        return;
+      }
 
       let uploadedPhotoUrl = null;
       if (photo) {

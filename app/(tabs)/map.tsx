@@ -142,6 +142,19 @@ function initMap(){
     radius:5000,fillColor:'#F59E0B',fillOpacity:0.04,
     strokeColor:'#F59E0B',strokeOpacity:0.2,strokeWeight:1
   });
+
+  // Locate me button
+  var locateBtn=document.createElement('button');
+  locateBtn.innerHTML='📍';
+  locateBtn.style.cssText='background:#0A0F1E;border:1px solid #F59E0B;border-radius:8px;padding:8px 10px;font-size:20px;cursor:pointer;margin:10px;box-shadow:0 2px 8px rgba(0,0,0,0.3)';
+  locateBtn.onclick=function(){
+    map.setCenter({lat:${userLat},lng:${userLng}});
+    map.setZoom(16);
+  };
+  map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(locateBtn);
+
+  // Enable zoom controls
+  map.setOptions({zoomControl:true,zoomControlOptions:{position:google.maps.ControlPosition.RIGHT_CENTER}});
   var showParks = '${filter}' === 'all' || '${filter}' === 'parks';
   var showDogs = '${filter}' === 'all' || '${filter}' === 'dogs' || '${filter}' === 'lost';
   if(showParks) PARKS.forEach(function(p){
