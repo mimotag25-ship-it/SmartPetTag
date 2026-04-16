@@ -26,6 +26,19 @@ export default function MapScreen() {
   const [selectedDog, setSelectedDog] = useState(null);
   const [myVisibility, setMyVisibility] = useState('public');
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [userLat, setUserLat] = useState(19.4136);
+  const [userLng, setUserLng] = useState(-99.1716);
+  const RADIUS_KM = 5;
+
+  function distanceKm(lat1, lng1, lat2, lng2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng/2) * Math.sin(dLng/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
   const slideAnim = useRef(new Animated.Value(400)).current;
   const { t, lang } = useLanguage();
   const params = useLocalSearchParams();
@@ -34,6 +47,12 @@ export default function MapScreen() {
   const focusLng = parseFloat(Array.isArray(params?.lng) ? params.lng[0] : (params?.lng || '-99.1716'));
 
   useEffect(() => {
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => { setUserLat(pos.coords.latitude); setUserLng(pos.coords.longitude); },
+        () => {} // fallback to default CDMX coords
+      );
+    }
     loadAlerts();
     loadDogs();
     const interval = setInterval(loadDogs, 10000);
@@ -50,10 +69,13 @@ export default function MapScreen() {
     if (data) setDogs(data);
   }
 
-  const filteredDogs = filter === 'all' ? dogs
-    : filter === 'dogs' ? dogs.filter(d => d.visibility !== 'private')
-    : filter === 'lost' ? dogs.filter(d => alerts.some(a => a.dog_name === d.dog_name))
-    : dogs;
+  const nearbyDogs = dogs.filter(d =>
+    distanceKm(userLat, userLng, d.lat || 19.4136, d.lng || -99.1716) <= RADIUS_KM
+  );
+  const filteredDogs = filter === 'all' ? nearbyDogs
+    : filter === 'dogs' ? nearbyDogs.filter(d => d.visibility !== 'private')
+    : filter === 'lost' ? nearbyDogs.filter(d => alerts.some(a => a.dog_name === d.dog_name))
+    : nearbyDogs;
 
   function openDogProfile(dog) {
     setSelectedDog(dog);

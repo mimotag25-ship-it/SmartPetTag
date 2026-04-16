@@ -161,7 +161,7 @@ function Post({ post }) {
   );
 }
 
-function AlertCard({ alert }) {
+function AlertCard({ alert, currentUserEmail, onResolve }) {
   function getTimeAgo(ts) {
     const mins = Math.floor((new Date() - new Date(ts)) / 60000);
     if (mins < 1) return 'Just now';
@@ -201,6 +201,11 @@ function AlertCard({ alert }) {
           <Text style={styles.shareBtnText}>↗ {t('share')}</Text>
         </TouchableOpacity>
       </View>
+      {onResolve && (
+        <TouchableOpacity style={styles.resolveBtn} onPress={onResolve}>
+          <Text style={styles.resolveBtnText}>✓ My pet is home — remove alert</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -228,6 +233,19 @@ export default function CommunityScreen() {
     if (!user) { const { data } = await supabase.from('dogs').select('*').single(); if (data) setCurrentDog(data); return; }
     const { data } = await supabase.from('dogs').select('*').eq('owner_email', user.email).single();
     if (data) setCurrentDog(data);
+  }
+
+  const [currentUserEmail, setCurrentUserEmail] = useState('');
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setCurrentUserEmail(user.email || '');
+    });
+  }, []);
+
+  async function resolveAlert(alertId) {
+    await supabase.from('lost_alerts').update({ status: 'found' }).eq('id', alertId);
+    loadAlerts();
   }
 
   async function loadAll() {
@@ -363,7 +381,7 @@ export default function CommunityScreen() {
               <Text style={styles.sectionTitle}>{t('activeAlertsNearYou')}</Text>
               <View style={styles.sectionBadge}><Text style={styles.sectionBadgeText}>{alerts.length}</Text></View>
             </View>
-            {alerts.map(a => <AlertCard key={a.id} alert={a} />)}
+            {alerts.map(a => <AlertCard key={a.id} alert={a} currentUserEmail={currentUserEmail} onResolve={a.owner_name && currentUserEmail && (a.owner_email === currentUserEmail || a.owner_name === currentUserEmail) ? () => resolveAlert(a.id) : null} />)}
           </View>
         )}
 
@@ -496,6 +514,8 @@ const styles = StyleSheet.create({
   nearMeHeader: { marginBottom: 16 },
   nearMeTitle: { fontSize: 17, fontWeight: '800', color: colors.textPrimary, marginBottom: 4 },
   nearMeSub: { fontSize: 13, color: colors.textMuted },
+  resolveBtn: { marginTop: 8, backgroundColor: '#052016', borderRadius: 10, paddingVertical: 10, alignItems: 'center', borderWidth: 0.5, borderColor: '#10B981' },
+  resolveBtnText: { color: '#10B981', fontSize: 12, fontWeight: '700' },
   emptyFeed: { alignItems: 'center', paddingVertical: 40, gap: 8 },
   emptyFeedEmoji: { fontSize: 48 },
   emptyFeedTitle: { fontSize: 18, fontWeight: '700', color: colors.textPrimary },

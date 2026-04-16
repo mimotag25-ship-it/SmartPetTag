@@ -77,7 +77,24 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState({ alerts: 0, found: 0, sightings: 0, posts: 0 });
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [userLat, setUserLat] = useState(19.4136);
+  const [userLng, setUserLng] = useState(-99.1716);
   const { t } = useLanguage();
+
+  function distanceKm(lat1, lng1, lat2, lng2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng/2) * Math.sin(dLng/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  const nearbyParks = PARKS
+    .map(p => ({ ...p, distance: distanceKm(userLat, userLng, p.lat, p.lng) }))
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, 4);
 
   // Animations
   const shimmerAnim = useRef(new Animated.Value(-width)).current;
@@ -88,6 +105,12 @@ export default function HomeScreen() {
   useEffect(() => {
     loadAll();
     startAnimations();
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => { setUserLat(pos.coords.latitude); setUserLng(pos.coords.longitude); },
+        () => {}
+      );
+    }
   }, []);
 
   function startAnimations() {
@@ -365,7 +388,7 @@ export default function HomeScreen() {
         </View>
         <Text style={s.sectionSub}>Live dog activity — updated every 5 min</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 20 }}>
-          {PARKS.map((park, i) => <ParkCard key={i} park={park} />)}
+          {nearbyParks.map((park, i) => <ParkCard key={i} park={park} />)}
         </ScrollView>
       </View>
 
