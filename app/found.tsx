@@ -181,7 +181,7 @@ export default function Found() {
 
             <TouchableOpacity style={s.photoPickerBtn} onPress={pickPhoto}>
               {photo ? (
-                <Image source={{ uri: photo }} style={s.pickedPhoto} resizeMode="cover" />
+                <Image source={{ uri: photo }} style={s.pickedPhoto} resizeMode="contain" />
               ) : (
                 <View style={s.photoPickerPlaceholder}>
                   <Text style={{ fontSize: 40 }}>📷</Text>

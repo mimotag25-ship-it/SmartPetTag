@@ -93,7 +93,7 @@ export default function PetProfile() {
           return (
             <View>
               <View style={s.heroWrap}>
-                <Image source={{ uri: allPhotos[activePhoto] }} style={s.heroPhoto} resizeMode="contain" />
+                <Image source={{ uri: allPhotos[activePhoto] }} style={s.heroPhoto} resizeMode="cover" />
                 <View style={s.onlineIndicator}>
                   <View style={s.onlineDot} />
                   <Text style={s.onlineText}>{dog.is_moving ? 'Moving now' : 'Online'}</Text>
@@ -113,7 +113,7 @@ export default function PetProfile() {
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.thumbnailRow}>
                   {allPhotos.map((photo, i) => (
                     <TouchableOpacity key={i} onPress={() => setActivePhoto(i)} style={[s.thumbnailWrap, activePhoto === i && s.thumbnailWrapActive]}>
-                      <Image source={{ uri: photo }} style={s.thumbnail} resizeMode="cover" />
+                      <Image source={{ uri: photo }} style={s.thumbnail} resizeMode="contain" />
                       {i === 0 && <View style={s.thumbnailBadge}><Text style={s.thumbnailBadgeText}>MAIN</Text></View>}
                     </TouchableOpacity>
                   ))}

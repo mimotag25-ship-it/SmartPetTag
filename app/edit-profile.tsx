@@ -34,8 +34,9 @@ export default function EditProfile() {
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { router.replace('/login'); return; }
       const { data } = await supabase.from('dogs').select('*')
-        .eq('owner_email', user?.email || '')
+        .eq('owner_email', user.email)
         .single();
       if (data) {
         setDog(data);

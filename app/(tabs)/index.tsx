@@ -13,6 +13,12 @@ const PARKS = [
   { name: 'Parque México', dogs: 14, energy: 5, friendly: 10, reactive: 4, status: 'high', emoji: '🌲', lat: 19.4119, lng: -99.1691 },
   { name: 'Parque Hundido', dogs: 3, energy: 2, friendly: 3, reactive: 0, status: 'low', emoji: '🌿', lat: 19.3782, lng: -99.1793 },
   { name: 'Jardín Pushkin', dogs: 5, energy: 3, friendly: 5, reactive: 0, status: 'low', emoji: '🍃', lat: 19.4186, lng: -99.1580 },
+  { name: 'Bosque de Chapultepec', dogs: 22, energy: 4, friendly: 18, reactive: 4, status: 'high', emoji: '🌲', lat: 19.4204, lng: -99.1892 },
+  { name: 'Parque Lincoln', dogs: 9, energy: 3, friendly: 8, reactive: 1, status: 'medium', emoji: '🌳', lat: 19.4322, lng: -99.1944 },
+  { name: 'Parque Caninas Roma', dogs: 6, energy: 4, friendly: 6, reactive: 0, status: 'medium', emoji: '🐕', lat: 19.4155, lng: -99.1603 },
+  { name: 'Parque Coyoacán', dogs: 11, energy: 3, friendly: 10, reactive: 1, status: 'medium', emoji: '🌳', lat: 19.3509, lng: -99.1618 },
+  { name: 'Parque Viveros', dogs: 7, energy: 2, friendly: 7, reactive: 0, status: 'low', emoji: '🌿', lat: 19.3545, lng: -99.1751 },
+  { name: 'Parque Masayoshi Ohira', dogs: 4, energy: 3, friendly: 4, reactive: 0, status: 'low', emoji: '🍃', lat: 19.3891, lng: -99.1734 },
 ];
 
 const STATUS_CONFIG = {
@@ -110,16 +116,15 @@ export default function HomeScreen() {
 
   async function loadDog() {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      const { data } = await supabase.from('dogs').select('*').single();
-      if (data) { setDog(data); loadStats(data); }
+    if (!user) { setLoading(false); return; }
+    const { data, error } = await supabase.from('dogs').select('*').eq('owner_email', user.email).single();
+    if (error || !data) {
+      // No dog found for this user — send to onboarding
+      router.replace('/onboarding');
       return;
     }
-    const { data, error } = await supabase.from('dogs').select('*').eq('owner_email', user.email).single();
-    if (error) {
-      const { data: fallback } = await supabase.from('dogs').select('*').single();
-      if (fallback) { setDog(fallback); loadStats(fallback); }
-    } else { setDog(data); loadStats(data); }
+    setDog(data);
+    loadStats(data);
   }
 
   async function loadStats(dogData) {

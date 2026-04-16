@@ -12,6 +12,11 @@ const PARKS = [
   { name: 'Parque México', lat: 19.4119, lng: -99.1691, dogs: 14, status: 'high' },
   { name: 'Parque Hundido', lat: 19.3782, lng: -99.1793, dogs: 3, status: 'low' },
   { name: 'Jardín Pushkin', lat: 19.4186, lng: -99.1580, dogs: 5, status: 'low' },
+  { name: 'Bosque de Chapultepec', lat: 19.4204, lng: -99.1892, dogs: 22, status: 'high' },
+  { name: 'Parque Lincoln', lat: 19.4322, lng: -99.1944, dogs: 9, status: 'medium' },
+  { name: 'Parque Caninas Roma', lat: 19.4155, lng: -99.1603, dogs: 6, status: 'medium' },
+  { name: 'Parque Coyoacán', lat: 19.3509, lng: -99.1618, dogs: 11, status: 'medium' },
+  { name: 'Parque Viveros', lat: 19.3545, lng: -99.1751, dogs: 7, status: 'low' },
 ];
 
 export default function MapScreen() {

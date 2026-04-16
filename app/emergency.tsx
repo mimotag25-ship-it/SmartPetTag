@@ -47,10 +47,8 @@ export default function Emergency() {
 
   async function loadDog() {
     const { data: { user } } = await supabase.auth.getUser();
-    const query = user
-      ? supabase.from('dogs').select('*, photo_url, photos').eq('owner_email', user.email).single()
-      : supabase.from('dogs').select('*, photo_url, photos').single();
-    const { data } = await query;
+    if (!user) return;
+    const { data } = await supabase.from('dogs').select('*, photo_url, photos').eq('owner_email', user.email).single();
     if (data) setDog(data);
   }
 
@@ -132,7 +130,7 @@ export default function Emergency() {
           <View style={s.petAlertCard}>
             <View style={s.petAlertPhotoWrap}>
               {dog?.photo_url
-                ? <Image source={{ uri: dog.photo_url }} style={s.petAlertPhoto} resizeMode="cover" />
+                ? <Image source={{ uri: dog.photo_url }} style={s.petAlertPhoto} resizeMode="contain" />
                 : <Text style={{ fontSize: 40 }}>{dog?.emoji || '🐕'}</Text>}
             </View>
             <View style={{ flex: 1 }}>
@@ -168,11 +166,11 @@ export default function Emergency() {
             <Text style={s.formLabel}>📷 Add a current photo (optional)</Text>
             <TouchableOpacity style={s.photoPickerBtn} onPress={pickExtraPhoto}>
               {additionalPhoto ? (
-                <Image source={{ uri: additionalPhoto }} style={s.pickedPhoto} resizeMode="cover" />
+                <Image source={{ uri: additionalPhoto }} style={s.pickedPhoto} resizeMode="contain" />
               ) : (
                 <View style={s.photoPickerPlaceholder}>
                   {dog?.photo_url
-                    ? <Image source={{ uri: dog.photo_url }} style={s.existingPhoto} resizeMode="cover" />
+                    ? <Image source={{ uri: dog.photo_url }} style={s.existingPhoto} resizeMode="contain" />
                     : <Text style={{ fontSize: 32 }}>📷</Text>}
                   <Text style={s.photoPickerText}>{dog?.photo_url ? 'Tap to add a different photo' : 'Add a photo'}</Text>
                   <Text style={s.photoPickerSub}>Profile photo will be used if none added</Text>
@@ -224,7 +222,7 @@ export default function Emergency() {
 
             <View style={s.activeDogCard}>
               {dog?.photo_url
-                ? <Image source={{ uri: dog.photo_url }} style={s.activeDogPhoto} resizeMode="cover" />
+                ? <Image source={{ uri: dog.photo_url }} style={s.activeDogPhoto} resizeMode="contain" />
                 : <View style={s.activeDogPhotoPlaceholder}><Text style={{ fontSize: 52 }}>{dog?.emoji || '🐕'}</Text></View>}
               <Text style={s.activeDogName}>{dog?.name}</Text>
               <Text style={s.activeDogBreed}>{dog?.breed}</Text>
@@ -302,7 +300,7 @@ export default function Emergency() {
           <View style={s.foundContent}>
             <View style={s.foundAvatarWrap}>
               {dog?.photo_url
-                ? <Image source={{ uri: dog.photo_url }} style={s.foundPhoto} resizeMode="cover" />
+                ? <Image source={{ uri: dog.photo_url }} style={s.foundPhoto} resizeMode="contain" />
                 : <Text style={{ fontSize: 80 }}>{dog?.emoji || '🐾'}</Text>}
             </View>
             <Text style={s.foundTitle}>{dog?.name} is home safe! 🎉</Text>
