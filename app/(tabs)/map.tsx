@@ -143,13 +143,30 @@ function initMap(){
     strokeColor:'#F59E0B',strokeOpacity:0.2,strokeWeight:1
   });
 
-  // Locate me button
+  // Locate me button — uses live browser geolocation
   var locateBtn=document.createElement('button');
   locateBtn.innerHTML='📍';
-  locateBtn.style.cssText='background:#0A0F1E;border:1px solid #F59E0B;border-radius:8px;padding:8px 10px;font-size:20px;cursor:pointer;margin:10px;box-shadow:0 2px 8px rgba(0,0,0,0.3)';
+  locateBtn.title='Go to my location';
+  locateBtn.style.cssText='background:#0A0F1E;border:2px solid #F59E0B;border-radius:8px;padding:8px 12px;font-size:20px;cursor:pointer;margin:10px;box-shadow:0 2px 8px rgba(0,0,0,0.4)';
   locateBtn.onclick=function(){
-    map.setCenter({lat:${userLat},lng:${userLng}});
-    map.setZoom(16);
+    if(navigator.geolocation){
+      locateBtn.innerHTML='⏳';
+      navigator.geolocation.getCurrentPosition(function(pos){
+        var latlng={lat:pos.coords.latitude,lng:pos.coords.longitude};
+        map.setCenter(latlng);
+        map.setZoom(17);
+        locateBtn.innerHTML='📍';
+        // Place accurate you marker
+        new google.maps.Marker({
+          position:latlng,map:map,
+          icon:{path:google.maps.SymbolPath.CIRCLE,scale:10,fillColor:'#F59E0B',fillOpacity:1,strokeColor:'#fff',strokeWeight:2},
+          title:'You are here'
+        });
+      },function(){
+        locateBtn.innerHTML='📍';
+        alert('Could not get your location');
+      },{enableHighAccuracy:true,timeout:5000});
+    }
   };
   map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(locateBtn);
 
