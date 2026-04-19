@@ -354,6 +354,20 @@ export default function Onboarding() {
             <Text style={s.stepNum}>04 / 05</Text>
             <Text style={s.stepTitle}>Where does {dogName} roam?</Text>
             <Text style={s.stepSub}>Connect with pet owners in your colonia</Text>
+            <View style={s.gpsCard}>
+              <Text style={s.gpsCardIcon}>📍</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={s.gpsCardTitle}>Allow location for live map</Text>
+                <Text style={s.gpsCardText}>Your phone GPS shows {dogName} moving on the community map. Without a GPS tag on the collar, the map only updates when you have your phone.</Text>
+              </View>
+            </View>
+            <View style={s.tagWarning}>
+              <Text style={s.tagWarningIcon}>🏷️</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={s.tagWarningTitle}>Want live tracking without your phone?</Text>
+                <Text style={s.tagWarningText}>Attach a Tractive or Tile GPS tag to {dogName}'s collar. Connect it in your profile settings after signup.</Text>
+              </View>
+            </View>
             <Text style={s.fieldLabel}>Street or neighbourhood name</Text>
             <TextInput
               style={s.input}
@@ -594,6 +608,14 @@ const s = StyleSheet.create({
   selectedNeighbourhoodName: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
   selectedNeighbourhoodSub: { fontSize: 12, color: colors.amber, marginTop: 2 },
   activeDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.amber, marginLeft: 'auto' },
+  gpsCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, backgroundColor: colors.communityDim, borderRadius: 12, borderWidth: 0.5, borderColor: colors.community, padding: 14, marginBottom: 12 },
+  gpsCardIcon: { fontSize: 20 },
+  gpsCardTitle: { fontSize: 13, fontWeight: '700', color: colors.textPrimary, marginBottom: 3 },
+  gpsCardText: { fontSize: 12, color: colors.textMuted, lineHeight: 18 },
+  tagWarning: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, backgroundColor: colors.amberDim, borderRadius: 12, borderWidth: 0.5, borderColor: colors.amber, padding: 14, marginBottom: 16 },
+  tagWarningIcon: { fontSize: 20 },
+  tagWarningTitle: { fontSize: 13, fontWeight: '700', color: colors.amber, marginBottom: 3 },
+  tagWarningText: { fontSize: 12, color: colors.textMuted, lineHeight: 18 },
   suggestionsWrap: { backgroundColor: colors.bgCard, borderRadius: 12, borderWidth: 0.5, borderColor: colors.bgBorder, marginBottom: 12, overflow: 'hidden' },
   suggestionRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 14, borderBottomWidth: 0.5, borderBottomColor: colors.bgBorder },
   suggestionIcon: { fontSize: 14, color: colors.amber },

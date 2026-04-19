@@ -176,17 +176,17 @@ export default function PetProfile() {
             {dog.behaviour_notes && (
               <View style={s.noteCard}><Text style={s.noteCardText}>{dog.behaviour_notes}</Text></View>
             )}
-            <InfoRow icon="🌳" label="Favourite spots" value={dog.favourite_spots} />
+            {dog.favourite_spots && <InfoRow icon="🌳" label="Favourite spots" value={dog.favourite_spots} />}
           </Section>
         )}
 
-        {(dog.vet_name || dog.allergies || dog.medications) && (
+        {(dog.vet_name || dog.allergies || dog.medications || dog.microchip) && (
           <Section title="⚕️ Medical">
-            <InfoRow icon="🏥" label="Vet" value={dog.vet_name} />
-            <InfoRow icon="📞" label="Vet phone" value={dog.vet_phone} />
-            <InfoRow icon="⚠️" label="Allergies" value={dog.allergies} />
-            <InfoRow icon="💊" label="Medications" value={dog.medications} />
-            <InfoRow icon="📡" label="Microchip #" value={dog.microchip} />
+            {dog.vet_name && <InfoRow icon="🏥" label="Vet" value={dog.vet_name} />}
+            {dog.vet_phone && <InfoRow icon="📞" label="Vet phone" value={dog.vet_phone} />}
+            {dog.allergies && <InfoRow icon="⚠️" label="Allergies" value={dog.allergies} />}
+            {dog.medications && <InfoRow icon="💊" label="Medications" value={dog.medications} />}
+            {dog.microchip && <InfoRow icon="📡" label="Microchip #" value={dog.microchip} />}
           </Section>
         )}
 
@@ -196,6 +196,14 @@ export default function PetProfile() {
             <InfoRow icon="📞" label="Owner phone" value={dog.owner_phone} />
           </Section>
         )}
+
+        <TouchableOpacity style={s.shareProfileBtn} onPress={() => {
+          if (typeof navigator !== 'undefined' && navigator.share) {
+            navigator.share({ title: dog.name + ' on SmartPet Tag', url: window.location.origin + '/public-profile?dogName=' + dog.name });
+          }
+        }}>
+          <Text style={s.shareProfileBtnText}>🔗 Share {dog.name}'s profile</Text>
+        </TouchableOpacity>
 
         {isOwner && (
           <TouchableOpacity style={s.lostBtn} onPress={() => router.push('/emergency')}>
@@ -262,6 +270,8 @@ const s = StyleSheet.create({
   noteCardText: { fontSize: 13, color: colors.textSecondary, lineHeight: 20 },
   ifFoundCard: { margin: 14, backgroundColor: colors.emergencyDim, borderRadius: 10, padding: 14, borderWidth: 0.5, borderColor: colors.emergency + '60' },
   ifFoundText: { fontSize: 13, color: colors.textSecondary, lineHeight: 20 },
+  shareProfileBtn: { marginHorizontal: 16, marginTop: 8, backgroundColor: colors.communityDim, borderRadius: 14, borderWidth: 0.5, borderColor: colors.community, paddingVertical: 12, alignItems: 'center', marginBottom: 8 },
+  shareProfileBtnText: { color: colors.community, fontWeight: '600', fontSize: 13 },
   lostBtn: { marginHorizontal: 16, marginTop: 8, backgroundColor: colors.emergencyDim, borderRadius: 14, borderWidth: 1, borderColor: colors.emergency, paddingVertical: 14, alignItems: 'center' },
   lostBtnText: { color: colors.emergency, fontWeight: '700', fontSize: 14 },
 });

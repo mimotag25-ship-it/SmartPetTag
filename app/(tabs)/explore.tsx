@@ -217,6 +217,7 @@ export default function CommunityScreen() {
   const [postType, setPostType] = useState('checkin');
   const [postText, setPostText] = useState('');
   const [postImage, setPostImage] = useState(null);
+  const [postLocation, setPostLocation] = useState('');
   const [posting, setPosting] = useState(false);
   const [feedMode, setFeedMode] = useState('feed');
   const [refreshing, setRefreshing] = useState(false);
@@ -292,9 +293,9 @@ export default function CommunityScreen() {
     await supabase.from('posts').insert({
       type: postType, text: postText, image: imageUrl,
       dog_name: currentDog?.name || 'Anonymous', owner_name: currentDog?.owner_name || '',
-      location: currentDog?.neighbourhood || 'CDMX', paws: 0,
+      location: postLocation || currentDog?.neighbourhood || 'CDMX', paws: 0,
     });
-    setPostText(''); setPostImage(null); setShowComposer(false); setPosting(false);
+    setPostText(''); setPostImage(null); setPostLocation(''); setShowComposer(false); setPosting(false);
     loadPosts();
   }
 
@@ -354,9 +355,18 @@ export default function CommunityScreen() {
                 </View>
               )}
             </TouchableOpacity>
+            {postType === 'checkin' && (
+              <TextInput
+                style={[styles.textInput, { marginBottom: 8 }]}
+                placeholder="📍 Which park or location?"
+                placeholderTextColor={colors.textMuted}
+                value={postLocation}
+                onChangeText={setPostLocation}
+              />
+            )}
             <TextInput
               style={styles.textInput}
-              placeholder={t('whatsUpTo')}
+              placeholder={postType === 'checkin' ? "How's it going? Any dogs to meet?" : postType === 'warning' ? "What should owners know?" : t('whatsUpTo')}
               placeholderTextColor={colors.textMuted}
               value={postText}
               onChangeText={setPostText}

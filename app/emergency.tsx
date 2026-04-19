@@ -65,6 +65,10 @@ export default function Emergency() {
 
   async function triggerAlert() {
     if (!dog) return;
+    if (typeof window !== 'undefined') {
+      const confirmed = window.confirm(`Send emergency alert for ${dog.name}? This will notify all nearby users immediately.`);
+      if (!confirmed) return;
+    }
     setLoading(true);
     let extraPhotoUrl = null;
     if (additionalPhoto) {
