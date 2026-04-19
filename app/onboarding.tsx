@@ -168,9 +168,20 @@ export default function Onboarding() {
       });
       if (dogError) { setError('Failed to create profile: ' + dogError.message); setLoading(false); return; }
       
+      let gpsLat = 19.4136, gpsLng = -99.1716;
+      try {
+        await new Promise((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            pos => { gpsLat = pos.coords.latitude; gpsLng = pos.coords.longitude; resolve(); },
+            () => resolve(),
+            { timeout: 3000 }
+          );
+        });
+      } catch(e) {}
+
       await supabase.from('dog_locations').insert({
         dog_name: dogName, owner_name: ownerName, breed: breed?.name || '',
-        personality: selectedTags.join(', '), lat: 19.4136, lng: -99.1716,
+        personality: selectedTags.join(', '), lat: gpsLat, lng: gpsLng,
         visibility: 'public', is_moving: false, emoji: selectedEmoji,
         owner_email: email, photo_url: uploadedPhotoUrl,
       });
