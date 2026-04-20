@@ -416,6 +416,16 @@ export default function HomeScreen() {
         <TouchableOpacity onPress={() => router.push('/privacy')}>
           <Text style={s.footerLink}>About SmartPet Tag</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={s.langToggle}
+          onPress={() => {
+            const newLang = lang === 'es' ? 'en' : 'es';
+            setLang(newLang);
+            if (typeof localStorage !== 'undefined') localStorage.setItem('spt_lang', newLang);
+          }}
+        >
+          <Text style={s.langToggleText}>{lang === 'es' ? '🇺🇸 English' : '🇲🇽 Español'}</Text>
+        </TouchableOpacity>
       </View>
       <View style={{ height: 40 }} />
     </ScrollView>

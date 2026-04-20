@@ -47,7 +47,8 @@ const NEARBY_DOTS = [
 ];
 
 export default function Onboarding() {
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(-1);
+  const [selectedLang, setSelectedLang] = useState('es');
   const [dogName, setDogName] = useState('');
   const [selectedEmoji, setSelectedEmoji] = useState('🐕');
   const [age, setAge] = useState('');
@@ -535,6 +536,18 @@ function CounterText({ anim }) {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
+  langScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
+  langTitle: { fontSize: 36, fontWeight: '900', color: colors.textPrimary, fontStyle: 'italic', marginBottom: 8 },
+  langSub: { fontSize: 14, color: colors.textMuted, textAlign: 'center', lineHeight: 22, marginBottom: 40 },
+  langCards: { flexDirection: 'row', gap: 16, marginBottom: 32, width: '100%' },
+  langCard: { flex: 1, backgroundColor: colors.bgCard, borderRadius: 20, borderWidth: 1.5, borderColor: colors.bgBorder, padding: 20, alignItems: 'center', gap: 6 },
+  langCardActive: { borderColor: colors.amber, backgroundColor: colors.amberDim },
+  langFlag: { fontSize: 40 },
+  langName: { fontSize: 18, fontWeight: '800', color: colors.textMuted },
+  langNameActive: { color: colors.amber },
+  langNative: { fontSize: 11, color: colors.textMuted, textAlign: 'center' },
+  langContinueBtn: { backgroundColor: colors.amber, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 48, alignItems: 'center' },
+  langContinueBtnText: { color: '#050508', fontSize: 17, fontWeight: '900' },
   stepWrap: { flex: 1 },
   progressWrap: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
   progressTrack: { flex: 1, height: 3, backgroundColor: colors.bgBorder, borderRadius: 2, overflow: 'hidden' },
