@@ -95,6 +95,12 @@ export default function MapScreen() {
             .eq('owner_email', user.email);
         }
       }
+      if (event.data?.type === 'dogClick') {
+        router.push({ pathname: '/pet-profile', params: { dogName: event.data.name } });
+      }
+      if (event.data?.type === 'alertClick') {
+        router.push({ pathname: '/pet-profile', params: { dogName: event.data.name, alertId: event.data.alertId, isLost: 'true' } });
+      }
     }
     if (typeof window !== 'undefined') {
       window.addEventListener('message', handleMessage);
@@ -160,8 +166,9 @@ export default function MapScreen() {
       photo: d.photo_url || null,
     }));
     const safeAlerts = alerts.map(a => ({
-      lat: 19.4148, lng: -99.1728,
+      lat: a.lat || 19.4148, lng: a.lng || -99.1728,
       name: String(a.dog_name || '').replace(/['"\\`]/g, ''),
+      id: a.id || '',
     }));
     const dogsData = JSON.stringify(safeArr);
     const alertsData = JSON.stringify(safeAlerts);
@@ -243,44 +250,46 @@ function initMap(){
   if(showDogs) {
   DOGS.forEach(function(d){
     var c=d.community?'#6366F1':'#F59E0B';
-    if(d.photo){
-      var canvas=document.createElement('canvas');
-      canvas.width=48;canvas.height=48;
-      var ctx=canvas.getContext('2d');
-      var img=new Image();
-      img.crossOrigin='anonymous';
-      img.onload=function(){
-        ctx.beginPath();
-        ctx.arc(24,24,22,0,Math.PI*2);
-        ctx.clip();
-        ctx.drawImage(img,0,0,48,48);
-        ctx.beginPath();
-        ctx.arc(24,24,22,0,Math.PI*2);
-        ctx.strokeStyle=d.community?'#6366F1':'#F59E0B';
-        ctx.lineWidth=3;
-        ctx.stroke();
-        new google.maps.Marker({
-          position:{lat:d.lat,lng:d.lng},map:map,
-          icon:{url:canvas.toDataURL(),scaledSize:new google.maps.Size(48,48),anchor:new google.maps.Point(24,24)},
-          title:d.name
+    (function(dog){
+      var name=dog.name;
+      if(dog.photo){
+        var canvas=document.createElement('canvas');
+        canvas.width=52;canvas.height=52;
+        var ctx=canvas.getContext('2d');
+        var img=new Image();
+        img.crossOrigin='anonymous';
+        img.onload=function(){
+          ctx.beginPath();ctx.arc(26,26,24,0,Math.PI*2);ctx.clip();
+          ctx.drawImage(img,0,0,52,52);
+          ctx.beginPath();ctx.arc(26,26,24,0,Math.PI*2);
+          ctx.strokeStyle=dog.community?'#6366F1':'#F59E0B';
+          ctx.lineWidth=3;ctx.stroke();
+          var m=new google.maps.Marker({
+            position:{lat:dog.lat,lng:dog.lng},map:map,
+            icon:{url:canvas.toDataURL(),scaledSize:new google.maps.Size(52,52),anchor:new google.maps.Point(26,26)},
+            title:name
+          });
+          m.addListener('click',function(){ window.parent.postMessage({type:'dogClick',name:name},'*'); });
+        };
+        img.src=dog.photo;
+      } else {
+        var m=new google.maps.Marker({
+          position:{lat:dog.lat,lng:dog.lng},map:map,
+          icon:{path:google.maps.SymbolPath.CIRCLE,scale:18,fillColor:dog.community?'#6366F1':'#F59E0B',fillOpacity:1,strokeColor:'#fff',strokeWeight:2.5},
+          title:name
         });
-      };
-      img.src=d.photo;
-    } else {
-      new google.maps.Marker({
-        position:{lat:d.lat,lng:d.lng},map:map,
-        icon:{path:google.maps.SymbolPath.CIRCLE,scale:16,fillColor:c,fillOpacity:1,strokeColor:'#fff',strokeWeight:2.5},
-        title:d.name
-      });
-    }
+        m.addListener('click',function(){ window.parent.postMessage({type:'dogClick',name:name},'*'); });
+      }
+    })(d);
   });
   }
   ALERTS.forEach(function(a){
-    new google.maps.Marker({
+    var am=new google.maps.Marker({
       position:{lat:a.lat,lng:a.lng},map:map,
-      icon:{path:google.maps.SymbolPath.CIRCLE,scale:16,fillColor:'#EF4444',fillOpacity:1,strokeColor:'#FCA5A5',strokeWeight:3},
-      title:a.name+' is lost!'
+      icon:{path:google.maps.SymbolPath.CIRCLE,scale:20,fillColor:'#EF4444',fillOpacity:1,strokeColor:'#FCA5A5',strokeWeight:3},
+      title:a.name+' is LOST — tap to help!'
     });
+    am.addListener('click',function(){ window.parent.postMessage({type:'alertClick',name:a.name,alertId:a.id},'*'); });
   });
 }
 </script>

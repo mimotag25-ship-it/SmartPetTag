@@ -45,6 +45,8 @@ function Section({ title, children }) {
 export default function PetProfile() {
   const params = useLocalSearchParams();
   const dogName = Array.isArray(params.dogName) ? params.dogName[0] : params.dogName;
+  const alertId = Array.isArray(params.alertId) ? params.alertId[0] : params.alertId;
+  const isLost = params.isLost === 'true';
   const [dog, setDog] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
@@ -122,6 +124,16 @@ export default function PetProfile() {
             </View>
           );
         })()}
+
+        {isLost && (
+          <View style={s.lostBanner}>
+            <View style={s.lostBannerDot} />
+            <View style={{ flex: 1 }}>
+              <Text style={s.lostBannerTitle}>🚨 {dog.name} is missing</Text>
+              <Text style={s.lostBannerSub}>Last seen near {dog.neighbourhood} — owner is looking</Text>
+            </View>
+          </View>
+        )}
 
         <View style={s.nameSection}>
           <View>
@@ -205,6 +217,15 @@ export default function PetProfile() {
           <Text style={s.shareProfileBtnText}>🔗 Share {dog.name}'s profile</Text>
         </TouchableOpacity>
 
+        {isLost && !isOwner && (
+          <TouchableOpacity
+            style={s.reportFoundBtn}
+            onPress={() => router.push({ pathname: '/found', params: { alertId, dogName: dog.name, ownerName: dog.owner_name, ownerPhone: dog.owner_phone, neighbourhood: dog.neighbourhood } })}
+          >
+            <Text style={s.reportFoundBtnText}>🙋 I found {dog.name} — report it</Text>
+          </TouchableOpacity>
+        )}
+
         {isOwner && (
           <TouchableOpacity style={s.lostBtn} onPress={() => router.push('/emergency')}>
             <Text style={s.lostBtnText}>🚨 Report {dog.name} as lost</Text>
@@ -272,6 +293,12 @@ const s = StyleSheet.create({
   ifFoundText: { fontSize: 13, color: colors.textSecondary, lineHeight: 20 },
   shareProfileBtn: { marginHorizontal: 16, marginTop: 8, backgroundColor: colors.communityDim, borderRadius: 14, borderWidth: 0.5, borderColor: colors.community, paddingVertical: 12, alignItems: 'center', marginBottom: 8 },
   shareProfileBtnText: { color: colors.community, fontWeight: '600', fontSize: 13 },
+  lostBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.emergencyDim, borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.emergency, paddingHorizontal: 20, paddingVertical: 14, marginBottom: 4 },
+  lostBannerDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.emergency },
+  lostBannerTitle: { fontSize: 15, fontWeight: '800', color: colors.emergency, marginBottom: 2 },
+  lostBannerSub: { fontSize: 12, color: colors.textMuted },
+  reportFoundBtn: { marginHorizontal: 16, marginTop: 8, marginBottom: 4, backgroundColor: colors.safeDim, borderRadius: 14, borderWidth: 1.5, borderColor: colors.safe, paddingVertical: 16, alignItems: 'center' },
+  reportFoundBtnText: { color: colors.safe, fontWeight: '800', fontSize: 15 },
   lostBtn: { marginHorizontal: 16, marginTop: 8, backgroundColor: colors.emergencyDim, borderRadius: 14, borderWidth: 1, borderColor: colors.emergency, paddingVertical: 14, alignItems: 'center' },
   lostBtnText: { color: colors.emergency, fontWeight: '700', fontSize: 14 },
 });
