@@ -47,6 +47,41 @@ export default function MapScreen() {
   const focusLng = parseFloat(Array.isArray(params?.lng) ? params.lng[0] : (params?.lng || '-99.1716'));
 
   useEffect(() => {
+    // Auto-update location every 30 seconds silently
+    let watchId = null;
+    let lastUpdate = 0;
+
+    async function updateLocation(lat, lng) {
+      const now = Date.now();
+      if (now - lastUpdate < 30000) return; // throttle to 30s
+      lastUpdate = now;
+      setUserLat(lat);
+      setUserLng(lng);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('dog_locations')
+          .update({ lat, lng, is_moving: true })
+          .eq('owner_email', user.email);
+      }
+    }
+
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      // Watch position continuously
+      watchId = navigator.geolocation.watchPosition(
+        pos => updateLocation(pos.coords.latitude, pos.coords.longitude),
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 30000, timeout: 10000 }
+      );
+    }
+
+    return () => {
+      if (watchId !== null && typeof navigator !== 'undefined') {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     // Listen for location updates from the map iframe
     async function handleMessage(event) {
       if (event.data?.type === 'location') {
