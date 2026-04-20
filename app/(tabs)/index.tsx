@@ -137,6 +137,13 @@ export default function HomeScreen() {
     setLoading(false);
   }
 
+  async function resolveMyAlert() {
+    if (!pendingAlert) return;
+    await supabase.from('lost_alerts').update({ status: 'found' }).eq('id', pendingAlert.id);
+    setPendingAlert(null);
+    alert('Alert resolved — welcome home ' + dog?.name + '! 🎉');
+  }
+
   async function loadDog() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); router.replace('/guest'); return; }
@@ -153,6 +160,7 @@ export default function HomeScreen() {
     }
     setDog(data);
     loadStats(data);
+    setTimeout(() => checkActiveAlert(), 500);
   }
 
   async function loadStats(dogData) {
@@ -420,6 +428,8 @@ const s = StyleSheet.create({
   iconBtnAlert: { backgroundColor: '#1C0707', borderColor: colors.emergency + '60' },
   iconBtnText: { fontSize: 17 },
 
+  foundMyselfBtn: { backgroundColor: '#052016', borderBottomLeftRadius: 12, borderBottomRightRadius: 12, paddingVertical: 10, alignItems: 'center', borderWidth: 0.5, borderTopWidth: 0, borderColor: '#10B981', marginBottom: 8 },
+  foundMyselfBtnText: { color: '#10B981', fontSize: 12, fontWeight: '700' },
   pendingBanner: { marginHorizontal: 20, marginBottom: 16, backgroundColor: '#1C1407', borderRadius: 14, overflow: \'hidden\', borderWidth: 1.5, borderColor: colors.amber, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
   pendingBannerDot: { width: 8, height: 8, borderRadius: 4, overflow: \'hidden\', backgroundColor: colors.amber },
   pendingBannerTitle: { fontSize: 13, fontWeight: '700', color: colors.textPrimary, marginBottom: 1 },
