@@ -77,6 +77,13 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState({ alerts: 0, found: 0, sightings: 0, posts: 0 });
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  function profileCompletion(dog) {
+    if (!dog) return 0;
+    const fields = ['photo_url', 'breed', 'age', 'colour', 'size', 'neighbourhood', 'owner_phone', 'personality', 'behaviour_notes', 'if_found_instructions'];
+    const filled = fields.filter(f => dog[f] && String(dog[f]).trim() !== '').length;
+    return Math.round((filled / fields.length) * 100);
+  }
   const [userLat, setUserLat] = useState(19.4136);
   const [userLng, setUserLng] = useState(-99.1716);
   const { t } = useLanguage();
@@ -486,6 +493,11 @@ const s = StyleSheet.create({
   emergencyBtnTitle: { fontSize: 14, fontWeight: '800', color: colors.textPrimary, marginBottom: 1 },
   emergencyBtnSub: { fontSize: 10, color: '#9CA3AF' },
   emergencyBtnArrow: { color: colors.emergency, fontSize: 16 },
+  completionWrap: { backgroundColor: colors.amberDim, borderRadius: 12, padding: 12, marginBottom: 10, borderWidth: 0.5, borderColor: colors.amber },
+  completionLabel: { fontSize: 12, color: colors.amber, fontWeight: '600' },
+  completionCta: { fontSize: 11, color: colors.amber },
+  completionTrack: { height: 4, backgroundColor: colors.bgBorder, borderRadius: 2 },
+  completionBar: { height: 4, backgroundColor: colors.amber, borderRadius: 2 },
   editBtn: { width: 64, backgroundColor: colors.bgCard, borderRadius: 16, overflow: \'hidden\', borderWidth: 0.5, borderColor: colors.bgBorder, alignItems: 'center', justifyContent: 'center', gap: 4 },
   editBtnIcon: { fontSize: 18 },
   editBtnText: { fontSize: 10, color: colors.textMuted },

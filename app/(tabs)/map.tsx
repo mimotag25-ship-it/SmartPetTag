@@ -360,6 +360,12 @@ function initMap(){
       </View>
 
       <View style={styles.chipsWrap}>
+        {filteredDogs.length === 0 && (
+          <View style={{ paddingHorizontal: 20, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <Text style={{ fontSize: 20 }}>🔍</Text>
+            <Text style={{ fontSize: 13, color: colors.textMuted }}>No pets nearby right now. Invite friends to join!</Text>
+          </View>
+        )}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 20, paddingVertical: 12 }}>
           {filteredDogs.map((dog, i) => (
             <TouchableOpacity key={i} style={[styles.dogChip, dog.is_moving && styles.dogChipMoving]} onPress={() => router.push({ pathname: '/pet-profile', params: { dogName: dog.dog_name } })}>

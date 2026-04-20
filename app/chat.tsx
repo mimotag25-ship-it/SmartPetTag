@@ -142,6 +142,8 @@ const styles = StyleSheet.create({
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
   emptyEmoji: { fontSize: 52, marginBottom: 16 },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: '#fff', marginBottom: 8 },
+  goToMapBtn: { marginTop: 16, backgroundColor: colors.amberDim, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 10, borderWidth: 0.5, borderColor: colors.amber },
+  goToMapBtnText: { color: colors.amber, fontSize: 13, fontWeight: '700' },
   emptySub: { fontSize: 13, color: '#444', textAlign: 'center', lineHeight: 20, marginBottom: 24 },
   startBtn: { backgroundColor: '#003d30', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 20, borderWidth: 0.5, borderColor: '#00D4AA' },
   startBtnText: { color: '#00D4AA', fontWeight: '600', fontSize: 14 },
