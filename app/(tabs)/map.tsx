@@ -47,6 +47,31 @@ export default function MapScreen() {
   const focusLng = parseFloat(Array.isArray(params?.lng) ? params.lng[0] : (params?.lng || '-99.1716'));
 
   useEffect(() => {
+    // Listen for location updates from the map iframe
+    async function handleMessage(event) {
+      if (event.data?.type === 'location') {
+        const { lat, lng } = event.data;
+        setUserLat(lat);
+        setUserLng(lng);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from('dog_locations')
+            .update({ lat, lng, is_moving: true })
+            .eq('owner_email', user.email);
+        }
+      }
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('message', handleMessage);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('message', handleMessage);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (typeof navigator !== 'undefined' && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         pos => { setUserLat(pos.coords.latitude); setUserLng(pos.coords.longitude); },
@@ -143,7 +168,7 @@ function initMap(){
     strokeColor:'#F59E0B',strokeOpacity:0.2,strokeWeight:1
   });
 
-  // Locate me button — uses live browser geolocation
+  // Locate me button — uses live browser geolocation + updates Supabase
   var locateBtn=document.createElement('button');
   locateBtn.innerHTML='📍';
   locateBtn.title='Go to my location';
@@ -155,17 +180,18 @@ function initMap(){
         var latlng={lat:pos.coords.latitude,lng:pos.coords.longitude};
         map.setCenter(latlng);
         map.setZoom(17);
-        locateBtn.innerHTML='📍';
-        // Place accurate you marker
+        locateBtn.innerHTML='✅';
+        setTimeout(function(){ locateBtn.innerHTML='📍'; }, 2000);
         new google.maps.Marker({
           position:latlng,map:map,
           icon:{path:google.maps.SymbolPath.CIRCLE,scale:10,fillColor:'#F59E0B',fillOpacity:1,strokeColor:'#fff',strokeWeight:2},
           title:'You are here'
         });
+        // Notify parent to update Supabase
+        window.parent.postMessage({type:'location',lat:pos.coords.latitude,lng:pos.coords.longitude},'*');
       },function(){
         locateBtn.innerHTML='📍';
-        alert('Could not get your location');
-      },{enableHighAccuracy:true,timeout:5000});
+      },{enableHighAccuracy:true,timeout:8000});
     }
   };
   map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(locateBtn);
