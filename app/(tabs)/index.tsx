@@ -170,6 +170,18 @@ export default function HomeScreen() {
     checkActiveAlertForDog(data);
   }
 
+  async function checkActiveAlertForDog(dogData) {
+    if (!dogData) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase.from('lost_alerts')
+      .select('*')
+      .eq('dog_name', dogData.name)
+      .eq('status', 'lost')
+      .single();
+    if (data) setPendingAlert(data);
+  }
+
   async function loadStats(dogData) {
     const { data: alertData } = await supabase.from('lost_alerts').select('id, status').eq('owner_name', dogData?.owner_name || '');
     setStats({
