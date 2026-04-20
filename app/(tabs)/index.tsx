@@ -61,7 +61,7 @@ function ParkCard({ park }) {
       </View>
       <View style={{ flexDirection: 'row', gap: 3, marginTop: 8 }}>
         {[1,2,3,4,5].map(j => (
-          <View key={j} style={{ flex: 1, height: 3, borderRadius: 2, backgroundColor: j <= park.energy ? ENERGY_COLORS[park.energy] : colors.bgBorder }} />
+          <View key={j} style={{ flex: 1, height: 3, borderRadius: 2, overflow: \'hidden\', backgroundColor: j <= park.energy ? ENERGY_COLORS[park.energy] : colors.bgBorder }} />
         ))}
       </View>
       <Text style={{ fontSize: 10, color: config.color, marginTop: 8, textAlign: 'right', fontWeight: '600' }}>View on map →</Text>
@@ -416,12 +416,12 @@ const s = StyleSheet.create({
   appName: { fontSize: 22, fontWeight: '900', color: colors.textPrimary, letterSpacing: -0.5, fontStyle: 'italic' },
   appSub: { fontSize: 11, color: colors.textMuted, marginTop: 1 },
   topBarActions: { flexDirection: 'row', gap: 8 },
-  iconBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.bgCard, alignItems: 'center', justifyContent: 'center', borderWidth: 0.5, borderColor: colors.bgBorder },
+  iconBtn: { width: 40, height: 40, borderRadius: 20, overflow: \'hidden\', backgroundColor: colors.bgCard, alignItems: 'center', justifyContent: 'center', borderWidth: 0.5, borderColor: colors.bgBorder },
   iconBtnAlert: { backgroundColor: '#1C0707', borderColor: colors.emergency + '60' },
   iconBtnText: { fontSize: 17 },
 
-  pendingBanner: { marginHorizontal: 20, marginBottom: 16, backgroundColor: '#1C1407', borderRadius: 14, borderWidth: 1.5, borderColor: colors.amber, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  pendingBannerDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.amber },
+  pendingBanner: { marginHorizontal: 20, marginBottom: 16, backgroundColor: '#1C1407', borderRadius: 14, overflow: \'hidden\', borderWidth: 1.5, borderColor: colors.amber, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  pendingBannerDot: { width: 8, height: 8, borderRadius: 4, overflow: \'hidden\', backgroundColor: colors.amber },
   pendingBannerTitle: { fontSize: 13, fontWeight: '700', color: colors.textPrimary, marginBottom: 1 },
   pendingBannerSub: { fontSize: 11, color: colors.amber },
   pendingBannerArrow: { color: colors.amber, fontSize: 16 },
@@ -430,13 +430,13 @@ const s = StyleSheet.create({
   pokemonCard: {
     marginHorizontal: 20, marginBottom: 16,
     backgroundColor: '#131C2E',
-    borderRadius: 24, borderWidth: 1.5, borderColor: colors.amber + '60',
+    borderRadius: 24, overflow: \'hidden\', borderWidth: 1.5, borderColor: colors.amber + '60',
     padding: 20, overflow: 'hidden',
     shadowColor: colors.amber, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 12,
   },
   shimmerStrip: { position: 'absolute', top: 0, left: 0, width: 120, height: '100%', backgroundColor: 'rgba(245,158,11,0.06)', transform: [{ skewX: '-20deg' }] },
   cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  cardTypeBadge: { backgroundColor: colors.amberDim, borderWidth: 0.5, borderColor: colors.amber, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  cardTypeBadge: { backgroundColor: colors.amberDim, borderWidth: 0.5, borderColor: colors.amber, borderRadius: 6, overflow: \'hidden\', paddingHorizontal: 8, paddingVertical: 3 },
   cardTypeText: { fontSize: 9, color: colors.amber, fontWeight: '800', letterSpacing: 1 },
   cardHpWrap: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   cardHpLabel: { fontSize: 9, color: colors.textMuted, fontWeight: '700', letterSpacing: 1 },
@@ -446,18 +446,18 @@ const s = StyleSheet.create({
   cardSubName: { fontSize: 12, color: colors.textMuted, marginBottom: 16 },
 
   cardPhotoWrap: { alignItems: 'center', marginBottom: 16, position: 'relative' },
-  cardPhotoGlow: { position: 'absolute', width: 180, height: 180, borderRadius: 90, backgroundColor: colors.amber, top: -10, alignSelf: 'center', zIndex: 0 },
-  cardPhoto: { width: 160, height: 160, borderRadius: 80, borderWidth: 3, borderColor: colors.amber, zIndex: 1 },
-  cardPhotoPlaceholder: { width: 160, height: 160, borderRadius: 80, borderWidth: 3, borderColor: colors.amber, backgroundColor: colors.amberDim, alignItems: 'center', justifyContent: 'center', zIndex: 1, gap: 8 },
+  cardPhotoGlow: { position: 'absolute', width: 180, height: 180, borderRadius: 90, overflow: \'hidden\', backgroundColor: colors.amber, top: -10, alignSelf: 'center', zIndex: 0 },
+  cardPhoto: { width: 160, height: 160, borderRadius: 80, overflow: \'hidden\', borderWidth: 3, borderColor: colors.amber, zIndex: 1 },
+  cardPhotoPlaceholder: { width: 160, height: 160, borderRadius: 80, overflow: \'hidden\', borderWidth: 3, borderColor: colors.amber, backgroundColor: colors.amberDim, alignItems: 'center', justifyContent: 'center', zIndex: 1, gap: 8 },
   cardPhotoEmoji: { fontSize: 64 },
   cardPhotoHint: { fontSize: 11, color: colors.amber },
-  cardPhotoOnline: { position: 'absolute', bottom: 8, right: '28%', width: 16, height: 16, borderRadius: 8, backgroundColor: '#10B981', borderWidth: 2.5, borderColor: '#131C2E', zIndex: 2 },
+  cardPhotoOnline: { position: 'absolute', bottom: 8, right: '28%', width: 16, height: 16, borderRadius: 8, overflow: \'hidden\', backgroundColor: '#10B981', borderWidth: 2.5, borderColor: '#131C2E', zIndex: 2 },
 
   cardTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 },
-  cardTag: { backgroundColor: '#1F2937', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 0.5, borderColor: '#374151' },
+  cardTag: { backgroundColor: '#1F2937', borderRadius: 20, overflow: \'hidden\', paddingHorizontal: 10, paddingVertical: 5, borderWidth: 0.5, borderColor: '#374151' },
   cardTagText: { fontSize: 11, color: '#9CA3AF', fontWeight: '500' },
 
-  cardStats: { flexDirection: 'row', backgroundColor: '#0D1526', borderRadius: 14, padding: 14, marginBottom: 14 },
+  cardStats: { flexDirection: 'row', backgroundColor: '#0D1526', borderRadius: 14, overflow: \'hidden\', padding: 14, marginBottom: 14 },
   cardStat: { flex: 1, alignItems: 'center' },
   cardStatNum: { fontSize: 22, fontWeight: '900', color: colors.amber, letterSpacing: -0.5 },
   cardStatLabel: { fontSize: 10, color: colors.textMuted, marginTop: 1 },
@@ -471,39 +471,39 @@ const s = StyleSheet.create({
 
   // Actions
   actions: { flexDirection: 'row', gap: 10, paddingHorizontal: 20, marginBottom: 24 },
-  emergencyBtn: { flex: 1, backgroundColor: '#1C0707', borderRadius: 16, borderWidth: 1.5, borderColor: colors.emergency, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10, shadowColor: colors.emergency, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6 },
+  emergencyBtn: { flex: 1, backgroundColor: '#1C0707', borderRadius: 16, overflow: \'hidden\', borderWidth: 1.5, borderColor: colors.emergency, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10, shadowColor: colors.emergency, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6 },
   emergencyBtnIcon: { fontSize: 26 },
   emergencyBtnTitle: { fontSize: 14, fontWeight: '800', color: colors.textPrimary, marginBottom: 1 },
   emergencyBtnSub: { fontSize: 10, color: '#9CA3AF' },
   emergencyBtnArrow: { color: colors.emergency, fontSize: 16 },
-  editBtn: { width: 64, backgroundColor: colors.bgCard, borderRadius: 16, borderWidth: 0.5, borderColor: colors.bgBorder, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  editBtn: { width: 64, backgroundColor: colors.bgCard, borderRadius: 16, overflow: \'hidden\', borderWidth: 0.5, borderColor: colors.bgBorder, alignItems: 'center', justifyContent: 'center', gap: 4 },
   editBtnIcon: { fontSize: 18 },
   editBtnText: { fontSize: 10, color: colors.textMuted },
 
   // Section
   section: { paddingHorizontal: 20, marginBottom: 24 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  sectionAlertDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.emergency },
+  sectionAlertDot: { width: 6, height: 6, borderRadius: 3, overflow: \'hidden\', backgroundColor: colors.emergency },
   sectionIcon: { fontSize: 14 },
   sectionTitle: { fontSize: 10, fontWeight: '800', color: '#6B7280', letterSpacing: 1.5, flex: 1 },
-  sectionBadge: { width: 18, height: 18, borderRadius: 9, backgroundColor: colors.emergency, alignItems: 'center', justifyContent: 'center' },
+  sectionBadge: { width: 18, height: 18, borderRadius: 9, overflow: \'hidden\', backgroundColor: colors.emergency, alignItems: 'center', justifyContent: 'center' },
   sectionBadgeText: { fontSize: 10, color: '#fff', fontWeight: '700' },
   sectionSub: { fontSize: 11, color: '#4B5563', marginBottom: 12 },
 
   // Alert row
-  alertRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#1C0707', borderRadius: 12, borderWidth: 0.5, borderColor: colors.emergency + '40', padding: 12, marginBottom: 8 },
-  alertRowAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#1C0707', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: colors.emergency },
+  alertRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#1C0707', borderRadius: 12, overflow: \'hidden\', borderWidth: 0.5, borderColor: colors.emergency + '40', padding: 12, marginBottom: 8 },
+  alertRowAvatar: { width: 40, height: 40, borderRadius: 20, overflow: \'hidden\', backgroundColor: '#1C0707', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: colors.emergency },
   alertRowPhoto: { width: 40, height: 40, borderRadius: 20 },
   alertRowName: { fontSize: 14, fontWeight: '700', color: colors.textPrimary, marginBottom: 2 },
   alertRowLoc: { fontSize: 11, color: '#6B7280' },
-  alertHelpBtn: { backgroundColor: colors.emergency, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  alertHelpBtn: { backgroundColor: colors.emergency, borderRadius: 8, overflow: \'hidden\', paddingHorizontal: 12, paddingVertical: 6 },
   alertHelpBtnText: { fontSize: 12, fontWeight: '700', color: '#fff' },
 
   // Park cards
-  parkCard: { width: 200, borderRadius: 18, borderWidth: 0.5, padding: 14 },
+  parkCard: { width: 200, borderRadius: 18, overflow: \'hidden\', borderWidth: 0.5, padding: 14 },
   parkCardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
   parkEmoji: { fontSize: 28 },
-  parkCountBadge: { borderRadius: 10, padding: 8, alignItems: 'center', minWidth: 48 },
+  parkCountBadge: { borderRadius: 10, overflow: \'hidden\', padding: 8, alignItems: 'center', minWidth: 48 },
   parkCount: { fontSize: 22, fontWeight: '900', lineHeight: 24 },
   parkCountSub: { fontSize: 9, fontWeight: '700' },
   parkName: { fontSize: 13, fontWeight: '700', color: colors.textPrimary, marginBottom: 2 },

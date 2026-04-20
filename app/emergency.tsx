@@ -134,7 +134,7 @@ export default function Emergency() {
           <View style={s.petAlertCard}>
             <View style={s.petAlertPhotoWrap}>
               {dog?.photo_url
-                ? <Image source={{ uri: dog.photo_url }} style={s.petAlertPhoto} resizeMode="contain" />
+                ? <Image source={{ uri: dog.photo_url }} style={s.petAlertPhoto} resizeMode="cover" />
                 : <Text style={{ fontSize: 40 }}>{dog?.emoji || '🐕'}</Text>}
             </View>
             <View style={{ flex: 1 }}>
@@ -170,11 +170,11 @@ export default function Emergency() {
             <Text style={s.formLabel}>📷 Add a current photo (optional)</Text>
             <TouchableOpacity style={s.photoPickerBtn} onPress={pickExtraPhoto}>
               {additionalPhoto ? (
-                <Image source={{ uri: additionalPhoto }} style={s.pickedPhoto} resizeMode="contain" />
+                <Image source={{ uri: additionalPhoto }} style={s.pickedPhoto} resizeMode="cover" />
               ) : (
                 <View style={s.photoPickerPlaceholder}>
                   {dog?.photo_url
-                    ? <Image source={{ uri: dog.photo_url }} style={s.existingPhoto} resizeMode="contain" />
+                    ? <Image source={{ uri: dog.photo_url }} style={s.existingPhoto} resizeMode="cover" />
                     : <Text style={{ fontSize: 32 }}>📷</Text>}
                   <Text style={s.photoPickerText}>{dog?.photo_url ? 'Tap to add a different photo' : 'Add a photo'}</Text>
                   <Text style={s.photoPickerSub}>Profile photo will be used if none added</Text>
@@ -226,7 +226,7 @@ export default function Emergency() {
 
             <View style={s.activeDogCard}>
               {dog?.photo_url
-                ? <Image source={{ uri: dog.photo_url }} style={s.activeDogPhoto} resizeMode="contain" />
+                ? <Image source={{ uri: dog.photo_url }} style={s.activeDogPhoto} resizeMode="cover" />
                 : <View style={s.activeDogPhotoPlaceholder}><Text style={{ fontSize: 52 }}>{dog?.emoji || '🐕'}</Text></View>}
               <Text style={s.activeDogName}>{dog?.name}</Text>
               <Text style={s.activeDogBreed}>{dog?.breed}</Text>
@@ -304,7 +304,7 @@ export default function Emergency() {
           <View style={s.foundContent}>
             <View style={s.foundAvatarWrap}>
               {dog?.photo_url
-                ? <Image source={{ uri: dog.photo_url }} style={s.foundPhoto} resizeMode="contain" />
+                ? <Image source={{ uri: dog.photo_url }} style={s.foundPhoto} resizeMode="cover" />
                 : <Text style={{ fontSize: 80 }}>{dog?.emoji || '🐾'}</Text>}
             </View>
             <Text style={s.foundTitle}>{dog?.name} is home safe! 🎉</Text>
@@ -332,7 +332,7 @@ const s = StyleSheet.create({
   confirmIcon: { fontSize: 48, marginBottom: 8 },
   confirmTitle: { fontSize: 28, fontWeight: '900', color: colors.textPrimary, textAlign: 'center', letterSpacing: -0.5, marginBottom: 6 },
   confirmSub: { fontSize: 14, color: colors.textMuted, textAlign: 'center', lineHeight: 22 },
-  petAlertCard: { flexDirection: 'row', alignItems: 'center', gap: 14, marginHorizontal: 20, marginBottom: 16, backgroundColor: colors.bgCard, borderRadius: 16, borderWidth: 1, borderColor: colors.amber + '60', padding: 14 },
+  petAlertCard: { flexDirection: 'row', alignItems: 'center', gap: 14, marginHorizontal: 20, marginBottom: 16, backgroundColor: colors.bgCard, borderRadius: 16, overflow: \'hidden\', borderWidth: 1, borderColor: colors.amber + '60', padding: 14 },
   petAlertPhotoWrap: { width: 72, height: 72, borderRadius: 36, overflow: 'hidden', borderWidth: 2, borderColor: colors.amber, backgroundColor: colors.amberDim, alignItems: 'center', justifyContent: 'center' },
   petAlertPhoto: { width: '100%', height: '100%' },
   petAlertName: { fontSize: 20, fontWeight: '800', color: colors.textPrimary, marginBottom: 2 },
@@ -340,56 +340,56 @@ const s = StyleSheet.create({
   petAlertDetail: { fontSize: 12, color: colors.textSecondary, marginBottom: 1 },
   formSection: { paddingHorizontal: 20, marginBottom: 16 },
   formLabel: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, marginBottom: 8, marginTop: 12 },
-  input: { backgroundColor: colors.bgCard, borderWidth: 0.5, borderColor: colors.bgBorder, borderRadius: 12, padding: 14, fontSize: 14, color: colors.textPrimary, marginBottom: 4 },
+  input: { backgroundColor: colors.bgCard, borderWidth: 0.5, borderColor: colors.bgBorder, borderRadius: 12, overflow: \'hidden\', padding: 14, fontSize: 14, color: colors.textPrimary, marginBottom: 4 },
   photoPickerBtn: { height: 120, borderRadius: 14, overflow: 'hidden', backgroundColor: colors.bgCard, borderWidth: 0.5, borderColor: colors.bgBorder },
   pickedPhoto: { width: '100%', height: '100%' },
   existingPhoto: { width: 64, height: 64, borderRadius: 32 },
   photoPickerPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6 },
   photoPickerText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
   photoPickerSub: { fontSize: 11, color: colors.textMuted },
-  whatHappensCard: { marginHorizontal: 20, backgroundColor: colors.bgCard, borderRadius: 16, borderWidth: 0.5, borderColor: colors.bgBorder, padding: 16, marginBottom: 16 },
+  whatHappensCard: { marginHorizontal: 20, backgroundColor: colors.bgCard, borderRadius: 16, overflow: \'hidden\', borderWidth: 0.5, borderColor: colors.bgBorder, padding: 16, marginBottom: 16 },
   whatHappensTitle: { fontSize: 13, fontWeight: '700', color: colors.textMuted, letterSpacing: 0.5, marginBottom: 12, textTransform: 'uppercase' },
   whatHappensRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 6, borderBottomWidth: 0.5, borderBottomColor: colors.bgBorder },
   whatHappensIcon: { fontSize: 16, width: 24 },
   whatHappensText: { fontSize: 13, color: colors.textSecondary, flex: 1, lineHeight: 20 },
-  alertBtn: { marginHorizontal: 20, backgroundColor: colors.emergency, borderRadius: 16, paddingVertical: 18, alignItems: 'center', shadowColor: colors.emergency, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 16, elevation: 8 },
+  alertBtn: { marginHorizontal: 20, backgroundColor: colors.emergency, borderRadius: 16, overflow: \'hidden\', paddingVertical: 18, alignItems: 'center', shadowColor: colors.emergency, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 16, elevation: 8 },
   alertBtnText: { color: '#fff', fontWeight: '900', fontSize: 15, textAlign: 'center' },
   alertBtnHint: { textAlign: 'center', fontSize: 12, color: colors.textMuted, marginTop: 8 },
   activeContainer: { flex: 1, backgroundColor: '#0D0808' },
-  ring: { position: 'absolute', width: 180, height: 180, borderRadius: 90, borderWidth: 2, borderColor: colors.emergency, top: height * 0.22, alignSelf: 'center', zIndex: 0 },
+  ring: { position: 'absolute', width: 180, height: 180, borderRadius: 90, overflow: \'hidden\', borderWidth: 2, borderColor: colors.emergency, top: height * 0.22, alignSelf: 'center', zIndex: 0 },
   activeContent: { padding: 24, paddingTop: 60, alignItems: 'center' },
-  activeStatus: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#1C0707', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, borderWidth: 1, borderColor: colors.emergency, marginBottom: 24 },
-  activeStatusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.emergency },
+  activeStatus: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#1C0707', borderRadius: 20, overflow: \'hidden\', paddingHorizontal: 16, paddingVertical: 8, borderWidth: 1, borderColor: colors.emergency, marginBottom: 24 },
+  activeStatusDot: { width: 8, height: 8, borderRadius: 4, overflow: \'hidden\', backgroundColor: colors.emergency },
   activeStatusText: { fontSize: 12, fontWeight: '800', color: colors.emergency, letterSpacing: 1 },
   activeDogCard: { alignItems: 'center', marginBottom: 20 },
-  activeDogPhoto: { width: 120, height: 120, borderRadius: 60, borderWidth: 3, borderColor: colors.emergency, marginBottom: 12 },
-  activeDogPhotoPlaceholder: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#1C0707', alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: colors.emergency, marginBottom: 12 },
+  activeDogPhoto: { width: 120, height: 120, borderRadius: 60, overflow: \'hidden\', borderWidth: 3, borderColor: colors.emergency, marginBottom: 12 },
+  activeDogPhotoPlaceholder: { width: 120, height: 120, borderRadius: 60, overflow: \'hidden\', backgroundColor: '#1C0707', alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: colors.emergency, marginBottom: 12 },
   activeDogName: { fontSize: 30, fontWeight: '900', color: '#fff', letterSpacing: -1 },
   activeDogBreed: { fontSize: 14, color: colors.textMuted, marginBottom: 4 },
   activeDogLocation: { fontSize: 13, color: colors.textSecondary },
-  notifiedCard: { backgroundColor: '#1C0707', borderRadius: 16, borderWidth: 1, borderColor: colors.emergency + '60', paddingVertical: 14, paddingHorizontal: 40, alignItems: 'center', marginBottom: 20, width: '100%' },
+  notifiedCard: { backgroundColor: '#1C0707', borderRadius: 16, overflow: \'hidden\', borderWidth: 1, borderColor: colors.emergency + '60', paddingVertical: 14, paddingHorizontal: 40, alignItems: 'center', marginBottom: 20, width: '100%' },
   notifiedNum: { fontSize: 48, fontWeight: '900', color: colors.emergency, letterSpacing: -2 },
   notifiedLabel: { fontSize: 12, color: colors.textMuted },
-  whileWaitingCard: { backgroundColor: colors.bgCard, borderRadius: 14, padding: 16, marginBottom: 20, width: '100%', borderWidth: 0.5, borderColor: colors.bgBorder },
+  whileWaitingCard: { backgroundColor: colors.bgCard, borderRadius: 14, overflow: \'hidden\', padding: 16, marginBottom: 20, width: '100%', borderWidth: 0.5, borderColor: colors.bgBorder },
   whileWaitingTitle: { fontSize: 13, fontWeight: '700', color: colors.amber, marginBottom: 10 },
   whileWaitingText: { fontSize: 12, color: colors.textSecondary, lineHeight: 22 },
   sectionLabel: { fontSize: 10, fontWeight: '800', color: colors.textMuted, letterSpacing: 1.5, alignSelf: 'flex-start', marginBottom: 10, marginTop: 4 },
-  waitingCard: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.bgCard, borderRadius: 12, borderWidth: 0.5, borderColor: colors.bgBorder, padding: 14, width: '100%', marginBottom: 16 },
-  waitingDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.textMuted },
+  waitingCard: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.bgCard, borderRadius: 12, overflow: \'hidden\', borderWidth: 0.5, borderColor: colors.bgBorder, padding: 14, width: '100%', marginBottom: 16 },
+  waitingDot: { width: 8, height: 8, borderRadius: 4, overflow: \'hidden\', backgroundColor: colors.textMuted },
   waitingText: { fontSize: 13, color: colors.textMuted },
-  sightingCard: { backgroundColor: '#052016', borderRadius: 12, borderWidth: 0.5, borderColor: '#10B981' + '60', padding: 14, width: '100%', marginBottom: 8 },
+  sightingCard: { backgroundColor: '#052016', borderRadius: 12, overflow: \'hidden\', borderWidth: 0.5, borderColor: '#10B981' + '60', padding: 14, width: '100%', marginBottom: 8 },
   sightingName: { fontSize: 13, fontWeight: '700', color: '#10B981', marginBottom: 2 },
   sightingMsg: { fontSize: 13, color: colors.textSecondary },
   sightingLoc: { fontSize: 11, color: colors.textMuted, marginTop: 4 },
-  whatsappShareBtn: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#052016', borderRadius: 14, borderWidth: 1, borderColor: '#10B981' + '60', padding: 14, width: '100%', marginBottom: 10 },
-  whatsappLogo: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#25D366', alignItems: 'center', justifyContent: 'center' },
+  whatsappShareBtn: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#052016', borderRadius: 14, overflow: \'hidden\', borderWidth: 1, borderColor: '#10B981' + '60', padding: 14, width: '100%', marginBottom: 10 },
+  whatsappLogo: { width: 28, height: 28, borderRadius: 14, overflow: \'hidden\', backgroundColor: '#25D366', alignItems: 'center', justifyContent: 'center' },
   whatsappLogoText: { color: '#fff', fontSize: 13, fontWeight: '900' },
   whatsappShareTitle: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 2 },
   whatsappShareSub: { fontSize: 11, color: colors.textMuted },
-  posterBtn: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.bgCard, borderRadius: 14, borderWidth: 0.5, borderColor: colors.bgBorder, padding: 14, width: '100%', marginBottom: 16 },
+  posterBtn: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.bgCard, borderRadius: 14, overflow: \'hidden\', borderWidth: 0.5, borderColor: colors.bgBorder, padding: 14, width: '100%', marginBottom: 16 },
   posterTitle: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 2 },
   posterSub: { fontSize: 11, color: colors.textMuted },
-  foundBtn: { backgroundColor: '#052016', borderRadius: 14, borderWidth: 1, borderColor: '#10B981', paddingVertical: 14, alignItems: 'center', width: '100%' },
+  foundBtn: { backgroundColor: '#052016', borderRadius: 14, overflow: \'hidden\', borderWidth: 1, borderColor: '#10B981', paddingVertical: 14, alignItems: 'center', width: '100%' },
   foundBtnText: { color: '#10B981', fontWeight: '700', fontSize: 14 },
   foundScreen: { flex: 1, backgroundColor: '#052016', alignItems: 'center', justifyContent: 'center', padding: 28 },
   confettiPiece: { position: 'absolute' },
@@ -398,7 +398,7 @@ const s = StyleSheet.create({
   foundPhoto: { width: '100%', height: '100%' },
   foundTitle: { fontSize: 26, fontWeight: '900', color: '#fff', textAlign: 'center', marginBottom: 8, letterSpacing: -0.5 },
   foundSub: { fontSize: 14, color: '#10B981', textAlign: 'center', lineHeight: 22, marginBottom: 28 },
-  foundShareBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#10B981', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 24, width: '100%', justifyContent: 'center', marginBottom: 10 },
+  foundShareBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#10B981', borderRadius: 14, overflow: \'hidden\', paddingVertical: 14, paddingHorizontal: 24, width: '100%', justifyContent: 'center', marginBottom: 10 },
   foundShareBtnText: { color: '#052016', fontWeight: '800', fontSize: 15 },
   backHomeBtn: { paddingVertical: 12 },
   backHomeBtnText: { color: '#6B7280', fontSize: 13 },
