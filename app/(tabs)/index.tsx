@@ -86,7 +86,7 @@ export default function HomeScreen() {
   }
   const [userLat, setUserLat] = useState(19.4136);
   const [userLng, setUserLng] = useState(-99.1716);
-  const { t } = useLanguage();
+  const { t, lang, setLang } = useLanguage();
 
   function distanceKm(lat1, lng1, lat2, lng2) {
     const R = 6371;
@@ -167,7 +167,7 @@ export default function HomeScreen() {
     }
     setDog(data);
     loadStats(data);
-    setTimeout(() => checkActiveAlert(), 500);
+    checkActiveAlertForDog(data);
   }
 
   async function loadStats(dogData) {
