@@ -65,7 +65,7 @@ export default function Onboarding() {
   const [photoUrl, setPhotoUrl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { t } = useLanguage();
+  const { t, lang, setLang } = useLanguage();
 
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
