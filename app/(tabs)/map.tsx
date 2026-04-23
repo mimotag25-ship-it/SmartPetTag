@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated, Platform, Share, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated, Image, Platform } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { router, useLocalSearchParams } from 'expo-router';
-import { colors, spacing, shadows } from '../../lib/design';
-import { useLanguage, t } from '../../lib/i18n';
+import { colors } from '../../lib/design';
+import { useLanguage } from '../../lib/i18n';
 
 const GOOGLE_MAPS_KEY = 'AIzaSyCVaatIaoT3Kc-81cwUiaxGgrBT1S7lyMU';
 
@@ -24,11 +24,16 @@ export default function MapScreen() {
   const [dogs, setDogs] = useState([]);
   const [filter, setFilter] = useState('all');
   const [selectedDog, setSelectedDog] = useState(null);
-  const [myVisibility, setMyVisibility] = useState('public');
-  const [showPrivacy, setShowPrivacy] = useState(false);
   const [userLat, setUserLat] = useState(19.4136);
   const [userLng, setUserLng] = useState(-99.1716);
-  const RADIUS_KM = 5;
+  const slideAnim = useRef(new Animated.Value(400)).current;
+  const { t, lang } = useLanguage();
+  const params = useLocalSearchParams();
+  const focusPark = Array.isArray(params?.park) ? params.park[0] : (params?.park || null);
+  const focusLat = parseFloat(Array.isArray(params?.lat) ? params.lat[0] : (params?.lat || '19.4136'));
+  const focusLng = parseFloat(Array.isArray(params?.lng) ? params.lng[0] : (params?.lng || '-99.1716'));
+
+  const RADIUS_KM = 10;
 
   function distanceKm(lat1, lng1, lat2, lng2) {
     const R = 6371;
@@ -39,88 +44,46 @@ export default function MapScreen() {
       Math.sin(dLng/2) * Math.sin(dLng/2);
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   }
-  const slideAnim = useRef(new Animated.Value(400)).current;
-  const { t, lang } = useLanguage();
-  const params = useLocalSearchParams();
-  const focusPark = Array.isArray(params?.park) ? params.park[0] : (params?.park || null);
-  const focusLat = parseFloat(Array.isArray(params?.lat) ? params.lat[0] : (params?.lat || '19.4136'));
-  const focusLng = parseFloat(Array.isArray(params?.lng) ? params.lng[0] : (params?.lng || '-99.1716'));
 
   useEffect(() => {
-    // Auto-update location every 30 seconds silently
+    // Auto-update location
     let watchId = null;
     let lastUpdate = 0;
-
     async function updateLocation(lat, lng) {
       const now = Date.now();
-      if (now - lastUpdate < 30000) return; // throttle to 30s
+      if (now - lastUpdate < 30000) return;
       lastUpdate = now;
-      setUserLat(lat);
-      setUserLng(lng);
+      setUserLat(lat); setUserLng(lng);
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.from('dog_locations')
-          .update({ lat, lng, is_moving: true })
-          .eq('owner_email', user.email);
-      }
+      if (user) await supabase.from('dog_locations').update({ lat, lng, is_moving: true }).eq('owner_email', user.email);
     }
-
     if (typeof navigator !== 'undefined' && navigator.geolocation) {
-      // Watch position continuously
       watchId = navigator.geolocation.watchPosition(
         pos => updateLocation(pos.coords.latitude, pos.coords.longitude),
-        () => {},
-        { enableHighAccuracy: true, maximumAge: 30000, timeout: 10000 }
+        () => {}, { enableHighAccuracy: true, maximumAge: 30000, timeout: 10000 }
       );
     }
-
-    return () => {
-      if (watchId !== null && typeof navigator !== 'undefined') {
-        navigator.geolocation.clearWatch(watchId);
-      }
-    };
+    return () => { if (watchId !== null && typeof navigator !== 'undefined') navigator.geolocation.clearWatch(watchId); };
   }, []);
 
   useEffect(() => {
-    // Listen for location updates from the map iframe
+    // Listen for map clicks
     async function handleMessage(event) {
       if (event.data?.type === 'location') {
         const { lat, lng } = event.data;
-        setUserLat(lat);
-        setUserLng(lng);
+        setUserLat(lat); setUserLng(lng);
         const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase.from('dog_locations')
-            .update({ lat, lng, is_moving: true })
-            .eq('owner_email', user.email);
-        }
+        if (user) await supabase.from('dog_locations').update({ lat, lng, is_moving: true }).eq('owner_email', user.email);
       }
-      if (event.data?.type === 'dogClick') {
-        router.push({ pathname: '/pet-profile', params: { dogName: event.data.name } });
-      }
-      if (event.data?.type === 'alertClick') {
-        router.push({ pathname: '/pet-profile', params: { dogName: event.data.name, alertId: event.data.alertId, isLost: 'true' } });
-      }
+      if (event.data?.type === 'dogClick') router.push({ pathname: '/pet-profile', params: { dogName: event.data.name } });
+      if (event.data?.type === 'alertClick') router.push({ pathname: '/pet-profile', params: { dogName: event.data.name, alertId: event.data.alertId, isLost: 'true' } });
     }
-    if (typeof window !== 'undefined') {
-      window.addEventListener('message', handleMessage);
-    }
-    return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('message', handleMessage);
-      }
-    };
+    if (typeof window !== 'undefined') window.addEventListener('message', handleMessage);
+    return () => { if (typeof window !== 'undefined') window.removeEventListener('message', handleMessage); };
   }, []);
 
   useEffect(() => {
-    if (typeof navigator !== 'undefined' && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        pos => { setUserLat(pos.coords.latitude); setUserLng(pos.coords.longitude); },
-        () => {} // fallback to default CDMX coords
-      );
-    }
-    loadAlerts();
-    loadDogs();
+    loadAlerts(); loadDogs();
     const interval = setInterval(loadDogs, 10000);
     return () => clearInterval(interval);
   }, []);
@@ -135,31 +98,29 @@ export default function MapScreen() {
     if (data) setDogs(data);
   }
 
-  const nearbyDogs = dogs.filter(d =>
-    distanceKm(userLat, userLng, d.lat || 19.4136, d.lng || -99.1716) <= RADIUS_KM
-  );
+  function openDog(dog) {
+    setSelectedDog(dog);
+    Animated.spring(slideAnim, { toValue: 0, tension: 60, friction: 12, useNativeDriver: true }).start();
+  }
+
+  function closeDog() {
+    Animated.timing(slideAnim, { toValue: 400, duration: 220, useNativeDriver: true }).start(() => setSelectedDog(null));
+  }
+
+  const nearbyDogs = dogs.filter(d => distanceKm(userLat, userLng, d.lat || 19.4136, d.lng || -99.1716) <= RADIUS_KM);
   const filteredDogs = filter === 'all' ? nearbyDogs
-    : filter === 'dogs' ? nearbyDogs.filter(d => d.visibility !== 'private')
+    : filter === 'dogs' ? nearbyDogs.filter(d => !alerts.some(a => a.dog_name === d.dog_name))
     : filter === 'lost' ? nearbyDogs.filter(d => alerts.some(a => a.dog_name === d.dog_name))
     : nearbyDogs;
-
-  function openDogProfile(dog) {
-    setSelectedDog(dog);
-    Animated.spring(slideAnim, { toValue: 0, tension: 50, friction: 10, useNativeDriver: true }).start();
-  }
-
-  function closeDogProfile() {
-    Animated.timing(slideAnim, { toValue: 400, duration: 250, useNativeDriver: true }).start(() => setSelectedDog(null));
-  }
 
   function buildMapHTML() {
     const filteredForMap = filter === 'all' ? dogs
       : filter === 'dogs' ? dogs.filter(d => !alerts.some(a => a.dog_name === d.dog_name))
       : filter === 'lost' ? dogs.filter(d => alerts.some(a => a.dog_name === d.dog_name))
       : dogs;
+
     const safeArr = filteredForMap.map(d => ({
-      lat: d.lat || 19.4136,
-      lng: d.lng || -99.1716,
+      lat: d.lat || 19.4136, lng: d.lng || -99.1716,
       name: String(d.dog_name || '').replace(/['"\\`]/g, ''),
       moving: Boolean(d.is_moving),
       community: d.visibility === 'community',
@@ -170,127 +131,229 @@ export default function MapScreen() {
       name: String(a.dog_name || '').replace(/['"\\`]/g, ''),
       id: a.id || '',
     }));
+    const parksData = JSON.stringify(filter === 'parks' || filter === 'all' ? PARKS : []);
     const dogsData = JSON.stringify(safeArr);
     const alertsData = JSON.stringify(safeAlerts);
-    const parksData = JSON.stringify(PARKS);
 
     return `<!DOCTYPE html><html>
-<head><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>*{margin:0;padding:0;box-sizing:border-box}html,body,#map{width:100%;height:100%}</style>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body, #map { width:100%; height:100%; }
+</style>
 </head>
-<body><div id="map"></div>
+<body>
+<div id="map"></div>
 <script>
 var DOGS=${dogsData};
 var ALERTS=${alertsData};
 var PARKS=${parksData};
-function initMap(){
-  var map=new google.maps.Map(document.getElementById('map'),{
-    center:{lat:${focusLat},lng:${focusLng}},zoom:${focusPark ? 17 : 15},
-    disableDefaultUI:true,zoomControl:true,
-    styles:[
-      {featureType:'water',elementType:'geometry',stylers:[{color:'#a2daf2'}]},
-      {featureType:'landscape',elementType:'geometry',stylers:[{color:'#f8f8f4'}]},
-      {featureType:'road.highway',elementType:'geometry',stylers:[{color:'#ffffff'}]},
-      {featureType:'road.arterial',elementType:'geometry',stylers:[{color:'#ffffff'}]},
-      {featureType:'road.local',elementType:'geometry',stylers:[{color:'#f0f0f0'}]},
-      {featureType:'poi.park',elementType:'geometry',stylers:[{color:'#c5e8c5'}]},
-      {featureType:'poi',elementType:'labels',stylers:[{visibility:'off'}]},
-      {featureType:'transit',stylers:[{visibility:'off'}]},
-      {featureType:'road',elementType:'labels.text.fill',stylers:[{color:'#888888'}]}
+
+function initMap() {
+  var map = new google.maps.Map(document.getElementById('map'), {
+    center: { lat: ${focusPark ? focusLat : userLat}, lng: ${focusPark ? focusLng : userLng} },
+    zoom: ${focusPark ? 17 : 15},
+    disableDefaultUI: true,
+    zoomControl: false,
+    gestureHandling: 'greedy',
+    styles: [
+      { featureType:'poi', elementType:'labels', stylers:[{ visibility:'off' }] },
+      { featureType:'transit', stylers:[{ visibility:'off' }] },
+      { featureType:'road', elementType:'labels.icon', stylers:[{ visibility:'off' }] },
+      { featureType:'water', elementType:'geometry', stylers:[{ color:'#a8d8ea' }] },
+      { featureType:'landscape', elementType:'geometry', stylers:[{ color:'#f5f5f0' }] },
+      { featureType:'road.highway', elementType:'geometry', stylers:[{ color:'#ffffff' }] },
+      { featureType:'road.arterial', elementType:'geometry', stylers:[{ color:'#ffffff' }] },
+      { featureType:'road.local', elementType:'geometry', stylers:[{ color:'#f0f0f0' }] },
+      { featureType:'poi.park', elementType:'geometry', stylers:[{ color:'#d4edda' }] },
+      { featureType:'poi.park', elementType:'labels.text', stylers:[{ visibility:'on', color:'#4a9460' }] },
+      { featureType:'road', elementType:'labels.text.fill', stylers:[{ color:'#999999' }] },
+      { featureType:'administrative.locality', elementType:'labels.text.fill', stylers:[{ color:'#555555' }] },
     ]
   });
-  new google.maps.Marker({
-    position:{lat:${userLat},lng:${userLng}},map:map,
-    icon:{path:google.maps.SymbolPath.CIRCLE,scale:14,fillColor:'#F59E0B',fillOpacity:1,strokeColor:'#fff',strokeWeight:3},
-    title:'You'
-  });
-  new google.maps.Circle({
-    map:map,center:{lat:${userLat},lng:${userLng}},
-    radius:5000,fillColor:'#F59E0B',fillOpacity:0.04,
-    strokeColor:'#F59E0B',strokeOpacity:0.2,strokeWeight:1
+
+  // You marker — blue dot like Find My
+  var youMarker = new google.maps.Marker({
+    position: { lat: ${userLat}, lng: ${userLng} },
+    map: map,
+    icon: {
+      path: google.maps.SymbolPath.CIRCLE,
+      scale: 10,
+      fillColor: '#007AFF',
+      fillOpacity: 1,
+      strokeColor: '#FFFFFF',
+      strokeWeight: 3
+    },
+    zIndex: 1000,
+    title: 'Tú'
   });
 
-  // Locate me button — uses live browser geolocation + updates Supabase
-  var locateBtn=document.createElement('button');
-  locateBtn.innerHTML='📍';
-  locateBtn.title='Go to my location';
-  locateBtn.style.cssText='background:#0A0F1E;border:2px solid #F59E0B;border-radius:8px;padding:8px 12px;font-size:20px;cursor:pointer;margin:10px;box-shadow:0 2px 8px rgba(0,0,0,0.4)';
-  locateBtn.onclick=function(){
-    if(navigator.geolocation){
-      locateBtn.innerHTML='⏳';
-      navigator.geolocation.getCurrentPosition(function(pos){
-        var latlng={lat:pos.coords.latitude,lng:pos.coords.longitude};
-        map.setCenter(latlng);
-        map.setZoom(17);
-        locateBtn.innerHTML='✅';
-        setTimeout(function(){ locateBtn.innerHTML='📍'; }, 2000);
-        new google.maps.Marker({
-          position:latlng,map:map,
-          icon:{path:google.maps.SymbolPath.CIRCLE,scale:10,fillColor:'#F59E0B',fillOpacity:1,strokeColor:'#fff',strokeWeight:2},
-          title:t('yourLocation')
+  // Blue accuracy ring
+  new google.maps.Circle({
+    map: map,
+    center: { lat: ${userLat}, lng: ${userLng} },
+    radius: 200,
+    fillColor: '#007AFF',
+    fillOpacity: 0.08,
+    strokeColor: '#007AFF',
+    strokeOpacity: 0.2,
+    strokeWeight: 1
+  });
+
+  // Park zones
+  PARKS.forEach(function(p) {
+    var c = p.status === 'high' ? '#FF3B30' : p.status === 'medium' ? '#FF9500' : '#34C759';
+    new google.maps.Circle({
+      map: map, center: { lat: p.lat, lng: p.lng },
+      radius: 100, fillColor: c, fillOpacity: 0.08,
+      strokeColor: c, strokeOpacity: 0.3, strokeWeight: 1
+    });
+  });
+
+  // Dog markers — Find My style circular photo badges
+  DOGS.forEach(function(d) {
+    var borderColor = d.community ? '#5856D6' : '#FF9500';
+    if (d.photo) {
+      var canvas = document.createElement('canvas');
+      canvas.width = 56; canvas.height = 68;
+      var ctx = canvas.getContext('2d');
+      var img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = function() {
+        // Shadow
+        ctx.shadowColor = 'rgba(0,0,0,0.25)';
+        ctx.shadowBlur = 8;
+        ctx.shadowOffsetY = 3;
+        // White border
+        ctx.beginPath();
+        ctx.arc(28, 26, 26, 0, Math.PI*2);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fill();
+        ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+        // Clip photo
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(28, 26, 23, 0, Math.PI*2);
+        ctx.clip();
+        ctx.drawImage(img, 5, 3, 46, 46);
+        ctx.restore();
+        // Colored ring
+        ctx.beginPath();
+        ctx.arc(28, 26, 25, 0, Math.PI*2);
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        // Triangle pointer
+        ctx.beginPath();
+        ctx.moveTo(22, 50); ctx.lineTo(28, 64); ctx.lineTo(34, 50);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fill();
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        var m = new google.maps.Marker({
+          position: { lat: d.lat, lng: d.lng }, map: map,
+          icon: { url: canvas.toDataURL(), scaledSize: new google.maps.Size(56, 68), anchor: new google.maps.Point(28, 64) },
+          title: d.name, zIndex: 100
         });
-        // Notify parent to update Supabase
-        window.parent.postMessage({type:'location',lat:pos.coords.latitude,lng:pos.coords.longitude},'*');
-      },function(){
-        locateBtn.innerHTML='📍';
-      },{enableHighAccuracy:true,timeout:8000});
+        m.addListener('click', function() {
+          window.parent.postMessage({ type: 'dogClick', name: d.name }, '*');
+        });
+      };
+      img.src = d.photo;
+    } else {
+      // Emoji badge
+      var canvas2 = document.createElement('canvas');
+      canvas2.width = 52; canvas2.height = 64;
+      var ctx2 = canvas2.getContext('2d');
+      ctx2.shadowColor = 'rgba(0,0,0,0.2)';
+      ctx2.shadowBlur = 6;
+      ctx2.shadowOffsetY = 2;
+      ctx2.beginPath();
+      ctx2.arc(26, 24, 22, 0, Math.PI*2);
+      ctx2.fillStyle = '#FFFFFF';
+      ctx2.fill();
+      ctx2.shadowBlur = 0; ctx2.shadowOffsetY = 0;
+      ctx2.beginPath();
+      ctx2.arc(26, 24, 21, 0, Math.PI*2);
+      ctx2.fillStyle = borderColor + '20';
+      ctx2.fill();
+      ctx2.strokeStyle = borderColor;
+      ctx2.lineWidth = 2.5;
+      ctx2.stroke();
+      ctx2.font = '22px serif';
+      ctx2.textAlign = 'center';
+      ctx2.textBaseline = 'middle';
+      ctx2.fillText('🐾', 26, 25);
+      ctx2.beginPath();
+      ctx2.moveTo(20, 44); ctx2.lineTo(26, 58); ctx2.lineTo(32, 44);
+      ctx2.fillStyle = '#FFFFFF';
+      ctx2.fill();
+      ctx2.strokeStyle = borderColor;
+      ctx2.lineWidth = 2;
+      ctx2.stroke();
+      var m2 = new google.maps.Marker({
+        position: { lat: d.lat, lng: d.lng }, map: map,
+        icon: { url: canvas2.toDataURL(), scaledSize: new google.maps.Size(52, 64), anchor: new google.maps.Point(26, 58) },
+        title: d.name, zIndex: 100
+      });
+      m2.addListener('click', function() {
+        window.parent.postMessage({ type: 'dogClick', name: d.name }, '*');
+      });
+    }
+  });
+
+  // Lost markers — red badge
+  ALERTS.forEach(function(a) {
+    var canvas3 = document.createElement('canvas');
+    canvas3.width = 52; canvas3.height = 64;
+    var ctx3 = canvas3.getContext('2d');
+    ctx3.shadowColor = 'rgba(255,59,48,0.3)';
+    ctx3.shadowBlur = 8; ctx3.shadowOffsetY = 2;
+    ctx3.beginPath();
+    ctx3.arc(26, 24, 22, 0, Math.PI*2);
+    ctx3.fillStyle = '#FF3B30';
+    ctx3.fill();
+    ctx3.shadowBlur = 0; ctx3.shadowOffsetY = 0;
+    ctx3.strokeStyle = '#FFFFFF';
+    ctx3.lineWidth = 3;
+    ctx3.stroke();
+    ctx3.font = 'bold 13px -apple-system, sans-serif';
+    ctx3.fillStyle = '#FFFFFF';
+    ctx3.textAlign = 'center';
+    ctx3.textBaseline = 'middle';
+    ctx3.fillText('SOS', 26, 24);
+    ctx3.beginPath();
+    ctx3.moveTo(20, 44); ctx3.lineTo(26, 58); ctx3.lineTo(32, 44);
+    ctx3.fillStyle = '#FF3B30';
+    ctx3.fill();
+    var m3 = new google.maps.Marker({
+      position: { lat: a.lat, lng: a.lng }, map: map,
+      icon: { url: canvas3.toDataURL(), scaledSize: new google.maps.Size(52, 64), anchor: new google.maps.Point(26, 58) },
+      title: a.name + ' — perdido', zIndex: 200
+    });
+    m3.addListener('click', function() {
+      window.parent.postMessage({ type: 'alertClick', name: a.name, alertId: a.id }, '*');
+    });
+  });
+
+  // Locate me button — Find My style
+  var locateBtn = document.createElement('button');
+  locateBtn.style.cssText = 'position:absolute;bottom:24px;right:16px;width:44px;height:44px;background:#fff;border:none;border-radius:50%;box-shadow:0 2px 12px rgba(0,0,0,0.2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;z-index:999;';
+  locateBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" fill="#007AFF"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="#007AFF" stroke-width="2" stroke-linecap="round"/></svg>';
+  locateBtn.onclick = function() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(function(pos) {
+        var latlng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        map.panTo(latlng); map.setZoom(17);
+        youMarker.setPosition(latlng);
+        window.parent.postMessage({ type: 'location', lat: pos.coords.latitude, lng: pos.coords.longitude }, '*');
+      }, function() {}, { enableHighAccuracy: true, timeout: 8000 });
     }
   };
-  map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(locateBtn);
-
-  // Enable zoom controls
-  map.setOptions({zoomControl:true,zoomControlOptions:{position:google.maps.ControlPosition.RIGHT_CENTER}});
-  var showParks = '${filter}' === 'all' || '${filter}' === 'parks';
-  var showDogs = '${filter}' === 'all' || '${filter}' === 'dogs' || '${filter}' === 'lost';
-  if(showParks) PARKS.forEach(function(p){
-    var c=p.status==='high'?'#EF4444':p.status==='medium'?'#F59E0B':'#10B981';
-    new google.maps.Circle({map:map,center:{lat:p.lat,lng:p.lng},radius:120,fillColor:c,fillOpacity:0.12,strokeColor:c,strokeOpacity:0.5,strokeWeight:1.5});
-    new google.maps.Marker({position:{lat:p.lat,lng:p.lng},map:map,icon:{path:google.maps.SymbolPath.CIRCLE,scale:8,fillColor:c,fillOpacity:1,strokeColor:'#fff',strokeWeight:2},title:p.name});
-  });
-  if(showDogs) {
-  DOGS.forEach(function(d){
-    var c=d.community?'#6366F1':'#F59E0B';
-    (function(dog){
-      var name=dog.name;
-      if(dog.photo){
-        var canvas=document.createElement('canvas');
-        canvas.width=52;canvas.height=52;
-        var ctx=canvas.getContext('2d');
-        var img=new Image();
-        img.crossOrigin='anonymous';
-        img.onload=function(){
-          ctx.beginPath();ctx.arc(26,26,24,0,Math.PI*2);ctx.clip();
-          ctx.drawImage(img,0,0,52,52);
-          ctx.beginPath();ctx.arc(26,26,24,0,Math.PI*2);
-          ctx.strokeStyle=dog.community?'#6366F1':'#F59E0B';
-          ctx.lineWidth=3;ctx.stroke();
-          var m=new google.maps.Marker({
-            position:{lat:dog.lat,lng:dog.lng},map:map,
-            icon:{url:canvas.toDataURL(),scaledSize:new google.maps.Size(52,52),anchor:new google.maps.Point(26,26)},
-            title:name
-          });
-          m.addListener('click',function(){ window.parent.postMessage({type:'dogClick',name:name},'*'); });
-        };
-        img.src=dog.photo;
-      } else {
-        var m=new google.maps.Marker({
-          position:{lat:dog.lat,lng:dog.lng},map:map,
-          icon:{path:google.maps.SymbolPath.CIRCLE,scale:18,fillColor:dog.community?'#6366F1':'#F59E0B',fillOpacity:1,strokeColor:'#fff',strokeWeight:2.5},
-          title:name
-        });
-        m.addListener('click',function(){ window.parent.postMessage({type:'dogClick',name:name},'*'); });
-      }
-    })(d);
-  });
-  }
-  ALERTS.forEach(function(a){
-    var am=new google.maps.Marker({
-      position:{lat:a.lat,lng:a.lng},map:map,
-      icon:{path:google.maps.SymbolPath.CIRCLE,scale:20,fillColor:'#EF4444',fillOpacity:1,strokeColor:'#FCA5A5',strokeWeight:3},
-      title:a.name+' is LOST — tap to help!'
-    });
-    am.addListener('click',function(){ window.parent.postMessage({type:'alertClick',name:a.name,alertId:a.id},'*'); });
-  });
+  document.body.appendChild(locateBtn);
 }
 </script>
 <script src="https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_KEY}&callback=initMap" async defer></script>
@@ -298,244 +361,205 @@ function initMap(){
   }
 
   const FILTERS = [
-    { key: 'all', label: '🗺️ ' + t('all') },
-    { key: 'dogs', label: '🐕 ' + t('dogs') },
-    { key: 'parks', label: '🌳 ' + t('parks') },
-    { key: 'lost', label: '🚨 ' + t('lost') },
-  ];
-
-  const VISIBILITY_OPTIONS = [
-    { key: 'public', label: t('visible'), icon: '🟢', desc: t('visPublic') },
-    { key: 'community', label: t('communityOnly'), icon: '🟡', desc: t('visCommunity') },
-    { key: 'private', label: t('hidden'), icon: '🔴', desc: t('visPrivate') },
+    { key: 'all', label: lang === 'es' ? 'Todo' : 'All', icon: '🗺️' },
+    { key: 'dogs', label: lang === 'es' ? 'Mascotas' : 'Pets', icon: '🐕' },
+    { key: 'parks', label: lang === 'es' ? 'Parques' : 'Parks', icon: '🌳' },
+    { key: 'lost', label: lang === 'es' ? 'Perdidos' : 'Lost', icon: '🚨' },
   ];
 
   return (
-    <View style={styles.container}>
-
-      <View style={styles.topControls}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 20 }}>
-          {FILTERS.map(f => (
-            <TouchableOpacity key={f.key} style={[styles.filterPill, filter === f.key && styles.filterPillActive]} onPress={() => setFilter(f.key)}>
-              <Text style={[styles.filterText, filter === f.key && styles.filterTextActive]}>{f.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-        <View style={styles.topActions}>
-          <TouchableOpacity style={styles.inviteBtn} onPress={async () => { try { await Share.share({ message: `🐾 ${dogs.length} pets tracked near you on SmartPet Tag. Join: smartpettag.app` }); } catch(e) {} }}>
-            <Text style={styles.inviteBtnText}>👥 {t('invite')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.privacyBtn} onPress={() => setShowPrivacy(!showPrivacy)}>
-            <Text>{myVisibility === 'public' ? '🟢' : myVisibility === 'community' ? '🟡' : '🔴'}</Text>
-            <Text style={styles.privacyText}>{myVisibility === 'public' ? t('visible') : myVisibility === 'community' ? t('community') : t('hidden')}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {focusPark && (
-        <View style={styles.focusBanner}>
-          <Text style={styles.focusBannerIcon}>🌳</Text>
-          <Text style={styles.focusBannerText}>Showing dogs near {focusPark}</Text>
-          <Text style={styles.focusBannerLive}>Live</Text>
-        </View>
-      )}
-
-      {alerts.length > 0 && (
-        <View style={styles.alertStrip}>
-          <View style={styles.alertDot} />
-          <Text style={styles.alertStripText}>🚨 {alerts.length} {t('lostAlerts')} active nearby</Text>
-        </View>
-      )}
-
-      <View style={styles.mapContainer}>
+    <View style={s.container}>
+      {/* Full screen map */}
+      <View style={s.mapFull}>
         {Platform.OS === 'web' ? (
-          <iframe srcDoc={buildMapHTML()} style={{ width: '100%', height: '100%', border: 'none' }} title="SmartPet Tag Map" />
+          <iframe
+            key={(focusPark || 'default') + filter + userLat + userLng}
+            srcDoc={buildMapHTML()}
+            style={{ width: '100%', height: '100%', border: 'none' }}
+            title="SmartPet Tag Map"
+          />
         ) : (
-          <View style={styles.mobileMap}>
+          <View style={s.mobileMap}>
             <Text style={{ fontSize: 52 }}>🗺️</Text>
-            <Text style={styles.mobileMapTitle}>Live Pet Map</Text>
-            <Text style={styles.mobileMapSub}>Full map available on desktop</Text>
+            <Text style={s.mobileMapTitle}>{lang === 'es' ? 'Mapa en vivo' : 'Live Map'}</Text>
+            <Text style={s.mobileMapSub}>{lang === 'es' ? 'Disponible en escritorio' : 'Full map on desktop'}</Text>
           </View>
         )}
       </View>
 
-      <View style={styles.chipsWrap}>
-        {filteredDogs.length === 0 && (
-          <View style={{ paddingHorizontal: 20, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <Text style={{ fontSize: 20 }}>🔍</Text>
-            <Text style={{ fontSize: 13, color: colors.textMuted }}>No pets nearby right now. Invite friends to join!</Text>
-          </View>
-        )}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 20, paddingVertical: 12 }}>
-          {filteredDogs.map((dog, i) => (
-            <TouchableOpacity key={i} style={[styles.dogChip, dog.is_moving && styles.dogChipMoving]} onPress={() => router.push({ pathname: '/pet-profile', params: { dogName: dog.dog_name } })}>
-              {dog.photo_url ? <Image source={{ uri: dog.photo_url }} style={styles.dogChipPhoto} /> : <Text style={{ fontSize: 24 }}>{dog.emoji}</Text>}
-              <View>
-                <Text style={styles.dogChipName}>{dog.dog_name}</Text>
-                <Text style={styles.dogChipStatus}>{dog.is_moving ? '🟢 ' + t('movingNow') : '⚪ ' + t('resting')}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
-      <View style={styles.legend}>
-        {[
-          { color: colors.amber, label: 'You' },
-          { color: '#F59E0B', label: t('publicDogs') },
-          { color: '#6366F1', label: t('communityOnly') },
-          { color: colors.emergency, label: t('lostAlerts') },
-          { color: '#10B981', label: 'Parks' },
-        ].map((item, i) => (
-          <View key={i} style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: item.color }]} />
-            <Text style={styles.legendText}>{item.label}</Text>
-          </View>
+      {/* Filter pills — floating over map like Find My */}
+      <View style={s.filterRow}>
+        {FILTERS.map(f => (
+          <TouchableOpacity
+            key={f.key}
+            style={[s.filterPill, filter === f.key && s.filterPillActive]}
+            onPress={() => setFilter(f.key)}
+          >
+            <Text style={s.filterIcon}>{f.icon}</Text>
+            <Text style={[s.filterText, filter === f.key && s.filterTextActive]}>{f.label}</Text>
+          </TouchableOpacity>
         ))}
       </View>
 
-      {selectedDog && (
-        <Animated.View style={[styles.popup, { transform: [{ translateY: slideAnim }] }]}>
-          <View style={styles.popupHandle} />
-          <TouchableOpacity style={styles.popupClose} onPress={closeDogProfile}>
-            <Text style={{ color: colors.textMuted, fontSize: 14 }}>✕</Text>
-          </TouchableOpacity>
-          <View style={styles.popupHero}>
-            <View style={styles.popupPhotoWrap}>
-              {selectedDog.photo_url
-                ? <Image source={{ uri: selectedDog.photo_url }} style={styles.popupPhoto} />
-                : <View style={styles.popupPhotoPlaceholder}><Text style={{ fontSize: 52 }}>{selectedDog.emoji}</Text></View>}
-              {selectedDog.is_moving && <View style={styles.popupMovingDot} />}
-            </View>
-            <View style={{ flex: 1, justifyContent: 'center', gap: 4 }}>
-              <Text style={styles.popupName}>{selectedDog.dog_name}</Text>
-              <Text style={styles.popupBreed}>{selectedDog.breed}{selectedDog.age ? ` · ${selectedDog.age} yrs` : ''}</Text>
-              <View style={{ flexDirection: 'row', gap: 6 }}>
-                <View style={[styles.popupBadge, { backgroundColor: selectedDog.visibility === 'community' ? colors.communityDim : colors.amberDim, borderColor: selectedDog.visibility === 'community' ? colors.community : colors.amber }]}>
-                  <Text style={[styles.popupBadgeText, { color: selectedDog.visibility === 'community' ? colors.community : colors.amber }]}>
-                    {selectedDog.visibility === 'community' ? '🟡 ' + t('community') : '🟢 ' + t('visible')}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          </View>
-          {selectedDog.tags && selectedDog.tags.length > 0 && (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-              {selectedDog.tags.slice(0, 5).map((tag, i) => (
-                <View key={i} style={styles.popupTag}><Text style={styles.popupTagText}>{tag}</Text></View>
-              ))}
-            </View>
-          )}
-          <View style={styles.popupDetails}>
-            <View style={styles.popupDetailRow}>
-              <Text style={styles.popupDetailIcon}>👤</Text>
-              <Text style={styles.popupDetailLabel}>{t('owner')}</Text>
-              <Text style={styles.popupDetailValue}>{selectedDog.owner_name}</Text>
-            </View>
-            {selectedDog.size && (
-              <View style={styles.popupDetailRow}>
-                <Text style={styles.popupDetailIcon}>📏</Text>
-                <Text style={styles.popupDetailLabel}>Size</Text>
-                <Text style={styles.popupDetailValue}>{selectedDog.size}</Text>
-              </View>
-            )}
-            {selectedDog.favourite_spots && (
-              <View style={styles.popupDetailRow}>
-                <Text style={styles.popupDetailIcon}>📍</Text>
-                <Text style={styles.popupDetailLabel}>Spots</Text>
-                <Text style={styles.popupDetailValue} numberOfLines={2}>{selectedDog.favourite_spots}</Text>
-              </View>
-            )}
-          </View>
-          <TouchableOpacity style={[styles.popupChatBtn, { marginBottom: 8 }]} onPress={() => { closeDogProfile(); router.push({ pathname: '/pet-profile', params: { dogName: selectedDog.dog_name } }); }}>
-            <Text style={styles.popupChatBtnText}>🐾 View full profile</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.popupChatBtn, { backgroundColor: colors.communityDim, borderColor: colors.community }]} onPress={() => { closeDogProfile(); router.push({ pathname: '/message', params: { conversationId: 'new', otherDog: selectedDog.dog_name, otherOwner: '' } }); }}>
-            <Text style={styles.popupChatBtnText}>💬 {t('sayHello')} {selectedDog.dog_name}</Text>
-          </TouchableOpacity>
-        </Animated.View>
+      {/* Alert strip */}
+      {alerts.length > 0 && (
+        <View style={s.alertStrip}>
+          <View style={s.alertDot} />
+          <Text style={s.alertStripText}>🚨 {alerts.length} {lang === 'es' ? 'alertas activas cerca' : 'active alerts nearby'}</Text>
+        </View>
       )}
 
-      {showPrivacy && (
-        <View style={styles.privacyPanel}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-            <Text style={styles.privacyPanelTitle}>{t('visibilitySettings')}</Text>
-            <TouchableOpacity onPress={() => setShowPrivacy(false)}><Text style={{ color: colors.textMuted, fontSize: 18 }}>✕</Text></TouchableOpacity>
-          </View>
-          <Text style={{ fontSize: 13, color: colors.textMuted, marginBottom: 16 }}>{t('controlVisibility')}</Text>
-          {VISIBILITY_OPTIONS.map(opt => (
-            <TouchableOpacity key={opt.key} style={[styles.visibilityRow, myVisibility === opt.key && styles.visibilityRowActive]} onPress={() => { setMyVisibility(opt.key); setShowPrivacy(false); }}>
-              <Text style={{ fontSize: 20 }}>{opt.icon}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.visibilityLabel, myVisibility === opt.key && { color: colors.textPrimary }]}>{opt.label}</Text>
-                <Text style={{ fontSize: 12, color: colors.textMuted }}>{opt.desc}</Text>
-              </View>
-              {myVisibility === opt.key && <Text style={{ color: colors.amber, fontSize: 16, fontWeight: '700' }}>✓</Text>}
-            </TouchableOpacity>
-          ))}
+      {/* Bottom sheet — Find My style pet list */}
+      <View style={s.bottomSheet}>
+        <View style={s.bottomSheetHandle} />
+        <View style={s.bottomSheetHeader}>
+          <Text style={s.bottomSheetTitle}>{lang === 'es' ? `${filteredDogs.length} mascotas cerca` : `${filteredDogs.length} pets nearby`}</Text>
+          <TouchableOpacity style={s.inviteBtn} onPress={() => {
+            if (typeof navigator !== 'undefined' && navigator.share) {
+              navigator.share({ title: 'SmartPet Tag', text: lang === 'es' ? '🐾 Protege a tu mascota con SmartPet Tag' : '🐾 Protect your pet with SmartPet Tag', url: 'https://smartpettag.vercel.app' });
+            }
+          }}>
+            <Text style={s.inviteBtnText}>{lang === 'es' ? '+ Invitar' : '+ Invite'}</Text>
+          </TouchableOpacity>
         </View>
+
+        {filteredDogs.length === 0 ? (
+          <View style={s.emptyState}>
+            <Text style={s.emptyIcon}>🔍</Text>
+            <Text style={s.emptyText}>{lang === 'es' ? 'Sin mascotas cerca ahora. ¡Invita amigos!' : 'No pets nearby. Invite friends to join!'}</Text>
+          </View>
+        ) : (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.petList}>
+            {filteredDogs.map((dog, i) => (
+              <TouchableOpacity
+                key={i}
+                style={[s.petCard, dog.is_moving && s.petCardMoving]}
+                onPress={() => router.push({ pathname: '/pet-profile', params: { dogName: dog.dog_name } })}
+              >
+                <View style={s.petCardPhotoWrap}>
+                  {dog.photo_url
+                    ? <Image source={{ uri: dog.photo_url }} style={s.petCardPhoto} resizeMode="cover" />
+                    : <View style={s.petCardPhotoPlaceholder}><Text style={{ fontSize: 22 }}>{dog.emoji || '🐾'}</Text></View>
+                  }
+                  {dog.is_moving && <View style={s.movingDot} />}
+                </View>
+                <Text style={s.petCardName} numberOfLines={1}>{dog.dog_name}</Text>
+                <Text style={s.petCardStatus}>{dog.is_moving
+                  ? (lang === 'es' ? '🟢 Activo' : '🟢 Active')
+                  : (lang === 'es' ? '⚪ Descansando' : '⚪ Resting')
+                }</Text>
+                <Text style={s.petCardDist}>
+                  {distanceKm(userLat, userLng, dog.lat, dog.lng) < 1
+                    ? Math.round(distanceKm(userLat, userLng, dog.lat, dog.lng) * 1000) + 'm'
+                    : distanceKm(userLat, userLng, dog.lat, dog.lng).toFixed(1) + 'km'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
+      </View>
+
+      {/* Dog detail popup — Find My style bottom card */}
+      {selectedDog && (
+        <Animated.View style={[s.popup, { transform: [{ translateY: slideAnim }] }]}>
+          <View style={s.popupHandle} />
+          <TouchableOpacity style={s.popupClose} onPress={closeDog}>
+            <Text style={s.popupCloseText}>✕</Text>
+          </TouchableOpacity>
+          <View style={s.popupHero}>
+            <View style={s.popupPhotoWrap}>
+              {selectedDog.photo_url
+                ? <Image source={{ uri: selectedDog.photo_url }} style={s.popupPhoto} resizeMode="cover" />
+                : <View style={s.popupPhotoPlaceholder}><Text style={{ fontSize: 40 }}>{selectedDog.emoji || '🐾'}</Text></View>
+              }
+              {selectedDog.is_moving && <View style={s.popupMovingDot} />}
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={s.popupName}>{selectedDog.dog_name}</Text>
+              <Text style={s.popupBreed}>{selectedDog.breed}</Text>
+              <Text style={s.popupDist}>
+                📍 {distanceKm(userLat, userLng, selectedDog.lat, selectedDog.lng).toFixed(1)}km {lang === 'es' ? 'de distancia' : 'away'}
+              </Text>
+            </View>
+          </View>
+          <View style={s.popupActions}>
+            <TouchableOpacity style={s.popupActionBtn} onPress={() => { closeDog(); router.push({ pathname: '/pet-profile', params: { dogName: selectedDog.dog_name } }); }}>
+              <Text style={s.popupActionIcon}>👤</Text>
+              <Text style={s.popupActionText}>{lang === 'es' ? 'Perfil' : 'Profile'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.popupActionBtn} onPress={() => { closeDog(); router.push({ pathname: '/message', params: { conversationId: 'new', otherDog: selectedDog.dog_name, otherOwner: '' } }); }}>
+              <Text style={s.popupActionIcon}>💬</Text>
+              <Text style={s.popupActionText}>{lang === 'es' ? 'Mensaje' : 'Message'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.popupActionBtn} onPress={() => { if (typeof window !== 'undefined') window.open(`https://www.google.com/maps/dir/?api=1&destination=${selectedDog.lat},${selectedDog.lng}`); }}>
+              <Text style={s.popupActionIcon}>🧭</Text>
+              <Text style={s.popupActionText}>{lang === 'es' ? 'Cómo llegar' : 'Directions'}</Text>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
       )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  topControls: { paddingTop: 16, paddingBottom: 8, gap: 10 },
-  filterPill: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999, overflow: 'hidden', backgroundColor: colors.bgCard, borderWidth: 0.5, borderColor: colors.bgBorder },
-  filterPillActive: { backgroundColor: colors.amberDim, borderColor: colors.amber },
-  filterText: { fontSize: 12, color: colors.textMuted, fontWeight: '500' },
-  filterTextActive: { color: colors.amber },
-  topActions: { flexDirection: 'row', gap: 8, paddingHorizontal: 20 },
-  inviteBtn: { backgroundColor: colors.communityDim, borderRadius: 999, overflow: 'hidden', paddingHorizontal: 14, paddingVertical: 7, borderWidth: 0.5, borderColor: colors.community },
-  inviteBtnText: { color: colors.community, fontSize: 12, fontWeight: '600' },
-  privacyBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.bgCard, borderRadius: 999, overflow: 'hidden', paddingHorizontal: 12, paddingVertical: 7, borderWidth: 0.5, borderColor: colors.bgBorder },
-  privacyText: { fontSize: 12, color: colors.textSecondary, fontWeight: '500' },
-  focusBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#ECFDF5', borderTopWidth: 0.5, borderBottomWidth: 0.5, borderColor: '#10B981', paddingHorizontal: 20, paddingVertical: 10 },
-  focusBannerIcon: { fontSize: 16 },
-  focusBannerText: { fontSize: 13, color: '#10B981', fontWeight: '600', flex: 1 },
-  focusBannerLive: { fontSize: 11, color: '#10B981', fontWeight: '700' },
-  alertStrip: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.emergencyDim, borderTopWidth: 0.5, borderBottomWidth: 0.5, borderColor: colors.emergency + '60', paddingHorizontal: 20, paddingVertical: 10 },
-  alertDot: { width: 6, height: 6, borderRadius: 3, overflow: 'hidden', backgroundColor: colors.emergency },
-  alertStripText: { fontSize: 12, color: colors.emergency, flex: 1, fontWeight: '500' },
-  mapContainer: { flex: 1 },
-  mobileMap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 32 },
-  mobileMapTitle: { fontSize: 20, fontWeight: '700', color: colors.textPrimary },
-  mobileMapSub: { fontSize: 13, color: colors.textMuted, textAlign: 'center' },
-  chipsWrap: { borderTopWidth: 0.5, borderTopColor: colors.bgBorder, backgroundColor: colors.bg },
-  dogChip: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.bgCard, borderRadius: 12, overflow: 'hidden', borderWidth: 0.5, borderColor: colors.bgBorder, paddingHorizontal: 12, paddingVertical: 8 },
-  dogChipMoving: { borderColor: colors.amber },
-  dogChipPhoto: { width: 32, height: 32, borderRadius: 16, overflow: 'hidden', borderWidth: 1.5, borderColor: colors.amber },
-  dogChipName: { fontSize: 12, fontWeight: '600', color: colors.textPrimary },
-  dogChipStatus: { fontSize: 10, color: colors.textMuted, marginTop: 1 },
-  legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingHorizontal: 20, paddingVertical: 10, backgroundColor: colors.bgCard, borderTopWidth: 0.5, borderTopColor: colors.bgBorder },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendText: { fontSize: 10, color: colors.textMuted },
-  popup: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: colors.bgCard, borderTopLeftRadius: 28, borderTopRightRadius: 28, borderTopWidth: 0.5, borderColor: colors.bgBorder, padding: 20, paddingTop: 12, maxHeight: '80%' },
-  popupHandle: { width: 40, height: 4, borderRadius: 2, overflow: 'hidden', backgroundColor: colors.bgBorder, alignSelf: 'center', marginBottom: 16 },
-  popupClose: { position: 'absolute', top: 16, right: 20, width: 32, height: 32, borderRadius: 16, overflow: 'hidden', backgroundColor: colors.bgBorder, alignItems: 'center', justifyContent: 'center' },
-  popupHero: { flexDirection: 'row', gap: 16, marginBottom: 14 },
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F2F2F7' },
+  mapFull: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  mobileMap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  mobileMapTitle: { fontSize: 20, fontWeight: '700', color: '#111827' },
+  mobileMapSub: { fontSize: 13, color: '#9CA3AF', textAlign: 'center' },
+
+  // Filter pills — floating
+  filterRow: { position: 'absolute', top: 16, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', gap: 8, paddingHorizontal: 16 },
+  filterPill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 4 },
+  filterPillActive: { backgroundColor: '#007AFF' },
+  filterIcon: { fontSize: 13 },
+  filterText: { fontSize: 13, fontWeight: '600', color: '#374151' },
+  filterTextActive: { color: '#FFFFFF' },
+
+  // Alert strip
+  alertStrip: { position: 'absolute', top: 64, left: 16, right: 16, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 12, padding: 10, shadowColor: '#EF4444', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 8 },
+  alertDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF3B30' },
+  alertStripText: { fontSize: 12, color: '#FF3B30', fontWeight: '600', flex: 1 },
+
+  // Bottom sheet
+  bottomSheet: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(255,255,255,0.98)', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 16 },
+  bottomSheetHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: '#D1D5DB', alignSelf: 'center', marginTop: 10, marginBottom: 12 },
+  bottomSheetHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 12 },
+  bottomSheetTitle: { fontSize: 15, fontWeight: '700', color: '#111827' },
+  inviteBtn: { backgroundColor: '#EEF2FF', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 },
+  inviteBtnText: { fontSize: 13, color: '#6366F1', fontWeight: '600' },
+  emptyState: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 12 },
+  emptyIcon: { fontSize: 20 },
+  emptyText: { fontSize: 13, color: '#9CA3AF', flex: 1 },
+
+  // Pet cards in bottom list
+  petList: { paddingHorizontal: 16, gap: 10, paddingBottom: 4 },
+  petCard: { width: 90, alignItems: 'center', gap: 4, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 10, borderWidth: 0.5, borderColor: '#F3F4F6', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4 },
+  petCardMoving: { borderColor: '#007AFF', borderWidth: 1.5 },
+  petCardPhotoWrap: { position: 'relative', marginBottom: 2 },
+  petCardPhoto: { width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: '#F3F4F6' },
+  petCardPhotoPlaceholder: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center' },
+  movingDot: { position: 'absolute', bottom: 0, right: 0, width: 12, height: 12, borderRadius: 6, backgroundColor: '#34C759', borderWidth: 2, borderColor: '#FFFFFF' },
+  petCardName: { fontSize: 11, fontWeight: '700', color: '#111827', textAlign: 'center', width: '100%' },
+  petCardStatus: { fontSize: 9, color: '#9CA3AF', textAlign: 'center' },
+  petCardDist: { fontSize: 9, color: '#007AFF', fontWeight: '600' },
+
+  // Dog detail popup
+  popup: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFFFFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 20, paddingTop: 12, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 20 },
+  popupHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: '#D1D5DB', alignSelf: 'center', marginBottom: 16 },
+  popupClose: { position: 'absolute', top: 16, right: 16, width: 30, height: 30, borderRadius: 15, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
+  popupCloseText: { color: '#9CA3AF', fontSize: 12, fontWeight: '700' },
+  popupHero: { flexDirection: 'row', gap: 14, marginBottom: 16, alignItems: 'center' },
   popupPhotoWrap: { position: 'relative' },
-  popupPhoto: { width: 100, height: 100, borderRadius: 50, overflow: 'hidden', borderWidth: 2.5, borderColor: colors.amber },
-  popupPhotoPlaceholder: { width: 100, height: 100, borderRadius: 50, overflow: 'hidden', backgroundColor: colors.amberDim, alignItems: 'center', justifyContent: 'center', borderWidth: 2.5, borderColor: colors.amber },
-  popupMovingDot: { position: 'absolute', bottom: 4, right: 4, width: 14, height: 14, borderRadius: 7, overflow: 'hidden', backgroundColor: colors.safe, borderWidth: 2, borderColor: colors.bgCard },
-  popupName: { fontSize: 22, fontWeight: '800', color: colors.textPrimary },
-  popupBreed: { fontSize: 13, color: colors.textSecondary },
-  popupBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, overflow: 'hidden', borderWidth: 0.5 },
-  popupBadgeText: { fontSize: 10, fontWeight: '700' },
-  popupTag: { backgroundColor: colors.bgBorder, borderRadius: 999, overflow: 'hidden', paddingHorizontal: 10, paddingVertical: 4 },
-  popupTagText: { fontSize: 11, color: colors.textSecondary },
-  popupDetails: { borderTopWidth: 0.5, borderTopColor: colors.bgBorder, paddingTop: 12, marginBottom: 14 },
-  popupDetailRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 7, borderBottomWidth: 0.5, borderBottomColor: colors.bgBorder },
-  popupDetailIcon: { fontSize: 14, width: 24 },
-  popupDetailLabel: { fontSize: 12, color: colors.textMuted, width: 80 },
-  popupDetailValue: { fontSize: 12, color: colors.textSecondary, flex: 1 },
-  popupChatBtn: { backgroundColor: colors.amberDim, borderRadius: 12, overflow: 'hidden', paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.amber },
-  popupChatBtnText: { color: colors.amber, fontWeight: '700', fontSize: 14 },
-  privacyPanel: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: colors.bgCard, borderTopLeftRadius: 28, borderTopRightRadius: 28, borderTopWidth: 0.5, borderColor: colors.bgBorder, padding: 20 },
-  privacyPanelTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
-  visibilityRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 12, overflow: 'hidden', borderWidth: 0.5, borderColor: colors.bgBorder, backgroundColor: colors.bg, marginBottom: 8 },
-  visibilityRowActive: { borderColor: colors.amber, backgroundColor: colors.amberDim },
-  visibilityLabel: { fontSize: 14, fontWeight: '600', color: colors.textSecondary, marginBottom: 2 },
+  popupPhoto: { width: 72, height: 72, borderRadius: 36, borderWidth: 2, borderColor: '#F3F4F6' },
+  popupPhotoPlaceholder: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center' },
+  popupMovingDot: { position: 'absolute', bottom: 2, right: 2, width: 14, height: 14, borderRadius: 7, backgroundColor: '#34C759', borderWidth: 2, borderColor: '#FFFFFF' },
+  popupName: { fontSize: 22, fontWeight: '800', color: '#111827', marginBottom: 2 },
+  popupBreed: { fontSize: 13, color: '#6B7280', marginBottom: 4 },
+  popupDist: { fontSize: 12, color: '#007AFF', fontWeight: '600' },
+  popupActions: { flexDirection: 'row', gap: 10 },
+  popupActionBtn: { flex: 1, alignItems: 'center', gap: 6, backgroundColor: '#F2F2F7', borderRadius: 14, paddingVertical: 12 },
+  popupActionIcon: { fontSize: 22 },
+  popupActionText: { fontSize: 11, fontWeight: '600', color: '#374151' },
 });
