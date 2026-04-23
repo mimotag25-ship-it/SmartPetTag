@@ -275,7 +275,7 @@ export default function Emergency() {
               <Text style={{ color: '#10B981', fontSize: 18 }}>→</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={s.posterBtn} onPress={() => router.push({ pathname: '/poster', params: { alertId, dogName: dog?.name, breed: dog?.breed, neighbourhood: lastSeen || dog?.neighbourhood, ownerName: dog?.owner_name, ownerPhone: dog?.owner_phone } })}>
+            <TouchableOpacity style={s.posterBtn} onPress={() => router.push({ pathname: '/poster', params: { alertId, dogName: dog?.name, breed: dog?.breed, neighbourhood: lastSeen || dog?.neighbourhood, ownerName: dog?.owner_name, ownerPhone: dog?.owner_phone, dogPhoto: dog?.photo_url } })}>
               <Text style={{ fontSize: 22 }}>🖨️</Text>
               <View style={{ flex: 1 }}>
                 <Text style={s.posterTitle}>Print emergency poster</Text>

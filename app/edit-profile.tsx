@@ -20,6 +20,11 @@ export default function EditProfile() {
   const [markings, setMarkings] = useState('');
   const [microchip, setMicrochip] = useState('');
   const [hasMicrochip, setHasMicrochip] = useState(false);
+  const [visibleFields, setVisibleFields] = useState({
+    phone: true, age: true, colour: true, size: true,
+    behaviour: true, medical: false, vet: false, markings: true,
+    favourite_spots: true, if_found: true,
+  });
   const [hasGpsTag, setHasGpsTag] = useState(false);
   const [vaccinated, setVaccinated] = useState(true);
   const [allergies, setAllergies] = useState('');
@@ -56,11 +61,16 @@ export default function EditProfile() {
         setIfFoundInstructions(data.if_found_instructions || '');
         setRespondsTo(data.responds_to || '');
         setPhotos(data.photos || []);
+        if (data.visible_fields) setVisibleFields(JSON.parse(data.visible_fields));
       }
       setLoading(false);
     }
     load();
   }, []);
+
+  function toggleFieldVisibility(field) {
+    setVisibleFields(prev => ({ ...prev, [field]: !prev[field] }));
+  }
 
   async function addPhoto() {
     if (photos.length >= 6) { alert('Maximum 6 photos allowed'); return; }
@@ -105,6 +115,7 @@ export default function EditProfile() {
       if_found_instructions: ifFoundInstructions,
       responds_to: respondsTo,
       photos,
+      visible_fields: JSON.stringify(visibleFields),
       photo_url: photos[0] || dog.photo_url,
     }).eq('id', dog.id);
     if (!error && photos[0]) {
@@ -242,7 +253,7 @@ export default function EditProfile() {
               value={vaccinated}
               onValueChange={setVaccinated}
               trackColor={{ false: '#1a1a1a', true: '#003d30' }}
-              thumbColor={vaccinated ? '#00D4AA' : '#555'}
+              thumbColor={vaccinated ? '#10B981' : '#D1D5DB'}
             />
           </View>
 
@@ -255,7 +266,7 @@ export default function EditProfile() {
               value={hasMicrochip}
               onValueChange={setHasMicrochip}
               trackColor={{ false: '#1a1a1a', true: '#003d30' }}
-              thumbColor={hasMicrochip ? '#00D4AA' : '#555'}
+              thumbColor={hasMicrochip ? '#10B981' : '#D1D5DB'}
             />
           </View>
 
@@ -282,7 +293,7 @@ export default function EditProfile() {
               value={hasGpsTag}
               onValueChange={setHasGpsTag}
               trackColor={{ false: '#1a1a1a', true: '#003d30' }}
-              thumbColor={hasGpsTag ? '#00D4AA' : '#555'}
+              thumbColor={hasGpsTag ? '#10B981' : '#D1D5DB'}
             />
           </View>
 
@@ -385,7 +396,11 @@ const styles = StyleSheet.create({
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: '#111' },
   backBtn: { color: '#555', fontSize: 14 },
   title: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
-  saveBtn: { fontSize: 14, fontWeight: '600', color: '#00D4AA' },
+  saveBtn: { fontSize: 14, fontWeight: '600', color: '#10B981' },
+  visToggle: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#F3F4F6', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 0.5, borderColor: '#E5E7EB' },
+  visToggleOn: { backgroundColor: '#ECFDF5', borderColor: '#10B981' },
+  visToggleText: { fontSize: 10, color: '#9CA3AF', fontWeight: '600' },
+  visToggleTextOn: { color: '#10B981' },
   savedBtn: { fontSize: 14, fontWeight: '600', color: '#10B981' },
   scroll: { flex: 1 },
   section: { marginHorizontal: 16, marginTop: 20, backgroundColor: '#0d0d0d', borderRadius: 16, borderWidth: 0.5, borderColor: '#1a1a1a', padding: 16, marginBottom: 4 },
@@ -398,8 +413,8 @@ const styles = StyleSheet.create({
   optionBtnActive: { backgroundColor: '#003d30', borderColor: '#00D4AA' },
   optionBtnText: { fontSize: 12, color: '#555', fontWeight: '500' },
   optionBtnTextActive: { color: '#00D4AA' },
-  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: '#111' },
-  toggleLabel: { fontSize: 14, color: '#FFFFFF', fontWeight: '500', marginBottom: 2 },
+  toggleRow: { backgroundColor: '#FFFFFF', borderBottomWidth: 0.5, borderBottomColor: '#E5E7EB', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: '#111' },
+  toggleLabel: { fontSize: 14, color: '#111827', color: '#FFFFFF', fontWeight: '500', marginBottom: 2 },
   toggleSub: { fontSize: 11, color: '#444' },
   tipBox: { flexDirection: 'row', gap: 10, backgroundColor: '#0a0a14', borderRadius: 10, padding: 12, marginTop: 10, borderWidth: 0.5, borderColor: '#222' },
   tipIcon: { fontSize: 16 },
