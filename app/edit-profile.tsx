@@ -142,7 +142,7 @@ export default function EditProfile() {
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 8 }}>
             {photos.map((photo, i) => (
               <View key={i} style={{ position: 'relative' }}>
-                <Image source={{ uri: photo }} style={{ width: 90, height: 90, borderRadius: 10, borderWidth: i === 0 ? 2.5 : 0.5, borderColor: i === 0 ? '#F59E0B' : '#374151' }} resizeMode='contain' />
+                <Image source={{ uri: photo }} style={{ width: 90, height: 90, borderRadius: 10, borderWidth: i === 0 ? 2.5 : 0.5, borderColor: i === 0 ? '#F59E0B' : '#E5E7EB' }} resizeMode='contain' />
                 {i === 0 && (
                   <View style={{ position: 'absolute', top: 4, left: 4, backgroundColor: '#F59E0B', borderRadius: 8, paddingHorizontal: 5, paddingVertical: 2 }}>
                     <Text style={{ fontSize: 9, color: '#FFFFFF', fontWeight: '800' }}>PROFILE</Text>
@@ -172,7 +172,7 @@ export default function EditProfile() {
               >
                 <Text style={{ fontSize: 24 }}>📷</Text>
                 <Text style={{ fontSize: 10, color: '#F59E0B', fontWeight: '600' }}>{uploadingPhoto ? 'Uploading...' : `Add photo`}</Text>
-                <Text style={{ fontSize: 9, color: '#9CA3AF' }}>{photos.length}/6</Text>
+                <Text style={{ fontSize: 9, color: '#6B7280' }}>{photos.length}/6</Text>
               </TouchableOpacity>
             )}
           </View>
