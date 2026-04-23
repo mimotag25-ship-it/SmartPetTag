@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { LanguageContext, T, t as globalT, setLanguage, getLanguage } from './i18n';
+import { useState, useEffect } from 'react';
+import { LanguageContext, getLanguage, setLanguage, t as translate, T } from './i18n';
 
 export default function LanguageProvider({ children }) {
   const [lang, setLangState] = useState(getLanguage());

@@ -7,7 +7,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { colors, shadows } from '../lib/design';
 
 const ENERGY_COLORS = ['#6366F1', '#6366F1', '#10B981', '#F59E0B', '#F97316', '#EF4444'];
-const ENERGY_LABELS = ['', 'Very Calm', 'Calm', 'Active', 'High Energy', 'Extreme'];
+const ENERGY_LABELS = ['', 'Very Calm', 'Calm', 'Active', lang === 'es' ? 'Alta energía' : 'High Energy', 'Extreme'];
 
 function InfoRow({ icon, label, value }) {
   if (!value) return null;
@@ -98,7 +98,7 @@ export default function PetProfile() {
                 <Image source={{ uri: allPhotos[activePhoto] }} style={s.heroPhoto} resizeMode="cover" />
                 <View style={s.onlineIndicator}>
                   <View style={s.onlineDot} />
-                  <Text style={s.onlineText}>{dog.is_moving ? 'Moving now' : 'Online'}</Text>
+                  <Text style={s.onlineText}>{dog.is_moving ? lang === 'es' ? 'En movimiento' : 'Moving now' : lang === 'es' ? 'En línea' : 'Online'}</Text>
                 </View>
                 {allPhotos.length > 1 && (
                   <View style={s.photoCounter}>

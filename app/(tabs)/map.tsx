@@ -227,7 +227,7 @@ function initMap(){
         new google.maps.Marker({
           position:latlng,map:map,
           icon:{path:google.maps.SymbolPath.CIRCLE,scale:10,fillColor:'#F59E0B',fillOpacity:1,strokeColor:'#fff',strokeWeight:2},
-          title:'You are here'
+          title:t('yourLocation')
         });
         // Notify parent to update Supabase
         window.parent.postMessage({type:'location',lat:pos.coords.latitude,lng:pos.coords.longitude},'*');

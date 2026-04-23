@@ -8,7 +8,7 @@ export default function ChatList() {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [myDog, setMyDog] = useState(null);
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   useEffect(() => {
     loadMyDog();
