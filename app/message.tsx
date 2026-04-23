@@ -155,7 +155,7 @@ export default function MessageScreen() {
           disabled={!text.trim() || sending}
         >
           {sending
-            ? <ActivityIndicator size="small" color="#050508" />
+            ? <ActivityIndicator size="small" color="#FFFFFF" />
             : <Text style={styles.sendBtnText}>↑</Text>
           }
         </TouchableOpacity>
@@ -165,13 +165,13 @@ export default function MessageScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#050508' },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: '#111' },
   backBtn: { color: '#555', fontSize: 20, width: 30 },
   topBarCenter: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   headerAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#111', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#00D4AA' },
   headerAvatarEmoji: { fontSize: 18 },
-  headerDogName: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  headerDogName: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
   headerStatus: { fontSize: 11, color: '#00D4AA' },
   allChatsBtn: { color: '#00D4AA', fontSize: 13, fontWeight: '500' },
   messageList: { flex: 1 },
@@ -186,13 +186,13 @@ const styles = StyleSheet.create({
   bubbleThem: { backgroundColor: '#111', borderBottomLeftRadius: 4, borderWidth: 0.5, borderColor: '#1a1a1a' },
   bubbleSender: { fontSize: 11, color: '#00D4AA', fontWeight: '600', marginBottom: 3 },
   bubbleText: { fontSize: 14, color: '#ccc', lineHeight: 20 },
-  bubbleTextMe: { color: '#050508' },
+  bubbleTextMe: { color: '#FFFFFF' },
   bubbleTime: { fontSize: 10, color: '#555', marginTop: 4, textAlign: 'right' },
   bubbleTimeMe: { color: 'rgba(0,0,0,0.4)' },
-  inputBar: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderTopWidth: 0.5, borderTopColor: '#111', backgroundColor: '#050508' },
+  inputBar: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderTopWidth: 0.5, borderTopColor: '#111', backgroundColor: '#FFFFFF' },
   inputAvatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#111', alignItems: 'center', justifyContent: 'center' },
-  input: { flex: 1, backgroundColor: '#0d0d0d', borderWidth: 0.5, borderColor: '#1a1a1a', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, fontSize: 14, color: '#fff', maxHeight: 100 },
+  input: { flex: 1, backgroundColor: '#0d0d0d', borderWidth: 0.5, borderColor: '#1a1a1a', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, fontSize: 14, color: '#FFFFFF', maxHeight: 100 },
   sendBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#00D4AA', alignItems: 'center', justifyContent: 'center' },
   sendBtnDisabled: { backgroundColor: '#0d0d0d', borderWidth: 0.5, borderColor: '#1a1a1a' },
-  sendBtnText: { color: '#050508', fontSize: 16, fontWeight: '700' },
+  sendBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
 });

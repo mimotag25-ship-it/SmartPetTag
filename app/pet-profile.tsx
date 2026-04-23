@@ -157,10 +157,10 @@ export default function PetProfile() {
         </View>
 
         <View style={s.badgesRow}>
-          {dog.vaccinated !== false && <Badge icon="💉" label="Vaccinated" color="#10B981" bg="#052016" />}
-          {dog.has_microchip && <Badge icon="📡" label="Microchipped" color="#6366F1" bg="#0F0F2E" />}
+          {dog.vaccinated !== false && <Badge icon="💉" label="Vaccinated" color="#10B981" bg="#ECFDF5" />}
+          {dog.has_microchip && <Badge icon="📡" label="Microchipped" color="#6366F1" bg="#EEF2FF" />}
           {dog.has_gps_tag && <Badge icon="📍" label="GPS Tag" color={colors.amber} bg={colors.amberDim} />}
-          {dog.is_moving && <Badge icon="🟢" label="Moving now" color="#10B981" bg="#052016" />}
+          {dog.is_moving && <Badge icon="🟢" label="Moving now" color="#10B981" bg="#ECFDF5" />}
         </View>
 
         {tags.length > 0 && (
@@ -247,22 +247,22 @@ const s = StyleSheet.create({
   headerTitle: { fontSize: 17, fontWeight: '700', color: colors.textPrimary },
   headerEdit: { backgroundColor: colors.amberDim, borderRadius: 8, overflow: 'hidden', paddingHorizontal: 12, paddingVertical: 6, borderWidth: 0.5, borderColor: colors.amber },
   headerEditText: { color: colors.amber, fontSize: 13, fontWeight: '600' },
-  heroWrap: { width: '100%', height: 320, position: 'relative', backgroundColor: '#0D1526', overflow: 'hidden' },
+  heroWrap: { width: '100%', height: 320, position: 'relative', backgroundColor: '#111827', overflow: 'hidden' },
   photoCounter: { position: 'absolute', top: 16, right: 16, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 20, overflow: 'hidden', paddingHorizontal: 12, paddingVertical: 5 },
-  photoCounterText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  photoCounterText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
   profilePicBadge: { position: 'absolute', top: 16, left: 16, backgroundColor: 'rgba(245,158,11,0.9)', borderRadius: 20, overflow: 'hidden', paddingHorizontal: 10, paddingVertical: 5, flexDirection: 'row', alignItems: 'center', gap: 4 },
-  profilePicBadgeText: { color: '#050508', fontSize: 11, fontWeight: '800' },
+  profilePicBadgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: '800' },
   thumbnailRow: { gap: 10, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.bgCard, flexDirection: 'row' },
   thumbnailWrap: { width: 64, height: 64, borderRadius: 12, overflow: 'hidden', borderWidth: 2.5, borderColor: 'transparent', position: 'relative' },
   thumbnailWrapActive: { borderColor: colors.amber },
   thumbnail: { width: '100%', height: '100%', overflow: 'hidden' },
   thumbnailBadge: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(245,158,11,0.85)', alignItems: 'center', paddingVertical: 2 },
-  thumbnailBadgeText: { fontSize: 8, color: '#050508', fontWeight: '800' },
+  thumbnailBadgeText: { fontSize: 8, color: '#FFFFFF', fontWeight: '800' },
   heroPhoto: { width: '100%', height: '100%' },
   heroPlaceholder: { width: '100%', height: 320, backgroundColor: colors.amberDim, alignItems: 'center', justifyContent: 'center' },
   onlineIndicator: { position: 'absolute', bottom: 12, left: 12, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 20, overflow: 'hidden', paddingHorizontal: 10, paddingVertical: 5 },
   onlineDot: { width: 7, height: 7, borderRadius: 4, overflow: 'hidden', backgroundColor: '#10B981' },
-  onlineText: { fontSize: 11, color: '#fff', fontWeight: '600' },
+  onlineText: { fontSize: 11, color: '#FFFFFF', fontWeight: '600' },
   nameSection: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 10 },
   petName: { fontSize: 34, fontWeight: '900', color: colors.textPrimary, letterSpacing: -1 },
   petBreed: { fontSize: 14, color: colors.textMuted, marginTop: 2 },

@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
   nearMeHeader: { marginBottom: 16 },
   nearMeTitle: { fontSize: 17, fontWeight: '800', color: colors.textPrimary, marginBottom: 4 },
   nearMeSub: { fontSize: 13, color: colors.textMuted },
-  resolveBtn: { marginTop: 8, backgroundColor: '#052016', borderRadius: 10, paddingVertical: 10, alignItems: 'center', borderWidth: 0.5, borderColor: '#10B981' },
+  resolveBtn: { marginTop: 8, backgroundColor: '#ECFDF5', borderRadius: 10, paddingVertical: 10, alignItems: 'center', borderWidth: 0.5, borderColor: '#10B981' },
   resolveBtnText: { color: '#10B981', fontSize: 12, fontWeight: '700' },
   emptyFeed: { alignItems: 'center', paddingVertical: 40, gap: 8 },
   emptyFeedEmoji: { fontSize: 48 },

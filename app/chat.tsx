@@ -135,13 +135,13 @@ export default function ChatList() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#050508' },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: '#111' },
   backBtn: { color: '#555', fontSize: 20 },
-  title: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  title: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
   emptyEmoji: { fontSize: 52, marginBottom: 16 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#fff', marginBottom: 8 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF', marginBottom: 8 },
   goToMapBtn: { marginTop: 16, backgroundColor: colors.amberDim, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 10, borderWidth: 0.5, borderColor: colors.amber },
   goToMapBtnText: { color: colors.amber, fontSize: 13, fontWeight: '700' },
   emptySub: { fontSize: 13, color: '#444', textAlign: 'center', lineHeight: 20, marginBottom: 24 },
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
   convAvatarEmoji: { fontSize: 24 },
   convBody: { flex: 1 },
   convHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  convDogName: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  convDogName: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
   convTime: { fontSize: 11, color: '#444' },
   alertBadge: { backgroundColor: '#1a0505', borderWidth: 0.5, borderColor: '#C0392B', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, alignSelf: 'flex-start', marginBottom: 4 },
   alertBadgeText: { fontSize: 10, color: '#C0392B', fontWeight: '600' },

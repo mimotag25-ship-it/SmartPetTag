@@ -73,9 +73,9 @@ export default function PublicProfile() {
 
       {/* Badges */}
       <View style={s.badges}>
-        {dog.vaccinated !== false && <View style={[s.badge, { borderColor: '#10B981', backgroundColor: '#052016' }]}><Text style={[s.badgeText, { color: '#10B981' }]}>💉 Vaccinated</Text></View>}
-        {dog.has_microchip && <View style={[s.badge, { borderColor: '#6366F1', backgroundColor: '#0F0F2E' }]}><Text style={[s.badgeText, { color: '#6366F1' }]}>📡 Microchipped</Text></View>}
-        {dog.has_gps_tag && <View style={[s.badge, { borderColor: '#F59E0B', backgroundColor: '#1C1407' }]}><Text style={[s.badgeText, { color: '#F59E0B' }]}>📍 GPS Tag</Text></View>}
+        {dog.vaccinated !== false && <View style={[s.badge, { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]}><Text style={[s.badgeText, { color: '#10B981' }]}>💉 Vaccinated</Text></View>}
+        {dog.has_microchip && <View style={[s.badge, { borderColor: '#6366F1', backgroundColor: '#EEF2FF' }]}><Text style={[s.badgeText, { color: '#6366F1' }]}>📡 Microchipped</Text></View>}
+        {dog.has_gps_tag && <View style={[s.badge, { borderColor: '#F59E0B', backgroundColor: '#FEF3C7' }]}><Text style={[s.badgeText, { color: '#F59E0B' }]}>📍 GPS Tag</Text></View>}
       </View>
 
       {/* Personality */}
@@ -162,49 +162,49 @@ export default function PublicProfile() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A0F1E' },
-  loader: { flex: 1, backgroundColor: '#0A0F1E', alignItems: 'center', justifyContent: 'center' },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  loader: { flex: 1, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
   header: { alignItems: 'center', paddingTop: 40, paddingBottom: 16 },
-  appName: { fontSize: 22, fontWeight: '900', color: '#F9FAFB', fontStyle: 'italic' },
-  appSub: { fontSize: 12, color: '#4B5563', marginTop: 2 },
+  appName: { fontSize: 22, fontWeight: '900', color: '#111827', fontStyle: 'italic' },
+  appSub: { fontSize: 12, color: '#6B7280', marginTop: 2 },
   heroWrap: { width: '100%' },
   heroPhoto: { width: '100%', height: 300, overflow: 'hidden' },
-  heroPlaceholder: { width: '100%', height: 300, backgroundColor: '#1C1407', alignItems: 'center', justifyContent: 'center' },
+  heroPlaceholder: { width: '100%', height: 300, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center' },
   thumbRow: { gap: 8, padding: 10, backgroundColor: '#111827' },
   thumb: { width: 60, height: 60, borderRadius: 10, borderWidth: 2, borderColor: 'transparent', overflow: 'hidden' },
   thumbActive: { borderColor: '#F59E0B' },
   nameWrap: { padding: 20, paddingBottom: 8 },
-  petName: { fontSize: 36, fontWeight: '900', color: '#F9FAFB', letterSpacing: -1 },
-  petBreed: { fontSize: 15, color: '#9CA3AF', marginTop: 2 },
+  petName: { fontSize: 36, fontWeight: '900', color: '#111827', letterSpacing: -1 },
+  petBreed: { fontSize: 15, color: '#6B7280', marginTop: 2 },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 20, marginBottom: 8 },
   badge: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20, borderWidth: 0.5 },
   badgeText: { fontSize: 12, fontWeight: '600' },
-  section: { marginHorizontal: 16, marginBottom: 12, backgroundColor: '#111827', borderRadius: 16, borderWidth: 0.5, borderColor: '#1F2937', overflow: 'hidden' },
-  sectionTitle: { fontSize: 14, fontWeight: '700', color: '#F9FAFB', padding: 16, borderBottomWidth: 0.5, borderBottomColor: '#1F2937' },
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 11, borderBottomWidth: 0.5, borderBottomColor: '#1F2937' },
+  section: { marginHorizontal: 16, marginBottom: 12, backgroundColor: '#111827', borderRadius: 16, borderWidth: 0.5, borderColor: '#6B7280', overflow: 'hidden' },
+  sectionTitle: { fontSize: 14, fontWeight: '700', color: '#111827', padding: 16, borderBottomWidth: 0.5, borderBottomColor: '#6B7280' },
+  row: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 11, borderBottomWidth: 0.5, borderBottomColor: '#6B7280' },
   rowLabel: { fontSize: 13, color: '#6B7280' },
-  rowValue: { fontSize: 13, color: '#F9FAFB', fontWeight: '500', maxWidth: '60%', textAlign: 'right' },
+  rowValue: { fontSize: 13, color: '#111827', fontWeight: '500', maxWidth: '60%', textAlign: 'right' },
   tagsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, padding: 14 },
-  tag: { backgroundColor: '#1F2937', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
-  tagText: { fontSize: 12, color: '#9CA3AF' },
-  noteText: { fontSize: 13, color: '#9CA3AF', lineHeight: 20, padding: 14 },
+  tag: { backgroundColor: '#6B7280', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
+  tagText: { fontSize: 12, color: '#6B7280' },
+  noteText: { fontSize: 13, color: '#6B7280', lineHeight: 20, padding: 14 },
   ifFoundSection: { borderColor: '#EF4444', borderWidth: 1 },
-  ifFoundTitle: { fontSize: 15, fontWeight: '800', color: '#EF4444', padding: 16, borderBottomWidth: 0.5, borderBottomColor: '#1F2937' },
-  ifFoundText: { fontSize: 13, color: '#F9FAFB', lineHeight: 22, padding: 16 },
+  ifFoundTitle: { fontSize: 15, fontWeight: '800', color: '#EF4444', padding: 16, borderBottomWidth: 0.5, borderBottomColor: '#6B7280' },
+  ifFoundText: { fontSize: 13, color: '#111827', lineHeight: 22, padding: 16 },
   contactSection: { marginHorizontal: 16, marginBottom: 12 },
   contactTitle: { fontSize: 13, fontWeight: '700', color: '#6B7280', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 },
-  callBtn: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#052016', borderRadius: 14, borderWidth: 1.5, borderColor: '#10B981', padding: 16, marginBottom: 8 },
+  callBtn: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#ECFDF5', borderRadius: 14, borderWidth: 1.5, borderColor: '#10B981', padding: 16, marginBottom: 8 },
   callBtnIcon: { fontSize: 26 },
-  callBtnName: { fontSize: 15, fontWeight: '700', color: '#F9FAFB', marginBottom: 2 },
+  callBtnName: { fontSize: 15, fontWeight: '700', color: '#111827', marginBottom: 2 },
   callBtnPhone: { fontSize: 14, color: '#10B981' },
   callBtnArrow: { color: '#10B981', fontSize: 20, marginLeft: 'auto' },
-  waBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#052016', borderRadius: 14, borderWidth: 0.5, borderColor: '#10B981', paddingVertical: 12, paddingHorizontal: 16, justifyContent: 'center' },
+  waBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#ECFDF5', borderRadius: 14, borderWidth: 0.5, borderColor: '#10B981', paddingVertical: 12, paddingHorizontal: 16, justifyContent: 'center' },
   waLogo: { width: 24, height: 24, borderRadius: 12, backgroundColor: '#25D366', alignItems: 'center', justifyContent: 'center' },
-  waLogoText: { color: '#fff', fontSize: 12, fontWeight: '900' },
+  waLogoText: { color: '#FFFFFF', fontSize: 12, fontWeight: '900' },
   waBtnText: { color: '#10B981', fontSize: 14, fontWeight: '600' },
-  vetCallBtn: { margin: 14, backgroundColor: '#0F0F2E', borderRadius: 10, padding: 12, alignItems: 'center', borderWidth: 0.5, borderColor: '#6366F1' },
+  vetCallBtn: { margin: 14, backgroundColor: '#EEF2FF', borderRadius: 10, padding: 12, alignItems: 'center', borderWidth: 0.5, borderColor: '#6366F1' },
   vetCallBtnText: { color: '#6366F1', fontSize: 13, fontWeight: '600' },
   footer: { alignItems: 'center', padding: 24 },
-  footerText: { fontSize: 14, color: '#374151', fontWeight: '600' },
-  footerSub: { fontSize: 12, color: '#374151', marginTop: 2 },
+  footerText: { fontSize: 14, color: '#6B7280', fontWeight: '600' },
+  footerSub: { fontSize: 12, color: '#6B7280', marginTop: 2 },
 });

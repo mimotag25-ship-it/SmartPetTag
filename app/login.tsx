@@ -64,18 +64,18 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A0F1E', justifyContent: 'center', padding: 24 },
+  container: { flex: 1, backgroundColor: '#FFFFFF', justifyContent: 'center', padding: 24 },
   header: { alignItems: 'center', marginBottom: 40 },
   emoji: { fontSize: 56, marginBottom: 12 },
-  title: { fontSize: 28, fontWeight: '800', color: '#F9FAFB', marginBottom: 6, fontStyle: 'italic' },
-  subtitle: { fontSize: 15, color: '#6B7280' },
-  form: { backgroundColor: '#111827', borderRadius: 20, padding: 24, borderWidth: 0.5, borderColor: '#1F2937' },
-  input: { borderWidth: 0.5, borderColor: '#1F2937', borderRadius: 12, padding: 14, fontSize: 14, marginBottom: 12, backgroundColor: '#0A0F1E', color: '#F9FAFB' },
+  title: { fontSize: 28, fontWeight: '800', color: '#111827', marginBottom: 6,  },
+  subtitle: { fontSize: 15, color: '#9CA3AF' },
+  form: { backgroundColor: '#F9FAFB', borderRadius: 20, padding: 24, borderWidth: 0.5, borderColor: '#374151' },
+  input: { borderWidth: 0.5, borderColor: '#374151', borderRadius: 12, padding: 14, fontSize: 14, marginBottom: 12, backgroundColor: '#FFFFFF', color: '#111827' },
   message: { fontSize: 13, color: '#EF4444', marginBottom: 12, textAlign: 'center' },
   button: { backgroundColor: '#F59E0B', borderRadius: 12, paddingVertical: 15, alignItems: 'center', marginBottom: 16 },
-  buttonText: { color: '#0A0F1E', fontSize: 16, fontWeight: '800' },
+  buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
   signupLink: { alignItems: 'center', paddingVertical: 8 },
   signupLinkText: { color: '#F59E0B', fontSize: 13 },
   backLink: { alignItems: 'center', paddingVertical: 8 },
-  backLinkText: { color: '#6B7280', fontSize: 13 },
+  backLinkText: { color: '#9CA3AF', fontSize: 13 },
 });

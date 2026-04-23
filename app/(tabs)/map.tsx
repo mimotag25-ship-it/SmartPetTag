@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
   inviteBtnText: { color: colors.community, fontSize: 12, fontWeight: '600' },
   privacyBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.bgCard, borderRadius: 999, overflow: 'hidden', paddingHorizontal: 12, paddingVertical: 7, borderWidth: 0.5, borderColor: colors.bgBorder },
   privacyText: { fontSize: 12, color: colors.textSecondary, fontWeight: '500' },
-  focusBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#052016', borderTopWidth: 0.5, borderBottomWidth: 0.5, borderColor: '#10B981', paddingHorizontal: 20, paddingVertical: 10 },
+  focusBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#ECFDF5', borderTopWidth: 0.5, borderBottomWidth: 0.5, borderColor: '#10B981', paddingHorizontal: 20, paddingVertical: 10 },
   focusBannerIcon: { fontSize: 16 },
   focusBannerText: { fontSize: 13, color: '#10B981', fontWeight: '600', flex: 1 },
   focusBannerLive: { fontSize: 11, color: '#10B981', fontWeight: '700' },

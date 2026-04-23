@@ -299,17 +299,17 @@ export default function PosterScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#050508' },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: '#111' },
   backBtn: { color: '#555', fontSize: 14 },
-  title: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  title: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
   previewInfo: { padding: 16, backgroundColor: '#1a0505', borderBottomWidth: 0.5, borderBottomColor: '#C0392B' },
-  previewTitle: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 4 },
+  previewTitle: { fontSize: 14, fontWeight: '700', color: '#FFFFFF', marginBottom: 4 },
   previewSub: { fontSize: 12, color: '#888', lineHeight: 18 },
   posterPreview: { flex: 1 },
   bottomBar: { flexDirection: 'row', gap: 10, padding: 16, borderTopWidth: 0.5, borderTopColor: '#111' },
   printBtn: { flex: 1, backgroundColor: '#C0392B', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
-  printBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  printBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
   shareBtn: { backgroundColor: '#0d0d0d', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 16, alignItems: 'center', borderWidth: 0.5, borderColor: '#333' },
   shareBtnText: { color: '#555', fontSize: 14 },
 });
