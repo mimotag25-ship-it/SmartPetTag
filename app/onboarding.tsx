@@ -4,7 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
 import { router } from 'expo-router';
 import { colors, shadows } from '../lib/design';
-import { useLanguage } from '../lib/i18n';
+import { useLanguage, setLanguage } from '../lib/i18n';
 
 const { width, height } = Dimensions.get('window');
 
