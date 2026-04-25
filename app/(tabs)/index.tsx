@@ -250,16 +250,23 @@ export default function HomeScreen() {
     >
       {/* Top bar */}
       <View style={s.topBar}>
-        <View>
-          <Text style={s.appName}>SmartPet Tag</Text>
-          <Text style={s.appSub}>Your pet's safety network</Text>
+        <View style={s.topBarLogo}>
+          <View style={s.topBarLogoMark}>
+            <View style={s.topBarShield}>
+              <View style={s.topBarPaw} />
+            </View>
+          </View>
+          <View>
+            <Text style={s.appName}>SmartPet Tag</Text>
+            <Text style={s.appSub}>{lang === 'es' ? 'Red de seguridad' : 'Safety Network'}</Text>
+          </View>
         </View>
         <View style={s.topBarActions}>
           <TouchableOpacity style={s.iconBtn} onPress={() => router.push('/chat')}>
             <Text style={s.iconBtnText}>💬</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[s.iconBtn, s.iconBtnAlert]} onPress={() => router.push('/emergency')}>
-            <Text style={s.iconBtnText}>🚨</Text>
+          <TouchableOpacity style={[s.iconBtn, s.iconBtnAlert]} onPress={() => router.push('/edit-profile')}>
+            <Text style={s.iconBtnText}>✏️</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -278,107 +285,94 @@ export default function HomeScreen() {
 
       {/* POKEMON CARD */}
       {dog && (
-        <Animated.View style={[s.pokemonCard, { opacity: cardEntryAnim, transform: [{ scale: cardEntryAnim.interpolate({ inputRange: [0,1], outputRange: [0.95, 1] }) }] }]}>
-          {/* Holographic shimmer */}
-          <Animated.View style={[s.shimmerStrip, { transform: [{ translateX: shimmerAnim }] }]} />
-
-          {/* Card top — type and HP */}
-          <View style={s.cardTop}>
-            <View style={s.cardTypeBadge}>
-              <Text style={s.cardTypeText}>🐾 PET CARD</Text>
+        <Animated.View style={[s.petCard, { opacity: cardEntryAnim, transform: [{ scale: cardEntryAnim.interpolate({ inputRange: [0,1], outputRange: [0.97, 1] }) }] }]}>
+          {/* Card header */}
+          <View style={s.petCardHeader}>
+            <View style={s.petCardBadge}>
+              <View style={s.petCardBadgeDot} />
+              <Text style={s.petCardBadgeText}>{lang === 'es' ? 'PROTEGIDO' : 'PROTECTED'}</Text>
             </View>
-            <View style={s.cardHpWrap}>
-              <Text style={s.cardHpLabel}>ENERGY</Text>
-              <View style={s.cardHpBars}>
-                {[1,2,3,4,5].map(i => (
-                  <View key={i} style={[s.hpBar, { backgroundColor: i <= 4 ? ENERGY_COLORS[4] : colors.bgBorder }]} />
+            <Text style={s.petCardDays}>{Math.floor((new Date() - new Date(dog.created_at || Date.now())) / 86400000) || 1} {lang === 'es' ? 'días' : 'days'}</Text>
+          </View>
+
+          {/* Hero section — photo + info side by side */}
+          <View style={s.petCardHero}>
+            <TouchableOpacity onPress={uploadDogPhoto} style={s.petCardPhotoWrap}>
+              {dog.photo_url ? (
+                <Image source={{ uri: dog.photo_url }} style={s.petCardPhoto} resizeMode="cover" />
+              ) : (
+                <View style={s.petCardPhotoEmpty}>
+                  <Text style={{ fontSize: 48 }}>{dog.emoji || '🐾'}</Text>
+                  <Text style={s.petCardPhotoHint}>{uploadingPhoto ? '...' : lang === 'es' ? 'Agregar foto' : 'Add photo'}</Text>
+                </View>
+              )}
+              <View style={s.petCardOnline} />
+            </TouchableOpacity>
+
+            <View style={s.petCardInfo}>
+              <Text style={s.petCardName}>{dog.name}</Text>
+              <Text style={s.petCardBreed}>{dog.breed}</Text>
+              {dog.age && <Text style={s.petCardDetail}>🎂 {dog.age} {lang === 'es' ? 'años' : 'yrs'}</Text>}
+              {dog.neighbourhood && <Text style={s.petCardDetail}>📍 {dog.neighbourhood}</Text>}
+              <View style={s.petCardTagsRow}>
+                {tags.slice(0, 2).map((tag, i) => (
+                  <View key={i} style={s.petCardTag}>
+                    <Text style={s.petCardTagText}>{tag}</Text>
+                  </View>
                 ))}
               </View>
             </View>
           </View>
 
-          {/* Card name */}
-          <Text style={s.cardName}>{dog.name}</Text>
-          <Text style={s.cardSubName}>{dog.breed} · {dog.age} yrs · {dog.neighbourhood}</Text>
+          {/* Divider */}
+          <View style={s.petCardDivider} />
 
-          {/* Card photo — large and centered */}
-          <TouchableOpacity onPress={uploadDogPhoto} style={s.cardPhotoWrap}>
-            <Animated.View style={[s.cardPhotoGlow, { opacity: glowAnim }]} />
-            {dog.photo_url ? (
-              <Image source={{ uri: dog.photo_url }} style={s.cardPhoto} />
-            ) : (
-              <View style={s.cardPhotoPlaceholder}>
-                <Text style={s.cardPhotoEmoji}>{dog.emoji || '🐾'}</Text>
-                <Text style={s.cardPhotoHint}>{uploadingPhoto ? 'Uploading...' : 'Tap to add photo'}</Text>
-              </View>
-            )}
-            <View style={s.cardPhotoOnline} />
-          </TouchableOpacity>
-
-          {/* Card tags */}
-          <View style={s.cardTags}>
-            {tags.slice(0, 4).map((tag, i) => (
-              <View key={i} style={s.cardTag}>
-                <Text style={s.cardTagText}>{tag}</Text>
-              </View>
-            ))}
-          </View>
-
-          {/* Card stats — meaningful metrics */}
-          <View style={s.cardStats}>
-            <View style={s.cardStat}>
-              <Text style={s.cardStatNum}>{Math.floor((new Date() - new Date(dog.created_at || Date.now())) / 86400000) || 1}</Text>
-              <Text style={s.cardStatLabel}>Days protected</Text>
+          {/* Stats row */}
+          <View style={s.petCardStats}>
+            <View style={s.petCardStat}>
+              <Text style={s.petCardStatNum}>{Math.floor((new Date() - new Date(dog.created_at || Date.now())) / 86400000) || 1}</Text>
+              <Text style={s.petCardStatLabel}>{lang === 'es' ? 'Días' : 'Days'}</Text>
             </View>
-            <View style={s.cardStatDivider} />
-            <View style={s.cardStat}>
-              <Text style={s.cardStatNum}>{stats.found > 0 ? '🦸' : stats.alerts > 0 ? '⚡' : '🌱'}</Text>
-              <Text style={s.cardStatLabel}>{stats.found > 0 ? 'Hero' : stats.alerts > 0 ? 'Active' : 'Member'}</Text>
+            <View style={s.petCardStatLine} />
+            <View style={s.petCardStat}>
+              <Text style={s.petCardStatNum}>{stats.alerts || 0}</Text>
+              <Text style={s.petCardStatLabel}>{lang === 'es' ? 'Alertas' : 'Alerts'}</Text>
             </View>
-            <View style={s.cardStatDivider} />
-            <View style={s.cardStat}>
-              <Text style={s.cardStatNum}>🟢</Text>
-              <Text style={s.cardStatLabel}>Network live</Text>
+            <View style={s.petCardStatLine} />
+            <View style={s.petCardStat}>
+              <Text style={s.petCardStatNum}>{stats.posts || 0}</Text>
+              <Text style={s.petCardStatLabel}>{lang === 'es' ? 'Posts' : 'Posts'}</Text>
+            </View>
+            <View style={s.petCardStatLine} />
+            <View style={s.petCardStat}>
+              <View style={s.petCardLiveDot} />
+              <Text style={s.petCardStatLabel}>{lang === 'es' ? 'En vivo' : 'Live'}</Text>
             </View>
           </View>
 
-          {/* Card actions */}
-          <View style={s.cardActions}>
-            <TouchableOpacity style={s.cardActionBtn} onPress={async () => { try { const { Share } = require('react-native'); await Share.share({ message: `🐾 Meet ${dog?.name}! SmartPet Tag profile: smartpettag.app` }); } catch(e) {} }}>
-              <Text style={s.cardActionIcon}>🔗</Text>
-              <Text style={s.cardActionText}>Share profile</Text>
+          {/* Action buttons */}
+          <View style={s.petCardActions}>
+            <TouchableOpacity style={s.petCardAction} onPress={() => router.push({ pathname: '/pet-profile', params: { dogName: dog.name } })}>
+              <Text style={s.petCardActionIcon}>👤</Text>
+              <Text style={s.petCardActionText}>{lang === 'es' ? 'Ver perfil' : 'Profile'}</Text>
             </TouchableOpacity>
-            <View style={s.cardActionDivider} />
-            <TouchableOpacity style={s.cardActionBtn} onPress={() => router.push('/edit-profile')}>
-              <Text style={s.cardActionIcon}>📋</Text>
-              <Text style={s.cardActionText}>Medical info</Text>
+            <TouchableOpacity style={s.petCardAction} onPress={() => router.push('/edit-profile')}>
+              <Text style={s.petCardActionIcon}>✏️</Text>
+              <Text style={s.petCardActionText}>{lang === 'es' ? 'Editar' : 'Edit'}</Text>
             </TouchableOpacity>
-            <View style={s.cardActionDivider} />
-            <TouchableOpacity style={s.cardActionBtn} onPress={() => router.push('/emergency')}>
-              <Text style={s.cardActionIcon}>🚨</Text>
-              <Text style={s.cardActionText}>Alert</Text>
+            <TouchableOpacity style={s.petCardAction} onPress={async () => { try { const { Share } = require('react-native'); await Share.share({ message: `🐾 Meet ${dog?.name}! smartpettag.vercel.app/public-profile?dogName=${dog?.name}` }); } catch(e) {} }}>
+              <Text style={s.petCardActionIcon}>🔗</Text>
+              <Text style={s.petCardActionText}>{lang === 'es' ? 'Compartir' : 'Share'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[s.petCardAction, s.petCardActionAlert]} onPress={() => router.push('/emergency')}>
+              <Text style={s.petCardActionIcon}>🚨</Text>
+              <Text style={[s.petCardActionText, { color: '#EF4444' }]}>{lang === 'es' ? 'Alerta' : 'Alert'}</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
       )}
 
-      {/* Action buttons */}
-      <View style={s.actions}>
-        <Animated.View style={[{ flex: 2, transform: [{ scale: pulseAnim }] }]}>
-          <TouchableOpacity style={s.emergencyBtn} onPress={() => router.push('/emergency')}>
-            <Text style={s.emergencyBtnIcon}>🚨</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={s.emergencyBtnTitle}>{dog?.name} Is Lost</Text>
-              <Text style={s.emergencyBtnSub}>Alert the entire neighbourhood</Text>
-            </View>
-            <Text style={s.emergencyBtnArrow}>→</Text>
-          </TouchableOpacity>
-        </Animated.View>
-        <TouchableOpacity style={s.editBtn} onPress={() => router.push('/edit-profile')}>
-          <Text style={s.editBtnIcon}>✏️</Text>
-          <Text style={s.editBtnText}>Edit</Text>
-        </TouchableOpacity>
-      </View>
+
 
       {/* Active alerts */}
       {alerts.length > 0 && (
@@ -466,13 +460,57 @@ const s = StyleSheet.create({
   pendingBannerArrow: { color: colors.amber, fontSize: 16 },
 
   // POKEMON CARD
-  pokemonCard: {
+  pokemonCardOld: {
     marginHorizontal: 20, marginBottom: 16,
     backgroundColor: '#0F172A',
     borderRadius: 24, overflow: 'hidden', borderWidth: 1.5, borderColor: colors.amber + '60',
     padding: 20, overflow: 'hidden',
     shadowColor: colors.amber, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 12,
   },
+  petCard: {
+    marginHorizontal: 20,
+    marginBottom: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    overflow: 'hidden',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 4,
+  },
+  petCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  petCardBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#ECFDF5', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+  petCardBadgeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#10B981' },
+  petCardBadgeText: { fontSize: 10, fontWeight: '800', color: '#10B981', letterSpacing: 1 },
+  petCardDays: { fontSize: 12, color: '#94A3B8', fontWeight: '600' },
+  petCardHero: { flexDirection: 'row', alignItems: 'center', gap: 16, padding: 20 },
+  petCardPhotoWrap: { position: 'relative', flexShrink: 0 },
+  petCardPhoto: { width: 110, height: 110, borderRadius: 55, borderWidth: 3, borderColor: '#F59E0B' },
+  petCardPhotoEmpty: { width: 110, height: 110, borderRadius: 55, borderWidth: 3, borderColor: '#E2E8F0', backgroundColor: '#FFFBEB', alignItems: 'center', justifyContent: 'center', gap: 4 },
+  petCardPhotoHint: { fontSize: 9, color: '#94A3B8', fontWeight: '600' },
+  petCardOnline: { position: 'absolute', bottom: 4, right: 4, width: 16, height: 16, borderRadius: 8, backgroundColor: '#10B981', borderWidth: 2.5, borderColor: '#FFFFFF' },
+  petCardInfo: { flex: 1, gap: 3 },
+  petCardName: { fontSize: 26, fontWeight: '800', color: '#0F172A', letterSpacing: -0.5 },
+  petCardBreed: { fontSize: 13, color: '#64748B', marginBottom: 2 },
+  petCardDetail: { fontSize: 12, color: '#94A3B8' },
+  petCardTagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginTop: 6 },
+  petCardTag: { backgroundColor: '#F1F5F9', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
+  petCardTagText: { fontSize: 11, color: '#64748B', fontWeight: '500' },
+  petCardDivider: { height: 1, backgroundColor: '#F1F5F9', marginHorizontal: 20 },
+  petCardStats: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14 },
+  petCardStat: { flex: 1, alignItems: 'center', gap: 2 },
+  petCardStatNum: { fontSize: 20, fontWeight: '800', color: '#0F172A', letterSpacing: -0.5 },
+  petCardStatLabel: { fontSize: 10, color: '#94A3B8', fontWeight: '600' },
+  petCardStatLine: { width: 1, height: 28, backgroundColor: '#E2E8F0' },
+  petCardLiveDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#10B981', marginBottom: 2 },
+  petCardActions: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#F1F5F9' },
+  petCardAction: { flex: 1, alignItems: 'center', paddingVertical: 14, gap: 4, borderRightWidth: 1, borderRightColor: '#F1F5F9' },
+  petCardActionAlert: { borderRightWidth: 0 },
+  petCardActionIcon: { fontSize: 18 },
+  petCardActionText: { fontSize: 10, fontWeight: '700', color: '#64748B' },
   shimmerStrip: { position: 'absolute', top: 0, left: 0, width: 120, height: '100%', backgroundColor: 'rgba(245,158,11,0.06)', transform: [{ skewX: '-20deg' }] },
   cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
   cardTypeBadge: { backgroundColor: colors.amberDim, borderWidth: 0.5, borderColor: colors.amber, borderRadius: 6, overflow: 'hidden', paddingHorizontal: 8, paddingVertical: 3 },
