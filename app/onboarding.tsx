@@ -228,7 +228,7 @@ export default function Onboarding() {
               <Text style={s.langNative}>Continue in English</Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity style={s.langContinueBtn} onPress={() => { setLanguage(selectedLang); setLang(selectedLang); setStep(0); }}>
+          <TouchableOpacity style={s.langContinueBtn} onPress={() => { setLanguage(selectedLang); if (typeof setLang === 'function') setLang(selectedLang); setStep(0); }}>
             <Text style={s.langContinueBtnText}>{selectedLang === 'es' ? 'Continuar →' : 'Continue →'}</Text>
           </TouchableOpacity>
         </View>
