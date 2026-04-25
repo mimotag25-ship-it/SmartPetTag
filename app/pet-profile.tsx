@@ -247,7 +247,7 @@ const s = StyleSheet.create({
   headerTitle: { fontSize: 17, fontWeight: '700', color: colors.textPrimary },
   headerEdit: { backgroundColor: colors.amberDim, borderRadius: 8, overflow: 'hidden', paddingHorizontal: 12, paddingVertical: 6, borderWidth: 0.5, borderColor: colors.amber },
   headerEditText: { color: colors.amber, fontSize: 13, fontWeight: '600' },
-  heroWrap: { width: '100%', height: 320, position: 'relative', backgroundColor: '#111827', overflow: 'hidden' },
+  heroWrap: { width: '100%', height: 320, position: 'relative', backgroundColor: '#FFFFFF', overflow: 'hidden' },
   photoCounter: { position: 'absolute', top: 16, right: 16, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 20, overflow: 'hidden', paddingHorizontal: 12, paddingVertical: 5 },
   photoCounterText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
   profilePicBadge: { position: 'absolute', top: 16, left: 16, backgroundColor: 'rgba(245,158,11,0.9)', borderRadius: 20, overflow: 'hidden', paddingHorizontal: 10, paddingVertical: 5, flexDirection: 'row', alignItems: 'center', gap: 4 },

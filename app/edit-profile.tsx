@@ -153,7 +153,7 @@ export default function EditProfile() {
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 8 }}>
             {photos.map((photo, i) => (
               <View key={i} style={{ position: 'relative' }}>
-                <Image source={{ uri: photo }} style={{ width: 90, height: 90, borderRadius: 10, borderWidth: i === 0 ? 2.5 : 0.5, borderColor: i === 0 ? '#F59E0B' : '#E5E7EB' }} resizeMode='contain' />
+                <Image source={{ uri: photo }} style={{ width: 90, height: 90, borderRadius: 10, borderWidth: i === 0 ? 2.5 : 0.5, borderColor: i === 0 ? '#F59E0B' : '#E2E8F0' }} resizeMode='contain' />
                 {i === 0 && (
                   <View style={{ position: 'absolute', top: 4, left: 4, backgroundColor: '#F59E0B', borderRadius: 8, paddingHorizontal: 5, paddingVertical: 2 }}>
                     <Text style={{ fontSize: 9, color: '#FFFFFF', fontWeight: '800' }}>PROFILE</Text>
@@ -177,13 +177,13 @@ export default function EditProfile() {
             ))}
             {photos.length < 6 && (
               <TouchableOpacity
-                style={{ width: 90, height: 90, borderRadius: 10, backgroundColor: '#111827', borderWidth: 1.5, borderColor: '#F59E0B', borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+                style={{ width: 90, height: 90, borderRadius: 10, backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#F59E0B', borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', gap: 4 }}
                 onPress={addPhoto}
                 disabled={uploadingPhoto}
               >
                 <Text style={{ fontSize: 24 }}>📷</Text>
                 <Text style={{ fontSize: 10, color: '#F59E0B', fontWeight: '600' }}>{uploadingPhoto ? 'Uploading...' : `Add photo`}</Text>
-                <Text style={{ fontSize: 9, color: '#6B7280' }}>{photos.length}/6</Text>
+                <Text style={{ fontSize: 9, color: '#64748B' }}>{photos.length}/6</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -397,9 +397,9 @@ const styles = StyleSheet.create({
   backBtn: { color: '#555', fontSize: 14 },
   title: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
   saveBtn: { fontSize: 14, fontWeight: '600', color: '#10B981' },
-  visToggle: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#F3F4F6', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 0.5, borderColor: '#E5E7EB' },
+  visToggle: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#F8FAFC', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 0.5, borderColor: '#E2E8F0' },
   visToggleOn: { backgroundColor: '#ECFDF5', borderColor: '#10B981' },
-  visToggleText: { fontSize: 10, color: '#9CA3AF', fontWeight: '600' },
+  visToggleText: { fontSize: 10, color: '#64748B', fontWeight: '600' },
   visToggleTextOn: { color: '#10B981' },
   savedBtn: { fontSize: 14, fontWeight: '600', color: '#10B981' },
   scroll: { flex: 1 },
@@ -413,8 +413,8 @@ const styles = StyleSheet.create({
   optionBtnActive: { backgroundColor: '#003d30', borderColor: '#00D4AA' },
   optionBtnText: { fontSize: 12, color: '#555', fontWeight: '500' },
   optionBtnTextActive: { color: '#00D4AA' },
-  toggleRow: { backgroundColor: '#FFFFFF', borderBottomWidth: 0.5, borderBottomColor: '#E5E7EB', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: '#111' },
-  toggleLabel: { fontSize: 14, color: '#111827', color: '#FFFFFF', fontWeight: '500', marginBottom: 2 },
+  toggleRow: { backgroundColor: '#FFFFFF', borderBottomWidth: 0.5, borderBottomColor: '#E2E8F0', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: '#111' },
+  toggleLabel: { fontSize: 14, color: '#FFFFFF', color: '#FFFFFF', fontWeight: '500', marginBottom: 2 },
   toggleSub: { fontSize: 11, color: '#444' },
   tipBox: { flexDirection: 'row', gap: 10, backgroundColor: '#0a0a14', borderRadius: 10, padding: 12, marginTop: 10, borderWidth: 0.5, borderColor: '#222' },
   tipIcon: { fontSize: 16 },

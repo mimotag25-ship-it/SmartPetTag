@@ -579,8 +579,8 @@ const s = StyleSheet.create({
   // Hero
   heroScreen: { flex: 1 },
   cityBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' },
-  gridH: { position: 'absolute', left: 0, right: 0, height: 0.5, backgroundColor: '#111827' },
-  gridV: { position: 'absolute', top: 0, bottom: 0, width: 0.5, backgroundColor: '#111827' },
+  gridH: { position: 'absolute', left: 0, right: 0, height: 0.5, backgroundColor: '#FFFFFF' },
+  gridV: { position: 'absolute', top: 0, bottom: 0, width: 0.5, backgroundColor: '#FFFFFF' },
   cityDot: { position: 'absolute' },
   cityDotRing: { position: 'absolute', width: 44, height: 44, borderRadius: 22, backgroundColor: colors.amber, top: -10, left: -10 },
   cityDotInner: { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.amberDim, borderWidth: 1.5, borderColor: colors.amber, alignItems: 'center', justifyContent: 'center' },
@@ -591,13 +591,13 @@ const s = StyleSheet.create({
   heroBadge: { backgroundColor: 'rgba(245,158,11,0.15)', borderWidth: 0.5, borderColor: colors.amber, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, alignSelf: 'flex-start', marginBottom: 20 },
   heroBadgeText: { color: colors.amber, fontSize: 11, fontWeight: '800', letterSpacing: 2 },
   heroCounter: { fontSize: 72, fontWeight: '900', color: '#FFFFFF', lineHeight: 76, letterSpacing: -3 },
-  heroCounterSub: { fontSize: 14, color: '#6B7280', marginBottom: 20 },
+  heroCounterSub: { fontSize: 14, color: '#64748B', marginBottom: 20 },
   heroTitle: { fontSize: 38, fontWeight: '900', color: '#FFFFFF', lineHeight: 44, marginBottom: 10, letterSpacing: -1 },
-  heroSub: { fontSize: 15, color: '#6B7280', lineHeight: 24, marginBottom: 28 },
+  heroSub: { fontSize: 15, color: '#64748B', lineHeight: 24, marginBottom: 28 },
   heroBtn: { backgroundColor: colors.amber, borderRadius: 16, paddingVertical: 16, alignItems: 'center', marginBottom: 12, ...shadows.amber },
   heroBtnText: { color: colors.bg, fontWeight: '900', fontSize: 17 },
   heroLoginBtn: { alignItems: 'center', paddingVertical: 8 },
-  heroLoginText: { color: '#6B7280', fontSize: 13 },
+  heroLoginText: { color: '#64748B', fontSize: 13 },
 
   // Steps
   stepScreen: { flex: 1 },
@@ -706,7 +706,7 @@ const s = StyleSheet.create({
   // Nav
   nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingVertical: 16, borderTopWidth: 0.5, borderTopColor: colors.bgBorder },
   navBack: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.bgCard, alignItems: 'center', justifyContent: 'center', borderWidth: 0.5, borderColor: colors.bgBorder },
-  navBackText: { color: '#6B7280', fontSize: 18 },
+  navBackText: { color: '#64748B', fontSize: 18 },
   navDots: { flexDirection: 'row', gap: 8 },
   navDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.bgBorder },
   navDotActive: { width: 22, backgroundColor: colors.amber, borderRadius: 3 },
