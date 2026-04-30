@@ -135,7 +135,8 @@ export default function MapScreen() {
     const dogsData = JSON.stringify(safeArr);
     const alertsData = JSON.stringify(safeAlerts);
 
-    return `<!DOCTYPE html><html>
+    return `<!DOCTYPE html>
+<html>
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>

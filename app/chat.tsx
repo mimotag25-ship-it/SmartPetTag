@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { router } from 'expo-router';
+import { colors } from '../lib/design';
 import { useLanguage, t } from '../lib/i18n';
 
 export default function ChatList() {

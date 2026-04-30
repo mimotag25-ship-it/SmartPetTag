@@ -7,7 +7,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { colors, shadows } from '../lib/design';
 
 const ENERGY_COLORS = ['#6366F1', '#6366F1', '#10B981', '#F59E0B', '#F97316', '#EF4444'];
-const ENERGY_LABELS = ['', 'Very Calm', 'Calm', 'Active', lang === 'es' ? 'Alta energía' : 'High Energy', 'Extreme'];
+const ENERGY_LABELS = ['', 'Very Calm', 'Calm', 'Active', 'High Energy', 'Extreme'];
 
 function InfoRow({ icon, label, value }) {
   if (!value) return null;
