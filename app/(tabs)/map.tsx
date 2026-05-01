@@ -524,9 +524,9 @@ const s = StyleSheet.create({
   alertStripText: { fontSize: 12, color: '#FF3B30', fontWeight: '600', flex: 1 },
 
   // Bottom sheet
-  bottomSheet: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(255,255,255,0.98)', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 16 },
-  bottomSheetHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: '#D1D5DB', alignSelf: 'center', marginTop: 10, marginBottom: 12 },
-  bottomSheetHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 12 },
+  bottomSheet: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(255,255,255,0.98)', borderTopLeftRadius: 16, borderTopRightRadius: 16, paddingBottom: 8, shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.06, shadowRadius: 8 },
+  bottomSheetHandle: { width: 32, height: 3, borderRadius: 2, backgroundColor: '#D1D5DB', alignSelf: 'center', marginTop: 6, marginBottom: 6 },
+  bottomSheetHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 6 },
   bottomSheetTitle: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
   inviteBtn: { backgroundColor: '#EEF2FF', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 },
   inviteBtnText: { fontSize: 13, color: '#6366F1', fontWeight: '600' },
@@ -535,7 +535,7 @@ const s = StyleSheet.create({
   emptyText: { fontSize: 13, color: '#64748B', flex: 1 },
 
   // Pet cards in bottom list
-  petList: { paddingHorizontal: 16, gap: 10, paddingBottom: 4 },
+  petList: { paddingHorizontal: 12, gap: 8, paddingBottom: 4 },
   petCard: { width: 90, alignItems: 'center', gap: 4, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 10, borderWidth: 0.5, borderColor: '#F8FAFC', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4 },
   petCardMoving: { borderColor: '#007AFF', borderWidth: 1.5 },
   petCardPhotoWrap: { position: 'relative', marginBottom: 2 },
