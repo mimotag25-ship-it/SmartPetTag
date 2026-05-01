@@ -427,13 +427,13 @@ function initMap() {
           </TouchableOpacity>
         </View>
 
-        {!sheetCollapsed && filteredDogs.length === 0 ? (
+        {!sheetCollapsed && (filteredDogs.length === 0 ? (
           <View style={s.emptyState}>
             <Text style={s.emptyIcon}>🔍</Text>
             <Text style={s.emptyText}>{lang === 'es' ? 'Sin mascotas cerca ahora. ¡Invita amigos!' : 'No pets nearby. Invite friends to join!'}</Text>
           </View>
         ) : (
-          {!sheetCollapsed && <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.petList}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.petList}>
             {filteredDogs.map((dog, i) => (
               <TouchableOpacity
                 key={i}
@@ -459,8 +459,8 @@ function initMap() {
                 </Text>
               </TouchableOpacity>
             ))}
-          </ScrollView>}
-        )}
+          </ScrollView>
+        ))}
       </View>
 
       {/* Dog detail popup — Find My style bottom card */}
