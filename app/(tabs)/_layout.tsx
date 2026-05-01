@@ -114,8 +114,7 @@ export default function TabLayout() {
 
   if (Platform.OS === 'web') {
     return (
-      <View style={{ flex: 1, flexDirection: 'row', backgroundColor: '#F8FAFC' }}>
-        <WebSidebar />
+      <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
         <View style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           <View style={{ flex: 1, overflow: 'hidden' }}>
             <Tabs key={lang} screenOptions={{ headerShown: false, tabBarStyle: { display: 'none' } }}>
