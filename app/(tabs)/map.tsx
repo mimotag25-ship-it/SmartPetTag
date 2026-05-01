@@ -24,6 +24,7 @@ export default function MapScreen() {
   const [dogs, setDogs] = useState([]);
   const [filter, setFilter] = useState('all');
   const [selectedDog, setSelectedDog] = useState(null);
+  const [sheetCollapsed, setSheetCollapsed] = useState(false);
   const [userLat, setUserLat] = useState(19.4136);
   const [userLng, setUserLng] = useState(-99.1716);
   const slideAnim = useRef(new Animated.Value(400)).current;
@@ -412,7 +413,9 @@ function initMap() {
 
       {/* Bottom sheet — Find My style pet list */}
       <View style={s.bottomSheet}>
-        <View style={s.bottomSheetHandle} />
+        <TouchableOpacity onPress={() => setSheetCollapsed(!sheetCollapsed)} style={{ alignItems: 'center', paddingBottom: 4 }}>
+          <View style={s.bottomSheetHandle} />
+        </TouchableOpacity>
         <View style={s.bottomSheetHeader}>
           <Text style={s.bottomSheetTitle}>{lang === 'es' ? `${filteredDogs.length} mascotas cerca` : `${filteredDogs.length} pets nearby`}</Text>
           <TouchableOpacity style={s.inviteBtn} onPress={() => {
@@ -424,13 +427,13 @@ function initMap() {
           </TouchableOpacity>
         </View>
 
-        {filteredDogs.length === 0 ? (
+        {!sheetCollapsed && filteredDogs.length === 0 ? (
           <View style={s.emptyState}>
             <Text style={s.emptyIcon}>🔍</Text>
             <Text style={s.emptyText}>{lang === 'es' ? 'Sin mascotas cerca ahora. ¡Invita amigos!' : 'No pets nearby. Invite friends to join!'}</Text>
           </View>
         ) : (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.petList}>
+          {!sheetCollapsed && <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.petList}>
             {filteredDogs.map((dog, i) => (
               <TouchableOpacity
                 key={i}
@@ -456,7 +459,7 @@ function initMap() {
                 </Text>
               </TouchableOpacity>
             ))}
-          </ScrollView>
+          </ScrollView>}
         )}
       </View>
 
