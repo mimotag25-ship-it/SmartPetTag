@@ -25,6 +25,9 @@ export default function MapScreen() {
   const [filter, setFilter] = useState('all');
   const [selectedDog, setSelectedDog] = useState(null);
   const [sheetCollapsed, setSheetCollapsed] = useState(false);
+  const [safeZone, setSafeZone] = useState(null); // { lat, lng, radius }
+  const [settingZone, setSettingZone] = useState(false);
+  const [myDog, setMyDog] = useState(null);
   const [userLat, setUserLat] = useState(19.4136);
   const [userLng, setUserLng] = useState(-99.1716);
   const slideAnim = useRef(new Animated.Value(400)).current;
@@ -78,16 +81,58 @@ export default function MapScreen() {
       }
       if (event.data?.type === 'dogClick') router.push({ pathname: '/pet-profile', params: { dogName: event.data.name } });
       if (event.data?.type === 'alertClick') router.push({ pathname: '/pet-profile', params: { dogName: event.data.name, alertId: event.data.alertId, isLost: 'true' } });
+      if (event.data?.type === 'safeZoneSet') {
+        saveSafeZone(event.data.lat, event.data.lng, event.data.radius);
+      }
     }
     if (typeof window !== 'undefined') window.addEventListener('message', handleMessage);
     return () => { if (typeof window !== 'undefined') window.removeEventListener('message', handleMessage); };
   }, []);
 
   useEffect(() => {
-    loadAlerts(); loadDogs();
+    loadAlerts(); loadDogs(); loadMyDog();
     const interval = setInterval(loadDogs, 10000);
     return () => clearInterval(interval);
   }, []);
+
+  async function loadMyDog() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase.from('dogs').select('*').eq('owner_email', user.email).single();
+    if (data) {
+      setMyDog(data);
+      if (data.safe_zone_lat && data.safe_zone_active) {
+        setSafeZone({ lat: data.safe_zone_lat, lng: data.safe_zone_lng, radius: data.safe_zone_radius || 500 });
+      }
+    }
+  }
+
+  async function saveSafeZone(lat, lng, radius) {
+    if (!myDog) return;
+    await supabase.from('dogs').update({
+      safe_zone_lat: lat, safe_zone_lng: lng,
+      safe_zone_radius: radius, safe_zone_active: true,
+    }).eq('id', myDog.id);
+    setSafeZone({ lat, lng, radius });
+    setSettingZone(false);
+    alert(lang === 'es' ? '✅ Zona segura guardada' : '✅ Safe zone saved');
+  }
+
+  async function clearSafeZone() {
+    if (!myDog) return;
+    await supabase.from('dogs').update({ safe_zone_active: false }).eq('id', myDog.id);
+    setSafeZone(null);
+  }
+
+  async function checkSafeZone() {
+    if (!safeZone || !myDog) return;
+    const { data } = await supabase.from('dog_locations').select('lat,lng').eq('dog_name', myDog.name).single();
+    if (!data) return;
+    const dist = distanceKm(safeZone.lat, safeZone.lng, data.lat, data.lng) * 1000;
+    if (dist > safeZone.radius) {
+      await supabase.from('dog_locations').update({ outside_zone: true }).eq('dog_name', myDog.name);
+    }
+  }
 
   async function loadAlerts() {
     const { data } = await supabase.from('lost_alerts').select('*').eq('status', 'lost');
@@ -341,6 +386,57 @@ function initMap() {
     });
   });
 
+  // Safe zone
+  var safeZoneData=JSON.parse('${JSON.stringify(safeZone || null).replace(/'/g, "\'")}');
+  var settingZone=${settingZone ? 'true' : 'false'};
+  var safeCircle=null;
+  var safeCenter=null;
+  var safeRadius=${safeZone ? safeZone.radius : 300};
+  var isDragging=false;
+
+  if(safeZoneData){
+    safeCircle=new google.maps.Circle({
+      map:map,
+      center:{lat:safeZoneData.lat,lng:safeZoneData.lng},
+      radius:safeZoneData.radius,
+      fillColor:'#10B981',fillOpacity:0.08,
+      strokeColor:'#10B981',strokeOpacity:0.6,strokeWeight:2,
+      editable:false
+    });
+  }
+
+  if(settingZone){
+    var infoDiv=document.createElement('div');
+    infoDiv.style.cssText='position:absolute;top:16px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,0.9);color:white;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;pointer-events:none;z-index:999;';
+    infoDiv.innerHTML='🎯 Tap map center, then drag to set radius';
+    document.body.appendChild(infoDiv);
+
+    var previewCircle=new google.maps.Circle({
+      map:map,center:map.getCenter(),radius:safeRadius,
+      fillColor:'#10B981',fillOpacity:0.1,
+      strokeColor:'#10B981',strokeOpacity:0.8,strokeWeight:2,
+      editable:true
+    });
+
+    map.addListener('click',function(e){
+      previewCircle.setCenter(e.latLng);
+      safeCenter=e.latLng;
+    });
+
+    google.maps.event.addListener(previewCircle,'radius_changed',function(){
+      safeRadius=previewCircle.getRadius();
+    });
+
+    var saveBtn=document.createElement('button');
+    saveBtn.innerHTML='✓ Save safe zone';
+    saveBtn.style.cssText='position:absolute;bottom:100px;left:50%;transform:translateX(-50%);background:#10B981;color:white;border:none;padding:12px 24px;border-radius:20px;font-size:14px;font-weight:700;cursor:pointer;z-index:999;box-shadow:0 4px 12px rgba(16,185,129,0.4);';
+    saveBtn.onclick=function(){
+      var center=previewCircle.getCenter();
+      window.parent.postMessage({type:'safeZoneSet',lat:center.lat(),lng:center.lng(),radius:previewCircle.getRadius()},'*');
+    };
+    document.body.appendChild(saveBtn);
+  }
+
   // Locate me button — Find My style
   var locateBtn = document.createElement('button');
   locateBtn.style.cssText = 'position:absolute;bottom:24px;right:16px;width:44px;height:44px;background:#fff;border:none;border-radius:50%;box-shadow:0 2px 12px rgba(0,0,0,0.2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;z-index:999;';
@@ -419,7 +515,17 @@ function initMap() {
         </TouchableOpacity>
         <View style={s.bottomSheetHeader}>
           <Text style={s.bottomSheetTitle}>{lang === 'es' ? `${filteredDogs.length} mascotas cerca` : `${filteredDogs.length} pets nearby`}</Text>
-          <TouchableOpacity style={s.inviteBtn} onPress={() => {
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+        {safeZone && (
+          <TouchableOpacity style={s.safeZoneActiveBtn} onPress={clearSafeZone}>
+            <Text style={s.safeZoneActiveBtnText}>🛡️ {lang === 'es' ? 'Zona activa' : 'Zone active'} ✕</Text>
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity style={[s.safeZoneBtn, settingZone && s.safeZoneBtnActive]} onPress={() => setSettingZone(!settingZone)}>
+          <Text style={s.safeZoneBtnText}>{settingZone ? (lang === 'es' ? '✕ Cancelar' : '✕ Cancel') : (lang === 'es' ? '🛡️ Zona segura' : '🛡️ Safe zone')}</Text>
+        </TouchableOpacity>
+        </View>
+        <TouchableOpacity style={s.inviteBtn} onPress={() => {
             if (typeof navigator !== 'undefined' && navigator.share) {
               navigator.share({ title: 'SmartPet Tag', text: lang === 'es' ? '🐾 Protege a tu mascota con SmartPet Tag' : '🐾 Protect your pet with SmartPet Tag', url: 'https://smartpettag.vercel.app' });
             }
@@ -530,6 +636,11 @@ const s = StyleSheet.create({
   // Bottom sheet
   bottomSheet: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(255,255,255,0.98)', borderTopLeftRadius: 16, borderTopRightRadius: 16, paddingBottom: 8, shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.06, shadowRadius: 8 },
   bottomSheetHandle: { width: 32, height: 3, borderRadius: 2, backgroundColor: '#D1D5DB', alignSelf: 'center', marginTop: 6, marginBottom: 6 },
+  safeZoneBtn: { backgroundColor: '#F0FDF4', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, borderWidth: 1, borderColor: '#10B981' },
+  safeZoneBtnActive: { backgroundColor: '#FEF2F2', borderColor: '#EF4444' },
+  safeZoneBtnText: { fontSize: 12, color: '#10B981', fontWeight: '700' },
+  safeZoneActiveBtn: { backgroundColor: '#ECFDF5', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#10B981', flexDirection: 'row', alignItems: 'center' },
+  safeZoneActiveBtnText: { fontSize: 11, color: '#10B981', fontWeight: '700' },
   collapseBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 16, alignSelf: 'center', backgroundColor: '#F1F5F9', borderRadius: 20, marginTop: 6, marginBottom: 4, borderWidth: 0.5, borderColor: '#E2E8F0' },
   collapseBtnArrow: { fontSize: 10, color: '#64748B' },
   collapseBtnLabel: { fontSize: 11, fontWeight: '700', color: '#64748B' },
