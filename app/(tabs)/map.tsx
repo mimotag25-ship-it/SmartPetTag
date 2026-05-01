@@ -34,7 +34,7 @@ export default function MapScreen() {
   const focusLat = parseFloat(Array.isArray(params?.lat) ? params.lat[0] : (params?.lat || '19.4136'));
   const focusLng = parseFloat(Array.isArray(params?.lng) ? params.lng[0] : (params?.lng || '-99.1716'));
 
-  const RADIUS_KM = 10;
+  const RADIUS_KM = 2;
 
   function distanceKm(lat1, lng1, lat2, lng2) {
     const R = 6371;
@@ -413,8 +413,9 @@ function initMap() {
 
       {/* Bottom sheet — Find My style pet list */}
       <View style={s.bottomSheet}>
-        <TouchableOpacity onPress={() => setSheetCollapsed(!sheetCollapsed)} style={{ alignItems: 'center', paddingBottom: 4 }}>
-          <View style={s.bottomSheetHandle} />
+        <TouchableOpacity onPress={() => setSheetCollapsed(!sheetCollapsed)} style={s.collapseBtn}>
+          <Text style={s.collapseBtnArrow}>{sheetCollapsed ? '▲' : '▼'}</Text>
+          <Text style={s.collapseBtnLabel}>{sheetCollapsed ? (lang === 'es' ? 'Ver mascotas' : 'Show pets') : (lang === 'es' ? 'Ocultar' : 'Hide')}</Text>
         </TouchableOpacity>
         <View style={s.bottomSheetHeader}>
           <Text style={s.bottomSheetTitle}>{lang === 'es' ? `${filteredDogs.length} mascotas cerca` : `${filteredDogs.length} pets nearby`}</Text>
@@ -529,6 +530,9 @@ const s = StyleSheet.create({
   // Bottom sheet
   bottomSheet: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(255,255,255,0.98)', borderTopLeftRadius: 16, borderTopRightRadius: 16, paddingBottom: 8, shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.06, shadowRadius: 8 },
   bottomSheetHandle: { width: 32, height: 3, borderRadius: 2, backgroundColor: '#D1D5DB', alignSelf: 'center', marginTop: 6, marginBottom: 6 },
+  collapseBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 16, alignSelf: 'center', backgroundColor: '#F1F5F9', borderRadius: 20, marginTop: 6, marginBottom: 4, borderWidth: 0.5, borderColor: '#E2E8F0' },
+  collapseBtnArrow: { fontSize: 10, color: '#64748B' },
+  collapseBtnLabel: { fontSize: 11, fontWeight: '700', color: '#64748B' },
   bottomSheetHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 6 },
   bottomSheetTitle: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
   inviteBtn: { backgroundColor: '#EEF2FF', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 },
