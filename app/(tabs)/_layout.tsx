@@ -38,6 +38,41 @@ const bn = StyleSheet.create({
   labelActive: { color: '#F59E0B' },
 });
 
+function WebBottomNav({ lang }) {
+  const pathname = usePathname();
+  const NAV = [
+    { icon: '🏠', label: lang === 'es' ? 'Inicio' : 'Home', route: '/(tabs)/' },
+    { icon: '🗺️', label: lang === 'es' ? 'Mapa' : 'Map', route: '/(tabs)/map' },
+    { icon: '🐾', label: lang === 'es' ? 'Comunidad' : 'Community', route: '/(tabs)/explore' },
+    { icon: '💬', label: lang === 'es' ? 'Mensajes' : 'Messages', route: '/chat' },
+  ];
+  return (
+    <View style={bn.bar}>
+      {NAV.map((item, i) => {
+        const active = pathname === item.route || (item.route !== '/(tabs)/' && pathname.startsWith(item.route.replace('/(tabs)', '')));
+        return (
+          <TouchableOpacity key={i} style={bn.item} onPress={() => router.push(item.route)}>
+            <View style={[bn.iconWrap, active && bn.iconWrapActive]}>
+              <Text style={bn.icon}>{item.icon}</Text>
+            </View>
+            <Text style={[bn.label, active && bn.labelActive]}>{item.label}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+const bn = StyleSheet.create({
+  bar: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#E2E8F0', paddingVertical: 8, paddingBottom: 12, shadowColor: '#0F172A', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.06, shadowRadius: 8 },
+  item: { flex: 1, alignItems: 'center', gap: 3 },
+  iconWrap: { width: 44, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  iconWrapActive: { backgroundColor: '#FFFBEB' },
+  icon: { fontSize: 20 },
+  label: { fontSize: 10, fontWeight: '600', color: '#94A3B8' },
+  labelActive: { color: '#F59E0B' },
+});
+
 function WebSidebar() {
   const pathname = usePathname();
   const { t, lang } = useLanguage();
