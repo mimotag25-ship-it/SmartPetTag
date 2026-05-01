@@ -40,8 +40,8 @@ function Post({ post }) {
     setPawned(true);
     setPaws(p => p + 1);
     Animated.sequence([
-      Animated.timing(scaleAnim, { toValue: 1.4, duration: 150, useNativeDriver: true }),
-      Animated.timing(scaleAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
+      Animated.timing(scaleAnim, { toValue: 1.4, duration: 150, useNativeDriver: false }),
+      Animated.timing(scaleAnim, { toValue: 1, duration: 150, useNativeDriver: false }),
     ]).start();
     supabase.from('paws').insert({ post_id: post.id, user_id: 'anon' });
     supabase.from('posts').update({ paws: paws + 1 }).eq('id', post.id);

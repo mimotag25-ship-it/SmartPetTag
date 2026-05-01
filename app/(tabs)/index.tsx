@@ -36,8 +36,8 @@ function ParkCard({ park }) {
   useEffect(() => {
     if (park.status !== 'low') {
       Animated.loop(Animated.sequence([
-        Animated.timing(pulseRef, { toValue: 1.3, duration: 800, useNativeDriver: true }),
-        Animated.timing(pulseRef, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(pulseRef, { toValue: 1.3, duration: 800, useNativeDriver: false }),
+        Animated.timing(pulseRef, { toValue: 1, duration: 800, useNativeDriver: false }),
       ])).start();
     }
   }, []);
@@ -123,20 +123,20 @@ export default function HomeScreen() {
   function startAnimations() {
     // Shimmer sweep
     Animated.loop(
-      Animated.timing(shimmerAnim, { toValue: width * 2, duration: 2400, useNativeDriver: true })
+      Animated.timing(shimmerAnim, { toValue: width * 2, duration: 2400, useNativeDriver: false })
     ).start();
     // Emergency pulse
     Animated.loop(Animated.sequence([
-      Animated.timing(pulseAnim, { toValue: 1.03, duration: 900, useNativeDriver: true }),
-      Animated.timing(pulseAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
+      Animated.timing(pulseAnim, { toValue: 1.03, duration: 900, useNativeDriver: false }),
+      Animated.timing(pulseAnim, { toValue: 1, duration: 900, useNativeDriver: false }),
     ])).start();
     // Glow breathe
     Animated.loop(Animated.sequence([
-      Animated.timing(glowAnim, { toValue: 0.8, duration: 1800, useNativeDriver: true }),
-      Animated.timing(glowAnim, { toValue: 0.4, duration: 1800, useNativeDriver: true }),
+      Animated.timing(glowAnim, { toValue: 0.8, duration: 1800, useNativeDriver: false }),
+      Animated.timing(glowAnim, { toValue: 0.4, duration: 1800, useNativeDriver: false }),
     ])).start();
     // Card entry
-    Animated.spring(cardEntryAnim, { toValue: 1, tension: 50, friction: 10, useNativeDriver: true }).start();
+    Animated.spring(cardEntryAnim, { toValue: 1, tension: 50, friction: 10, useNativeDriver: false }).start();
   }
 
   async function loadAll() {

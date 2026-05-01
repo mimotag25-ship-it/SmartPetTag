@@ -63,6 +63,10 @@ export default function Onboarding() {
   const [password, setPassword] = useState('');
   const [photo, setPhoto] = useState(null);
   const [photoUrl, setPhotoUrl] = useState(null);
+  const [color, setColor] = useState('');
+  const [size, setSize] = useState('');
+  const [respondsTo, setRespondsTo] = useState('');
+  const [ifFoundInstructions, setIfFoundInstructions] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { t, lang, setLang } = useLanguage();
@@ -166,6 +170,9 @@ export default function Onboarding() {
         personality: selectedTags.join(', '), neighbourhood, owner_name: ownerName,
         owner_phone: phone, emoji: selectedEmoji, owner_email: email,
         photo_url: uploadedPhotoUrl,
+        color, size,
+        responds_to: respondsTo,
+        if_found_instructions: ifFoundInstructions,
       });
       if (dogError) { setError('Failed to create profile: ' + dogError.message); setLoading(false); return; }
       
@@ -558,6 +565,16 @@ function CounterText({ anim }) {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
+  skipStepBtn: { alignItems: 'center', paddingVertical: 12 },
+  skipStepBtnText: { fontSize: 13, color: '#94A3B8', fontWeight: '500' },
+  optionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+  optionChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: '#F1F5F9', borderWidth: 0.5, borderColor: '#E2E8F0' },
+  optionChipActive: { backgroundColor: '#FFFBEB', borderColor: '#F59E0B' },
+  optionChipText: { fontSize: 12, color: '#64748B', fontWeight: '500' },
+  optionChipTextActive: { color: '#D97706', fontWeight: '700' },
+  ifFoundCard: { backgroundColor: '#FFF7ED', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#FCD34D', marginBottom: 16 },
+  ifFoundCardTitle: { fontSize: 13, fontWeight: '700', color: '#D97706', marginBottom: 4 },
+  ifFoundCardText: { fontSize: 12, color: '#92400E', lineHeight: 18 },
   langScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   langTitle: { fontSize: 36, fontWeight: '900', color: colors.textPrimary, fontStyle: 'italic', marginBottom: 8 },
   langSub: { fontSize: 14, color: colors.textMuted, textAlign: 'center', lineHeight: 22, marginBottom: 40 },
