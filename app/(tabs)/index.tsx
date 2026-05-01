@@ -168,6 +168,28 @@ export default function HomeScreen() {
     setDog(data);
     loadStats(data);
     checkActiveAlertForDog(data);
+    checkOutsideZone(data);
+  }
+
+  async function checkOutsideZone(dogData) {
+    if (!dogData?.safe_zone_active) return;
+    const { data } = await supabase.from('dog_locations')
+      .select('lat,lng,outside_zone')
+      .eq('dog_name', dogData.name)
+      .single();
+    if (data?.outside_zone) {
+      const msg = lang === 'es'
+        ? `⚠️ ${dogData.name} está fuera de su zona segura`
+        : `⚠️ ${dogData.name} is outside their safe zone`;
+      if (typeof window !== 'undefined') {
+        const sendAlert = window.confirm(
+          (lang === 'es'
+            ? `${dogData.name} ha salido de su zona segura. ¿Quieres enviar una alerta a toda la comunidad?`
+            : `${dogData.name} has left their safe zone. Send a full community alert?`)
+        );
+        if (sendAlert) router.push('/emergency');
+      }
+    }
   }
 
   async function checkActiveAlertForDog(dogData) {

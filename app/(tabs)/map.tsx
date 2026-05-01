@@ -407,9 +407,10 @@ function initMap() {
 
   if(settingZone){
     var infoDiv=document.createElement('div');
-    infoDiv.style.cssText='position:absolute;top:16px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,0.9);color:white;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;pointer-events:none;z-index:999;';
-    infoDiv.innerHTML='🎯 Tap map center, then drag to set radius';
+    infoDiv.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(15,23,42,0.95);color:white;padding:20px 28px;border-radius:20px;font-size:14px;font-weight:600;pointer-events:none;z-index:999;text-align:center;max-width:280px;line-height:1.6;box-shadow:0 8px 32px rgba(0,0,0,0.3);';
+    infoDiv.innerHTML='🛡️ <strong>Set Safe Zone</strong><br><span style="font-size:12px;opacity:0.85;font-weight:400;">Tap anywhere on the map to place the center.<br>Then drag the circle edge to set the radius.<br><br>⚠️ Your pet will trigger an alert if they go outside this zone.</span>';
     document.body.appendChild(infoDiv);
+    setTimeout(function(){ infoDiv.style.opacity='0'; infoDiv.style.transition='opacity 0.5s'; setTimeout(function(){ infoDiv.remove(); },500); }, 4000);
 
     var previewCircle=new google.maps.Circle({
       map:map,center:map.getCenter(),radius:safeRadius,
