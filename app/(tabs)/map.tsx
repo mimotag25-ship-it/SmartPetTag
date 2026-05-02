@@ -407,10 +407,9 @@ function initMap() {
 
   if(settingZone){
     var infoDiv=document.createElement('div');
-    infoDiv.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(15,23,42,0.95);color:white;padding:20px 28px;border-radius:20px;font-size:14px;font-weight:600;pointer-events:none;z-index:999;text-align:center;max-width:280px;line-height:1.6;box-shadow:0 8px 32px rgba(0,0,0,0.3);';
-    infoDiv.innerHTML='🛡️ <strong>Set Safe Zone</strong><br><span style="font-size:12px;opacity:0.85;font-weight:400;">Tap anywhere on the map to place the center.<br>Then drag the circle edge to set the radius.<br><br>⚠️ Your pet will trigger an alert if they go outside this zone.</span>';
+    infoDiv.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(15,23,42,0.97);color:white;padding:24px 28px;border-radius:20px;font-size:14px;font-weight:600;pointer-events:all;z-index:999;text-align:center;max-width:300px;line-height:1.6;box-shadow:0 8px 32px rgba(0,0,0,0.35);';
+    infoDiv.innerHTML='<div style="font-size:28px;margin-bottom:8px;">🛡️</div><strong style="font-size:16px;">Set Safe Zone</strong><br><span style="font-size:13px;opacity:0.85;font-weight:400;display:block;margin:10px 0;">1. Tap the map to set the center<br>2. Drag the circle edge to set radius<br><br><span style="color:#FCD34D;font-weight:600;">⚠️ You will be notified if your pet leaves this zone</span></span><button onclick="this.parentElement.remove()" style="margin-top:12px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:8px 24px;border-radius:20px;cursor:pointer;font-size:13px;font-weight:600;">Got it ✓</button>';
     document.body.appendChild(infoDiv);
-    setTimeout(function(){ infoDiv.style.opacity='0'; infoDiv.style.transition='opacity 0.5s'; setTimeout(function(){ infoDiv.remove(); },500); }, 4000);
 
     var previewCircle=new google.maps.Circle({
       map:map,center:map.getCenter(),radius:safeRadius,
