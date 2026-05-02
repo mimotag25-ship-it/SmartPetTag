@@ -7,6 +7,7 @@ import { useLanguage } from '../lib/i18n';
 
 export default function Guest() {
   const [dogCount, setDogCount] = useState(0);
+  const [showLangPicker, setShowLangPicker] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
