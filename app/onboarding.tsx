@@ -107,14 +107,22 @@ export default function Onboarding() {
 
   function animateStep(dir) {
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 0, duration: 140, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: dir === 'next' ? -28 : 28, duration: 140, useNativeDriver: true }),
+      Animated.timing(stepAnim, { toValue: 0, duration: 150, useNativeDriver: false }),
+      Animated.timing(stepSlide, { toValue: dir === 'next' ? -30 : 30, duration: 150, useNativeDriver: false }),
     ]).start(() => {
-      setStep(s => s + (dir === 'next' ? 1 : -1));
-      slideAnim.setValue(dir === 'next' ? 28 : -28);
+      if (dir === 'next') {
+        if (step === 3) { setStep(35); }
+        else if (step === 35) { setStep(4); }
+        else if (step < 4) { setStep(s => s + 1); }
+      } else {
+        if (step === 4) { setStep(35); }
+        else if (step === 35) { setStep(3); }
+        else if (step > 0) { setStep(s => s - 1); }
+      }
+      stepSlide.setValue(dir === 'next' ? 30 : -30);
       Animated.parallel([
-        Animated.timing(fadeAnim, { toValue: 1, duration: 180, useNativeDriver: true }),
-        Animated.timing(slideAnim, { toValue: 0, duration: 180, useNativeDriver: true }),
+        Animated.timing(stepAnim, { toValue: 1, duration: 200, useNativeDriver: false }),
+        Animated.timing(stepSlide, { toValue: 0, duration: 200, useNativeDriver: false }),
       ]).start();
     });
   }
@@ -343,9 +351,7 @@ export default function Onboarding() {
                 <TouchableOpacity key={b.name} style={[s.breedCard, breed?.name === b.name && s.breedCardActive]} onPress={() => { setBreed(b); if (b.name === 'Other') setShowCustomBreed(true); else setShowCustomBreed(false); }}>
                   <Text style={s.breedCardEmoji}>{b.emoji}</Text>
                   <Text style={[s.breedCardName, breed?.name === b.name && { color: colors.textPrimary }]}>{b.name}</Text>
-                  <View style={{ flexDirection: 'row', gap: 2 }}>
-                    {[1,2,3,4,5].map(i => <View key={i} style={{ width: 10, height: 4, borderRadius: 1, backgroundColor: i <= b.energy ? ENERGY_COLORS[b.energy] : colors.bgBorder }} />)}
-                  </View>
+
                 </TouchableOpacity>
               ))}
             </View>

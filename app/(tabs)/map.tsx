@@ -439,9 +439,11 @@ function initMap() {
   }
 
   // Locate me button — Find My style
+  var locateDiv = document.createElement('div');
+  locateDiv.style.cssText = 'margin:10px;';
   var locateBtn = document.createElement('button');
-  locateBtn.style.cssText = 'position:absolute;bottom:24px;right:16px;width:44px;height:44px;background:#fff;border:none;border-radius:50%;box-shadow:0 2px 12px rgba(0,0,0,0.2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;z-index:999;';
-  locateBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" fill="#007AFF"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="#007AFF" stroke-width="2" stroke-linecap="round"/></svg>';
+  locateBtn.style.cssText = 'width:44px;height:44px;background:#fff;border:none;border-radius:50%;box-shadow:0 2px 12px rgba(0,0,0,0.25);cursor:pointer;display:flex;align-items:center;justify-content:center;';
+  locateBtn.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3.5" fill="#007AFF"/><circle cx="12" cy="12" r="7" stroke="#007AFF" stroke-width="1.5" fill="none"/><line x1="12" y1="2" x2="12" y2="6" stroke="#007AFF" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="18" x2="12" y2="22" stroke="#007AFF" stroke-width="2" stroke-linecap="round"/><line x1="2" y1="12" x2="6" y2="12" stroke="#007AFF" stroke-width="2" stroke-linecap="round"/><line x1="18" y1="12" x2="22" y2="12" stroke="#007AFF" stroke-width="2" stroke-linecap="round"/></svg>';
   locateBtn.onclick = function() {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(function(pos) {
@@ -452,7 +454,8 @@ function initMap() {
       }, function() {}, { enableHighAccuracy: true, timeout: 8000 });
     }
   };
-  document.body.appendChild(locateBtn);
+  locateDiv.appendChild(locateBtn);
+  map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(locateDiv);
 }
 </script>
 <script src="https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_KEY}&callback=initMap" async defer></script>
@@ -556,10 +559,7 @@ function initMap() {
                   {dog.is_moving && <View style={s.movingDot} />}
                 </View>
                 <Text style={s.petCardName} numberOfLines={1}>{dog.dog_name}</Text>
-                <Text style={s.petCardStatus}>{dog.is_moving
-                  ? (lang === 'es' ? '🟢 Activo' : '🟢 Active')
-                  : (lang === 'es' ? '⚪ Descansando' : '⚪ Resting')
-                }</Text>
+<Text style={s.petCardStatus}>{dog.is_moving ? '🟢' : '⚪'} {distanceKm(userLat, userLng, dog.lat, dog.lng) < 1 ? Math.round(distanceKm(userLat, userLng, dog.lat, dog.lng)*1000)+'m' : distanceKm(userLat, userLng, dog.lat, dog.lng).toFixed(1)+'km'}</Text>
                 <Text style={s.petCardDist}>
                   {distanceKm(userLat, userLng, dog.lat, dog.lng) < 1
                     ? Math.round(distanceKm(userLat, userLng, dog.lat, dog.lng) * 1000) + 'm'

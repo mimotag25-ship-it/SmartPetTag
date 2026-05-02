@@ -59,12 +59,7 @@ function ParkCard({ park }) {
         <Text style={s.parkMetaText}>😊 {park.friendly} friendly</Text>
         {park.reactive > 0 && <Text style={[s.parkMetaText, { color: colors.amber }]}>⚠️ {park.reactive} reactive</Text>}
       </View>
-      <View style={{ flexDirection: 'row', gap: 3, marginTop: 8 }}>
-        {[1,2,3,4,5].map(j => (
-          <View key={j} style={{ flex: 1, height: 3, borderRadius: 2, overflow: 'hidden', backgroundColor: j <= park.energy ? ENERGY_COLORS[park.energy] : colors.bgBorder }} />
-        ))}
-      </View>
-      <Text style={{ fontSize: 10, color: config.color, marginTop: 8, textAlign: 'right', fontWeight: '600' }}>View on map →</Text>
+          <Text style={{ fontSize: 10, color: config.color, marginTop: 8, textAlign: 'right', fontWeight: '600' }}>View on map →</Text>
     </TouchableOpacity>
   );
 }
