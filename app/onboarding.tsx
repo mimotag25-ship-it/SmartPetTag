@@ -47,7 +47,7 @@ const NEARBY_DOTS = [
 ];
 
 export default function Onboarding() {
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(1);
   const [selectedLang, setSelectedLang] = useState('es');
   const [dogName, setDogName] = useState('');
   const [selectedEmoji, setSelectedEmoji] = useState('🐕');
