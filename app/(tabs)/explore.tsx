@@ -7,10 +7,8 @@ import { colors, spacing, radius, shadows } from '../../lib/design';
 import { useLanguage, t } from '../../lib/i18n';
 
 const POST_TYPES = [
-  { key: 'checkin', label: t('checkin'), icon: '📍', color: colors.safe },
   { key: 'lost', label: t('lost'), icon: '🚨', color: colors.emergency },
   { key: 'spotted', label: t('spotted'), icon: '👀', color: colors.amber },
-  { key: 'event', label: t('event'), icon: '🎉', color: colors.community },
   { key: 'warning', label: t('warning'), icon: '⚠️', color: '#F97316' },
 ];
 
@@ -26,8 +24,6 @@ function getTypeConfig(type) {
 }
 
 function Post({ post }) {
-  const [pawned, setPawned] = useState(false);
-  const [paws, setPaws] = useState(post.paws || 0);
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');

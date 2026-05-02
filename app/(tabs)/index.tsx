@@ -351,16 +351,7 @@ export default function HomeScreen() {
               <Text style={s.petCardStatLabel}>{lang === 'es' ? 'Días' : 'Days'}</Text>
             </View>
             <View style={s.petCardStatLine} />
-            <View style={s.petCardStat}>
-              <Text style={s.petCardStatNum}>{stats.alerts || 0}</Text>
-              <Text style={s.petCardStatLabel}>{lang === 'es' ? 'Alertas' : 'Alerts'}</Text>
-            </View>
-            <View style={s.petCardStatLine} />
-            <View style={s.petCardStat}>
-              <Text style={s.petCardStatNum}>{stats.posts || 0}</Text>
-              <Text style={s.petCardStatLabel}>{lang === 'es' ? 'Posts' : 'Posts'}</Text>
-            </View>
-            <View style={s.petCardStatLine} />
+
             <View style={s.petCardStat}>
               <View style={s.petCardLiveDot} />
               <Text style={s.petCardStatLabel}>{lang === 'es' ? 'En vivo' : 'Live'}</Text>

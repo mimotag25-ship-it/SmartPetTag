@@ -121,8 +121,7 @@ export default function TabLayout() {
               <Tabs.Screen name="index" />
               <Tabs.Screen name="map" />
               <Tabs.Screen name="explore" />
-              <Tabs.Screen name="scanner" options={{ href: null }} />
-            </Tabs>
+              </Tabs>
           </View>
           <WebBottomNav lang={lang} />
         </View>
@@ -153,7 +152,6 @@ export default function TabLayout() {
       <Tabs.Screen name="index" options={{ title: lang === 'es' ? 'Inicio' : 'Home', tabBarIcon: () => <Text style={{ fontSize: 22 }}>🏠</Text> }} />
       <Tabs.Screen name="map" options={{ title: lang === 'es' ? 'Mapa' : 'Map', tabBarIcon: () => <Text style={{ fontSize: 22 }}>🗺️</Text> }} />
       <Tabs.Screen name="explore" options={{ title: lang === 'es' ? 'Comunidad' : 'Community', tabBarIcon: () => <Text style={{ fontSize: 22 }}>🐾</Text> }} />
-      <Tabs.Screen name="scanner" options={{ href: null }} />
     </Tabs>
   );
 }
