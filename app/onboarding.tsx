@@ -106,24 +106,19 @@ export default function Onboarding() {
   }, [step]);
 
   function animateStep(dir) {
-    Animated.sequence([
-      Animated.timing(stepAnim, { toValue: 0, duration: 150, useNativeDriver: false }),
-    ]).start(() => {
-      if (dir === 'next') {
-        setStep(s => {
-          if (s === 3) return 35;
-          if (s === 35) return 4;
-          return s + 1;
-        });
-      } else {
-        setStep(s => {
-          if (s === 35) return 3;
-          if (s === 4) return 35;
-          return Math.max(1, s - 1);
-        });
-      }
-      Animated.timing(stepAnim, { toValue: 1, duration: 200, useNativeDriver: false }).start();
-    });
+    if (dir === 'next') {
+      setStep(s => {
+        if (s === 3) return 35;
+        if (s === 35) return 4;
+        return s + 1;
+      });
+    } else {
+      setStep(s => {
+        if (s === 35) return 3;
+        if (s === 4) return 35;
+        return Math.max(1, s - 1);
+      });
+    }
   }
 
   function toggleTag(tag) {
