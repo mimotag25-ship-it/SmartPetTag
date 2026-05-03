@@ -106,24 +106,23 @@ export default function Onboarding() {
   }, [step]);
 
   function animateStep(dir) {
-    Animated.parallel([
+    Animated.sequence([
       Animated.timing(stepAnim, { toValue: 0, duration: 150, useNativeDriver: false }),
-      Animated.timing(stepSlide, { toValue: dir === 'next' ? -30 : 30, duration: 150, useNativeDriver: false }),
     ]).start(() => {
       if (dir === 'next') {
-        if (step === 3) { setStep(35); }
-        else if (step === 35) { setStep(4); }
-        else if (step < 4) { setStep(s => s + 1); }
+        setStep(s => {
+          if (s === 3) return 35;
+          if (s === 35) return 4;
+          return s + 1;
+        });
       } else {
-        if (step === 4) { setStep(35); }
-        else if (step === 35) { setStep(3); }
-        else if (step > 0) { setStep(s => s - 1); }
+        setStep(s => {
+          if (s === 35) return 3;
+          if (s === 4) return 35;
+          return Math.max(1, s - 1);
+        });
       }
-      stepSlide.setValue(dir === 'next' ? 30 : -30);
-      Animated.parallel([
-        Animated.timing(stepAnim, { toValue: 1, duration: 200, useNativeDriver: false }),
-        Animated.timing(stepSlide, { toValue: 0, duration: 200, useNativeDriver: false }),
-      ]).start();
+      Animated.timing(stepAnim, { toValue: 1, duration: 200, useNativeDriver: false }).start();
     });
   }
 
@@ -138,9 +137,11 @@ export default function Onboarding() {
 
   function canProceed() {
     if (step === 1) return dogName.trim().length > 0;
-    if (step === 2) return breed !== null;
-    if (step === 3) return selectedTags.length > 0;
-    if (step === 4) return neighbourhood.length > 0;
+    if (step === 2) return true; // breed optional
+    if (step === 3) return true; // tags optional
+    if (step === 4) return neighbourhood.trim().length > 0;
+    if (step === 35) return true; // if-found optional
+    if (step === 5) return true; // GPS step
     return true;
   }
 
