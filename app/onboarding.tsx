@@ -107,17 +107,9 @@ export default function Onboarding() {
 
   function animateStep(dir) {
     if (dir === 'next') {
-      setStep(s => {
-        if (s === 3) return 35;
-        if (s === 35) return 4;
-        return s + 1;
-      });
+      setStep(s => Math.min(s + 1, 6));
     } else {
-      setStep(s => {
-        if (s === 35) return 3;
-        if (s === 4) return 35;
-        return Math.max(1, s - 1);
-      });
+      setStep(s => Math.max(s - 1, 1));
     }
   }
 
@@ -205,7 +197,7 @@ export default function Onboarding() {
   }
 
   const CONFETTI_COLORS = [colors.amber, colors.emergency, '#10B981', '#6366F1', '#fff', '#FBBF24'];
-  const progress = Math.max(0, (step - 1) / 5);
+  const progress = Math.max(0, (step - 1) / 4);
 
   return (
     <View style={s.container}>
@@ -446,6 +438,33 @@ export default function Onboarding() {
                 </TouchableOpacity>
               ))}
             </View>
+
+            <View style={{ height: 1, backgroundColor: colors.bgBorder, marginVertical: 20 }} />
+
+            <Text style={s.stepTitle}>🚨 {lang === 'es' ? 'Si te encuentran' : 'If found'}</Text>
+            <Text style={s.stepSub}>{lang === 'es' ? 'Esto aparece cuando alguien escanea tu collar QR' : 'This shows when someone scans your QR collar tag'}</Text>
+
+            <Text style={s.fieldLabel}>{lang === 'es' ? 'Responde al nombre' : 'Responds to name'}</Text>
+            <TextInput
+              style={s.input}
+              placeholder={lang === 'es' ? 'ej. Rocky, aquí, ven...' : 'e.g. Rocky, buddy, here...'}
+              placeholderTextColor={colors.textMuted}
+              value={respondsTo}
+              onChangeText={setRespondsTo}
+            />
+
+            <Text style={s.fieldLabel}>{lang === 'es' ? 'Instrucciones si me encuentran' : 'If found instructions'}</Text>
+            <TextInput
+              style={[s.input, { height: 80, textAlignVertical: 'top' }]}
+              placeholder={lang === 'es' ? 'ej. Por favor llama inmediatamente, no me alimentes...' : 'e.g. Please call immediately, do not feed me...'}
+              placeholderTextColor={colors.textMuted}
+              value={ifFoundInstructions}
+              onChangeText={setIfFoundInstructions}
+              multiline
+            />
+            <Text style={{ fontSize: 11, color: colors.textMuted, marginBottom: 8 }}>
+              {lang === 'es' ? '💡 Puedes completar esto después en tu perfil' : '💡 You can complete this later in your profile'}
+            </Text>
           </ScrollView>
         )}
 
@@ -537,7 +556,7 @@ export default function Onboarding() {
             </TouchableOpacity>
           ) : <View style={{ width: 44 }} />}
           <View style={s.navDots}>
-            {[1,2,3,4,5].map(i => (
+            {[1,2,3,4].map(i => (
               <View key={i} style={[s.navDot, step === i && s.navDotActive, step > i && s.navDotDone]} />
             ))}
           </View>
