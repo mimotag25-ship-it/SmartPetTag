@@ -139,6 +139,11 @@ export default function HomeScreen() {
     setLoading(false);
   }
 
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.replace('/guest');
+  }
+
   async function resolveMyAlert() {
     if (!pendingAlert) return;
     await supabase.from('lost_alerts').update({ status: 'found' }).eq('id', pendingAlert.id);
@@ -425,6 +430,10 @@ export default function HomeScreen() {
       <View style={s.footer}>
         <TouchableOpacity onPress={() => router.push('/privacy')}>
           <Text style={s.footerLink}>{t('privacyPolicy')}</Text>
+        </TouchableOpacity>
+        <Text style={s.footerDot}>·</Text>
+        <TouchableOpacity onPress={handleLogout}>
+          <Text style={[s.footerLink, { color: colors.emergency }]}>{lang === 'es' ? 'Cerrar sesión' : 'Sign out'}</Text>
         </TouchableOpacity>
         <Text style={s.footerDot}>·</Text>
         <TouchableOpacity onPress={() => router.push('/privacy')}>
