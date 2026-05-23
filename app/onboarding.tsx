@@ -135,12 +135,27 @@ export default function Onboarding() {
     setLoading(true); setError('');
     try {
       // Try sign up first
-      const { error: signUpError } = await supabase.auth.signUp({ email, password });
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
       
-      // If email exists, just sign in instead
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      // If signup failed (not because email exists), show error
+      if (signUpError && !signUpError.message.toLowerCase().includes('already')) {
+        setError(signUpError.message);
+        setLoading(false);
+        return;
+      }
+
+      // Sign in (works for both new and existing accounts)
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       if (signInError) {
         setError('Could not sign in. Please check your email and password.');
+        setLoading(false);
+        return;
+      }
+
+      // Make sure we have a valid user before inserting dog
+      const userId = signInData?.user?.id;
+      if (!userId) {
+        setError('Authentication failed. Please try again.');
         setLoading(false);
         return;
       }
