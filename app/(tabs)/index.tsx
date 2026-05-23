@@ -152,17 +152,38 @@ export default function HomeScreen() {
   }
 
   async function loadDog() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setLoading(false); router.replace('/guest'); return; }
-    // Try up to 5 times with delay — DB write may still be in progress after onboarding
+    // Get session from localStorage directly first
+    let email = null;
+    try {
+      const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('smartpettag-auth') : null;
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        email = parsed?.user?.email;
+      }
+    } catch(e) {}
+
+    // Fall back to getUser if no localStorage
+    if (!email) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { 
+        // Wait and retry once before giving up
+        await new Promise(r => setTimeout(r, 2000));
+        const { data: { user: user2 } } = await supabase.auth.getUser();
+        if (!user2) { setLoading(false); router.replace('/guest'); return; }
+        email = user2.email;
+      } else {
+        email = user.email;
+      }
+    }
+
+    // Load dog for this email
     let data = null;
     for (let i = 0; i < 5; i++) {
-      const { data: result } = await supabase.from('dogs').select('*').eq('owner_email', user.email).single();
+      const { data: result } = await supabase.from('dogs').select('*').eq('owner_email', email).single();
       if (result) { data = result; break; }
-      if (i < 4) await new Promise(r => setTimeout(r, 1500));
+      if (i < 4) await new Promise(r => setTimeout(r, 1000));
     }
     if (!data) {
-      // Still no dog — go to onboarding
       router.replace('/onboarding');
       return;
     }
