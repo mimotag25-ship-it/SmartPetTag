@@ -127,8 +127,6 @@ export default function Onboarding() {
     if (step === 2) return true; // breed optional
     if (step === 3) return true; // tags optional
     if (step === 4) return neighbourhood.trim().length > 0;
-    if (step === 35) return true; // if-found optional
-    if (step === 5) return true; // GPS step
     return true;
   }
 

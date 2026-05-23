@@ -429,7 +429,7 @@ function initMap() {
 
     var saveBtn=document.createElement('button');
     saveBtn.innerHTML='✓ Save safe zone';
-    saveBtn.style.cssText='position:absolute;bottom:100px;left:50%;transform:translateX(-50%);background:#10B981;color:white;border:none;padding:12px 24px;border-radius:20px;font-size:14px;font-weight:700;cursor:pointer;z-index:999;box-shadow:0 4px 12px rgba(16,185,129,0.4);';
+    saveBtn.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#10B981;color:white;border:none;padding:14px 32px;border-radius:24px;font-size:15px;font-weight:700;cursor:pointer;z-index:9999;box-shadow:0 4px 16px rgba(16,185,129,0.5);white-space:nowrap;';
     saveBtn.onclick=function(){
       var center=previewCircle.getCenter();
       window.parent.postMessage({type:'safeZoneSet',lat:center.lat(),lng:center.lng(),radius:previewCircle.getRadius()},'*');
