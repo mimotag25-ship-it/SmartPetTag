@@ -137,9 +137,14 @@ export default function Onboarding() {
       // Try sign up first
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
       
-      // If signup failed (not because email exists), show error
-      if (signUpError && !signUpError.message.toLowerCase().includes('already')) {
-        setError(signUpError.message);
+      // Show exact signup error
+      if (signUpError) {
+        setError('Signup error: ' + signUpError.message);
+        setLoading(false);
+        return;
+      }
+      if (!signUpData?.user) {
+        setError('No user returned from signup. Check Supabase settings.');
         setLoading(false);
         return;
       }
