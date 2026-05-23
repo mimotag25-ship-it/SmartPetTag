@@ -154,14 +154,15 @@ export default function HomeScreen() {
   async function loadDog() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); router.replace('/guest'); return; }
-    // Try up to 3 times with delay — onboarding DB write may still be in progress
+    // Try up to 5 times with delay — DB write may still be in progress after onboarding
     let data = null;
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 5; i++) {
       const { data: result } = await supabase.from('dogs').select('*').eq('owner_email', user.email).single();
       if (result) { data = result; break; }
-      if (i < 2) await new Promise(r => setTimeout(r, 1000));
+      if (i < 4) await new Promise(r => setTimeout(r, 1500));
     }
     if (!data) {
+      // Still no dog — go to onboarding
       router.replace('/onboarding');
       return;
     }

@@ -537,7 +537,7 @@ export default function Onboarding() {
                 </View>
               ))}
             </View>
-            <TouchableOpacity style={s.enterBtn} onPress={() => router.replace('/(tabs)/explore')}>
+            <TouchableOpacity style={s.enterBtn} onPress={() => router.replace('/(tabs)/')}>
               <Text style={s.enterBtnText}>{'Enter SmartPet Tag 🐾'}</Text>
             </TouchableOpacity>
             </View>
