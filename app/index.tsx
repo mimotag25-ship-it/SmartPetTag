@@ -1,32 +1,44 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { supabase } from '../lib/supabase';
 
 export default function Index() {
   useEffect(() => {
-    // First check existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    let redirected = false;
+
+    // Check localStorage session directly
+    const stored = typeof localStorage !== 'undefined' 
+      ? localStorage.getItem('smartpettag-auth') 
+      : null;
+    
+    if (stored) {
+      // Session exists in storage — go to app immediately
+      router.replace('/(tabs)/');
+      return;
+    }
+
+    // No stored session — listen for auth
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (redirected) return;
       if (session) {
+        redirected = true;
         router.replace('/(tabs)/');
-      } else {
-        // No session yet — listen for auth state change
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          if (session) {
-            router.replace('/(tabs)/');
-          } else if (event === 'SIGNED_OUT') {
-            router.replace('/guest');
-          }
-        });
-        // If still no session after 2s, go to guest
-        setTimeout(() => {
-          supabase.auth.getSession().then(({ data: { session } }) => {
-            if (!session) router.replace('/guest');
-          });
-        }, 2000);
-        return () => subscription.unsubscribe();
       }
     });
+
+    // Fallback — go to guest after 1.5s if no session
+    const timer = setTimeout(() => {
+      if (!redirected) {
+        redirected = true;
+        router.replace('/guest');
+      }
+    }, 1500);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timer);
+    };
   }, []);
 
   return (
