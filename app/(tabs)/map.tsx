@@ -498,7 +498,7 @@ function initMap() {
       <View style={s.mapFull}>
         {Platform.OS === 'web' ? (
           <iframe
-            key={(focusPark || 'default') + filter + userLat + userLng}
+            key={(focusPark || 'default') + filter + userLat + userLng + (showSafeZoneModal ? 'sz' : '')}
             srcDoc={buildMapHTML()}
             style={{ width: '100%', height: '100%', border: 'none' }}
             title="SmartPet Tag Map"
@@ -909,7 +909,7 @@ const s = StyleSheet.create({
   szRadiusDisplay: { alignItems: 'center', paddingVertical: 16 },
   szRadiusDisplayNum: { fontSize: 48, fontWeight: '900', color: '#10B981', letterSpacing: -2 },
   szRadiusDisplayLabel: { fontSize: 13, color: '#64748B', fontWeight: '600' },
-  szManualRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginVertical: 12 },
+  szManualRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 8, paddingHorizontal: 4 },
   szMinusBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E2E8F0' },
   szPlusBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#ECFDF5', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#10B981' },
   szPlusMinusText: { fontSize: 24, fontWeight: '300', color: '#0F172A' },
