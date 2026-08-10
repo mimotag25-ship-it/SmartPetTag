@@ -28,8 +28,11 @@ export default function MapScreen() {
   const [safeZone, setSafeZone] = useState(null); // { lat, lng, radius }
   const [settingZone, setSettingZone] = useState(false);
   const [showSafeZoneModal, setShowSafeZoneModal] = useState(false);
+  const [szStep, setSzStep] = useState(1);
   const [zoneRadius, setZoneRadius] = useState(300);
+  const [communityThreshold, setCommunityThreshold] = useState(500);
   const [outsideAlert, setOutsideAlert] = useState(false);
+  const [confirmCount, setConfirmCount] = useState(0);
   const [myDog, setMyDog] = useState(null);
   const [userLat, setUserLat] = useState(19.4136);
   const [userLng, setUserLng] = useState(-99.1716);
@@ -622,83 +625,180 @@ function initMap() {
           </View>
         </Animated.View>
       )}
-      {/* Safe Zone Modal */}
+      {/* Safe Zone Setup Flow */}
       {showSafeZoneModal && (
         <View style={s.szModal}>
           <View style={s.szModalCard}>
             <View style={s.szModalHandle} />
-            <Text style={s.szModalTitle}>🛡️ {lang === 'es' ? 'Zona Segura' : 'Safe Zone'}</Text>
-            <Text style={s.szModalSub}>
-              {lang === 'es'
-                ? 'Recibirás una alerta si tu mascota sale de esta área. Si se aleja más de 250m, podrás alertar a toda la comunidad.'
-                : 'You will get an alert if your pet leaves this area. If they go 250m beyond, you can alert the whole community.'}
-            </Text>
 
-            {/* Radius selector */}
-            <View style={s.szRadiusSection}>
-              <Text style={s.szRadiusLabel}>
-                {lang === 'es' ? 'Radio de la zona:' : 'Zone radius:'} <Text style={s.szRadiusValue}>{zoneRadius}m</Text>
-              </Text>
-              <View style={s.szSliderRow}>
-                {[100, 200, 300, 500, 750, 1000, 1500, 2000].map(r => (
-                  <TouchableOpacity
-                    key={r}
-                    style={[s.szRadiusBtn, zoneRadius === r && s.szRadiusBtnActive]}
-                    onPress={() => setZoneRadius(r)}
-                  >
-                    <Text style={[s.szRadiusBtnText, zoneRadius === r && s.szRadiusBtnTextActive]}>
-                      {r >= 1000 ? `${r/1000}km` : `${r}m`}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+            {/* Step indicators */}
+            <View style={s.szSteps}>
+              {[1,2,3].map(i => (
+                <View key={i} style={s.szStepItem}>
+                  <View style={[s.szStepDot, szStep >= i && s.szStepDotActive, szStep > i && s.szStepDotDone]}>
+                    <Text style={s.szStepDotText}>{szStep > i ? '✓' : i}</Text>
+                  </View>
+                  <Text style={[s.szStepLabel, szStep >= i && s.szStepLabelActive]}>
+                    {i === 1 ? (lang === 'es' ? 'Mi alerta' : 'My alert') : i === 2 ? (lang === 'es' ? 'Comunidad' : 'Community') : (lang === 'es' ? 'Activar' : 'Activate')}
+                  </Text>
+                </View>
+              ))}
             </View>
 
-            {/* Zone explanation */}
-            <View style={s.szInfoRow}>
-              <View style={[s.szInfoDot, { backgroundColor: '#10B981' }]} />
-              <Text style={s.szInfoText}>{lang === 'es' ? 'Zona segura — tu mascota está dentro' : 'Safe zone — pet is inside'}</Text>
-            </View>
-            <View style={s.szInfoRow}>
-              <View style={[s.szInfoDot, { backgroundColor: '#F59E0B' }]} />
-              <Text style={s.szInfoText}>{lang === 'es' ? 'Alerta suave — salió de la zona' : 'Soft alert — left the zone'}</Text>
-            </View>
-            <View style={s.szInfoRow}>
-              <View style={[s.szInfoDot, { backgroundColor: '#EF4444' }]} />
-              <Text style={s.szInfoText}>{lang === 'es' ? 'Alerta crítica — más de 250m fuera' : 'Critical alert — 250m+ beyond zone'}</Text>
-            </View>
-
-            {/* Zone location note */}
-            <View style={s.szLocationNote}>
-              <Text style={s.szLocationNoteText}>
-                📍 {lang === 'es'
-                  ? 'La zona se centrará en la ubicación actual de tu mascota en el mapa'
-                  : "Zone will center on your pet's current location on the map"}
-              </Text>
-            </View>
-
-            {/* Actions */}
-            <View style={s.szActions}>
-              {safeZone && (
-                <TouchableOpacity style={s.szDeactivateBtn} onPress={() => { clearSafeZone(); setShowSafeZoneModal(false); }}>
-                  <Text style={s.szDeactivateBtnText}>{lang === 'es' ? 'Desactivar zona' : 'Deactivate zone'}</Text>
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity
-                style={s.szActivateBtn}
-                onPress={() => {
-                  saveSafeZone(userLat, userLng, zoneRadius);
-                  setShowSafeZoneModal(false);
-                }}
-              >
-                <Text style={s.szActivateBtnText}>
-                  ✓ {lang === 'es' ? 'Activar zona segura' : 'Activate safe zone'}
+            {/* STEP 1 — Personal alert radius */}
+            {szStep === 1 && (
+              <View>
+                <Text style={s.szModalTitle}>📍 {lang === 'es' ? 'Zona de alerta personal' : 'Personal alert zone'}</Text>
+                <Text style={s.szModalSub}>
+                  {lang === 'es'
+                    ? 'Recibirás una notificación silenciosa cuando tu mascota salga de esta área. Solo tú la verás.'
+                    : 'You will get a silent notification when your pet leaves this area. Only you will see it.'}
                 </Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={s.szCancelBtn} onPress={() => setShowSafeZoneModal(false)}>
-                <Text style={s.szCancelBtnText}>{lang === 'es' ? 'Cancelar' : 'Cancel'}</Text>
-              </TouchableOpacity>
-            </View>
+                <View style={s.szRadiusDisplay}>
+                  <Text style={s.szRadiusDisplayNum}>{zoneRadius >= 1000 ? `${zoneRadius/1000}km` : `${zoneRadius}m`}</Text>
+                  <Text style={s.szRadiusDisplayLabel}>{lang === 'es' ? 'radio' : 'radius'}</Text>
+                </View>
+                <View style={s.szSliderRow}>
+                  {[100, 200, 300, 500, 750, 1000, 1500, 2000].map(r => (
+                    <TouchableOpacity
+                      key={r}
+                      style={[s.szRadiusBtn, zoneRadius === r && s.szRadiusBtnActive]}
+                      onPress={() => setZoneRadius(r)}
+                    >
+                      <Text style={[s.szRadiusBtnText, zoneRadius === r && s.szRadiusBtnTextActive]}>
+                        {r >= 1000 ? `${r/1000}km` : `${r}m`}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <View style={s.szTip}>
+                  <Text style={s.szTipText}>
+                    💡 {lang === 'es'
+                      ? 'Recomendamos 300-500m para colonias urbanas como Condesa o Roma'
+                      : 'We recommend 300-500m for urban areas like Condesa or Roma'}
+                  </Text>
+                </View>
+                <TouchableOpacity style={s.szNextBtn} onPress={() => setSzStep(2)}>
+                  <Text style={s.szNextBtnText}>{lang === 'es' ? 'Siguiente →' : 'Next →'}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* STEP 2 — Community alert threshold */}
+            {szStep === 2 && (
+              <View>
+                <Text style={s.szModalTitle}>🚨 {lang === 'es' ? 'Alerta comunitaria' : 'Community alert'}</Text>
+                <Text style={s.szModalSub}>
+                  {lang === 'es'
+                    ? 'Si tu mascota se aleja más de esta distancia ADICIONAL fuera de tu zona, se te preguntará si quieres alertar a toda la comunidad.'
+                    : 'If your pet goes this much FURTHER beyond your zone, you will be asked if you want to alert the whole community.'}
+                </Text>
+
+                <View style={s.szRadiusDisplay}>
+                  <Text style={s.szRadiusDisplayNum}>{communityThreshold >= 1000 ? `${communityThreshold/1000}km` : `${communityThreshold}m`}</Text>
+                  <Text style={s.szRadiusDisplayLabel}>{lang === 'es' ? 'más allá de tu zona' : 'beyond your zone'}</Text>
+                </View>
+
+                <View style={s.szSliderRow}>
+                  {[250, 500, 750, 1000, 1500, 2000].map(r => (
+                    <TouchableOpacity
+                      key={r}
+                      style={[s.szRadiusBtn, communityThreshold === r && s.szRadiusBtnActive]}
+                      onPress={() => setCommunityThreshold(r)}
+                    >
+                      <Text style={[s.szRadiusBtnText, communityThreshold === r && s.szRadiusBtnTextActive]}>
+                        {r >= 1000 ? `${r/1000}km` : `${r}m`}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <View style={s.szSafeguardCard}>
+                  <Text style={s.szSafeguardTitle}>🔒 {lang === 'es' ? 'Salvaguardas contra alertas falsas' : 'False alert safeguards'}</Text>
+                  <View style={s.szSafeguardRow}>
+                    <Text style={s.szSafeguardIcon}>✓</Text>
+                    <Text style={s.szSafeguardText}>{lang === 'es' ? 'Siempre se te preguntará antes de alertar a la comunidad' : 'You are always asked before alerting the community'}</Text>
+                  </View>
+                  <View style={s.szSafeguardRow}>
+                    <Text style={s.szSafeguardIcon}>✓</Text>
+                    <Text style={s.szSafeguardText}>{lang === 'es' ? 'Máximo 1 alerta comunitaria cada 30 minutos' : 'Maximum 1 community alert every 30 minutes'}</Text>
+                  </View>
+                  <View style={s.szSafeguardRow}>
+                    <Text style={s.szSafeguardIcon}>✓</Text>
+                    <Text style={s.szSafeguardText}>{lang === 'es' ? 'Puedes cancelar la alerta en los primeros 60 segundos' : 'You can cancel the alert within the first 60 seconds'}</Text>
+                  </View>
+                </View>
+
+                <View style={s.szNavRow}>
+                  <TouchableOpacity style={s.szBackBtn} onPress={() => setSzStep(1)}>
+                    <Text style={s.szBackBtnText}>← {lang === 'es' ? 'Atrás' : 'Back'}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={s.szNextBtn} onPress={() => setSzStep(3)}>
+                    <Text style={s.szNextBtnText}>{lang === 'es' ? 'Siguiente →' : 'Next →'}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            {/* STEP 3 — Confirm and activate */}
+            {szStep === 3 && (
+              <View>
+                <Text style={s.szModalTitle}>✅ {lang === 'es' ? 'Confirmar zona segura' : 'Confirm safe zone'}</Text>
+                <Text style={s.szModalSub}>
+                  {lang === 'es' ? 'Revisa tu configuración antes de activar.' : 'Review your settings before activating.'}
+                </Text>
+
+                <View style={s.szSummaryCard}>
+                  <View style={s.szSummaryRow}>
+                    <Text style={s.szSummaryIcon}>📍</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.szSummaryLabel}>{lang === 'es' ? 'Centro de la zona' : 'Zone center'}</Text>
+                      <Text style={s.szSummaryValue}>{lang === 'es' ? 'Tu ubicación actual en el mapa' : 'Your current location on map'}</Text>
+                    </View>
+                  </View>
+                  <View style={s.szSummaryRow}>
+                    <Text style={s.szSummaryIcon}>🔵</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.szSummaryLabel}>{lang === 'es' ? 'Alerta personal' : 'Personal alert'}</Text>
+                      <Text style={s.szSummaryValue}>{zoneRadius >= 1000 ? `${zoneRadius/1000}km` : `${zoneRadius}m`} {lang === 'es' ? 'radio' : 'radius'}</Text>
+                    </View>
+                  </View>
+                  <View style={s.szSummaryRow}>
+                    <Text style={s.szSummaryIcon}>🚨</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.szSummaryLabel}>{lang === 'es' ? 'Alerta comunitaria' : 'Community alert'}</Text>
+                      <Text style={s.szSummaryValue}>{communityThreshold >= 1000 ? `${communityThreshold/1000}km` : `${communityThreshold}m`} {lang === 'es' ? 'más allá' : 'beyond zone'}</Text>
+                    </View>
+                  </View>
+                </View>
+
+                {safeZone && (
+                  <TouchableOpacity style={s.szDeactivateBtn} onPress={() => { clearSafeZone(); setShowSafeZoneModal(false); setSzStep(1); }}>
+                    <Text style={s.szDeactivateBtnText}>🗑️ {lang === 'es' ? 'Desactivar zona actual' : 'Deactivate current zone'}</Text>
+                  </TouchableOpacity>
+                )}
+
+                <View style={s.szNavRow}>
+                  <TouchableOpacity style={s.szBackBtn} onPress={() => setSzStep(2)}>
+                    <Text style={s.szBackBtnText}>← {lang === 'es' ? 'Atrás' : 'Back'}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={s.szActivateBtn}
+                    onPress={() => {
+                      saveSafeZone(userLat, userLng, zoneRadius);
+                      setShowSafeZoneModal(false);
+                      setSzStep(1);
+                    }}
+                  >
+                    <Text style={s.szActivateBtnText}>🛡️ {lang === 'es' ? 'Activar zona' : 'Activate zone'}</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity style={s.szCancelBtn} onPress={() => { setShowSafeZoneModal(false); setSzStep(1); }}>
+                  <Text style={s.szCancelBtnText}>{lang === 'es' ? 'Cancelar' : 'Cancel'}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </View>
       )}
@@ -777,6 +877,40 @@ const s = StyleSheet.create({
   szDeactivateBtn: { backgroundColor: '#FFF1F1', borderRadius: 14, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: '#FECACA' },
   szDeactivateBtnText: { color: '#EF4444', fontWeight: '600', fontSize: 13 },
   szCancelBtn: { paddingVertical: 10, alignItems: 'center' },
+  szCancelBtnText: { color: '#94A3B8', fontSize: 13 },
+  szSteps: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 0, marginBottom: 20 },
+  szStepItem: { alignItems: 'center', gap: 4, flex: 1 },
+  szStepDot: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#F1F5F9', borderWidth: 1.5, borderColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' },
+  szStepDotActive: { borderColor: '#10B981', backgroundColor: '#ECFDF5' },
+  szStepDotDone: { borderColor: '#10B981', backgroundColor: '#10B981' },
+  szStepDotText: { fontSize: 11, fontWeight: '700', color: '#64748B' },
+  szStepLabel: { fontSize: 9, color: '#94A3B8', fontWeight: '600', textAlign: 'center' },
+  szStepLabelActive: { color: '#10B981' },
+  szRadiusDisplay: { alignItems: 'center', paddingVertical: 16 },
+  szRadiusDisplayNum: { fontSize: 48, fontWeight: '900', color: '#10B981', letterSpacing: -2 },
+  szRadiusDisplayLabel: { fontSize: 13, color: '#64748B', fontWeight: '600' },
+  szTip: { backgroundColor: '#F0FDF4', borderRadius: 10, padding: 12, marginVertical: 12, borderWidth: 0.5, borderColor: '#A7F3D0' },
+  szTipText: { fontSize: 12, color: '#065F46', lineHeight: 18 },
+  szSafeguardCard: { backgroundColor: '#F8FAFC', borderRadius: 14, padding: 14, marginVertical: 12, borderWidth: 0.5, borderColor: '#E2E8F0' },
+  szSafeguardTitle: { fontSize: 13, fontWeight: '700', color: '#0F172A', marginBottom: 10 },
+  szSafeguardRow: { flexDirection: 'row', gap: 8, marginBottom: 6, alignItems: 'flex-start' },
+  szSafeguardIcon: { fontSize: 12, color: '#10B981', fontWeight: '700', width: 16 },
+  szSafeguardText: { fontSize: 12, color: '#64748B', flex: 1, lineHeight: 17 },
+  szSummaryCard: { backgroundColor: '#F8FAFC', borderRadius: 14, padding: 14, marginVertical: 12, borderWidth: 0.5, borderColor: '#E2E8F0', gap: 2 },
+  szSummaryRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderBottomWidth: 0.5, borderBottomColor: '#E2E8F0' },
+  szSummaryIcon: { fontSize: 18, width: 28 },
+  szSummaryLabel: { fontSize: 11, color: '#94A3B8', fontWeight: '600', marginBottom: 2 },
+  szSummaryValue: { fontSize: 14, color: '#0F172A', fontWeight: '700' },
+  szNavRow: { flexDirection: 'row', gap: 10, marginTop: 8 },
+  szBackBtn: { flex: 1, paddingVertical: 13, alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0' },
+  szBackBtnText: { color: '#64748B', fontSize: 14, fontWeight: '600' },
+  szNextBtn: { flex: 2, paddingVertical: 13, alignItems: 'center', borderRadius: 12, backgroundColor: '#FFFBEB', borderWidth: 1, borderColor: '#F59E0B' },
+  szNextBtnText: { color: '#D97706', fontSize: 14, fontWeight: '700' },
+  szActivateBtn: { flex: 2, paddingVertical: 13, alignItems: 'center', borderRadius: 12, backgroundColor: '#10B981' },
+  szActivateBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 14 },
+  szDeactivateBtn: { backgroundColor: '#FFF1F1', borderRadius: 12, paddingVertical: 11, alignItems: 'center', borderWidth: 1, borderColor: '#FECACA', marginBottom: 8 },
+  szDeactivateBtnText: { color: '#EF4444', fontWeight: '600', fontSize: 13 },
+  szCancelBtn: { paddingVertical: 12, alignItems: 'center' },
   szCancelBtnText: { color: '#94A3B8', fontSize: 13 },
   // Outside alert
   outsideAlert: { position: 'absolute', top: 80, left: 16, right: 16, backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, borderWidth: 2, borderColor: '#EF4444', zIndex: 999, shadowColor: '#EF4444', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 10 },
