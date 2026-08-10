@@ -18,7 +18,7 @@ function getTypeConfig(type) {
     case 'spotted': return { border: colors.amber, bg: colors.amberDim, label: '👀 ' + t('spotted').toUpperCase(), labelColor: colors.amber };
     case 'event': return { border: colors.community, bg: colors.communityDim, label: '🎉 ' + t('event').toUpperCase(), labelColor: colors.community };
     case 'checkin': return { border: colors.safe, bg: colors.safeDim, label: '📍 ' + t('checkin').toUpperCase(), labelColor: colors.safe };
-    case 'warning': return { border: '#F97316', bg: '#1C0E07', label: '⚠️ ' + t('warning').toUpperCase(), labelColor: '#F97316' };
+    case 'warning': return { border: '#F97316', bg: '#FFF7ED', label: '⚠️ ' + t('warning').toUpperCase(), labelColor: '#F97316' };
     default: return { border: colors.bgBorder, bg: colors.bgCard, label: null, labelColor: null };
   }
 }
@@ -27,6 +27,8 @@ function Post({ post }) {
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
+  const [pawned, setPawned] = useState(false);
+  const [paws, setPaws] = useState(post.paws || 0);
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const { t } = useLanguage();
   const typeConfig = getTypeConfig(post.type);
