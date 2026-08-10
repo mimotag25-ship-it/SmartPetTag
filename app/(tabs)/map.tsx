@@ -411,7 +411,7 @@ function initMap() {
   });
 
   // Safe zone
-  var safeZoneData=JSON.parse('${JSON.stringify(safeZone || null).replace(/'/g, "\'")}');
+  var safeZoneData=${safeZone ? JSON.stringify(safeZone) : 'null'};
   var settingZone=${settingZone ? 'true' : 'false'};
   var safeCircle=null;
   var safeCenter=null;
