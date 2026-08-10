@@ -215,6 +215,7 @@ export default function CommunityScreen() {
   const [postImage, setPostImage] = useState(null);
   const [postLocation, setPostLocation] = useState('');
   const [posting, setPosting] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const [feedMode, setFeedMode] = useState('feed');
   const [refreshing, setRefreshing] = useState(false);
   const [currentDog, setCurrentDog] = useState(null);
@@ -255,8 +256,13 @@ export default function CommunityScreen() {
   }
 
   async function loadPosts() {
-    const { data } = await supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(20);
-    if (data) setPosts(data);
+    try {
+      const { data, error } = await supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(20);
+      if (error) { setLoadError(error.message); return; }
+      if (data) setPosts(data);
+    } catch(e) {
+      setLoadError(String(e));
+    }
   }
 
   async function onRefresh() {
@@ -391,6 +397,12 @@ export default function CommunityScreen() {
           </View>
         )}
 
+        {loadError ? (
+          <View style={{ padding: 20, backgroundColor: '#FFF1F1', margin: 16, borderRadius: 12 }}>
+            <Text style={{ color: '#EF4444', fontWeight: '700' }}>Error loading feed:</Text>
+            <Text style={{ color: '#EF4444', fontSize: 12, marginTop: 4 }}>{loadError}</Text>
+          </View>
+        ) : null}
         {/* Posts or Near Me */}
         <View style={styles.postsSection}>
           {feedMode === 'nearby' ? (
