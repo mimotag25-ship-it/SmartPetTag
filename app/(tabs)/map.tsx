@@ -414,7 +414,7 @@ function initMap() {
   var szLat = ${safeZone ? safeZone.lat : 0};
   var szLng = ${safeZone ? safeZone.lng : 0};
   var szRadius = ${safeZone ? safeZone.radius : 0};
-  var szActive = ${safeZone ? 'true' : 'false'};
+  var szActive = ${safeZone ? 1 : 0};
   if(szActive && szLat && szLng) {
     new google.maps.Circle({
       map:map,
