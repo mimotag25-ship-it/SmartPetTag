@@ -23,7 +23,7 @@ function getTypeConfig(type) {
   }
 }
 
-function Post({ post }) {
+function Post({ post, currentDog }) {
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
@@ -420,7 +420,7 @@ export default function CommunityScreen() {
                   <Text style={styles.emptyFeedSub}>Be the first to check in at a park or report a sighting</Text>
                 </View>
               ) : (
-                posts.filter(p => ['checkin','warning','spotted'].includes(p.type)).map(post => <Post key={post.id} post={post} />)
+                posts.filter(p => ['checkin','warning','spotted'].includes(p.type)).map(post => <Post key={post.id} post={post} currentDog={currentDog} />)
               )}
             </View>
           ) : (
@@ -431,7 +431,7 @@ export default function CommunityScreen() {
                 <Text style={styles.emptyFeedSub}>Be the first to share something with the community</Text>
               </View>
             ) : (
-              posts.map(post => <Post key={post.id} post={post} />)
+              posts.map(post => <Post key={post.id} post={post} currentDog={currentDog} />)
             )
           )}
         </View>
