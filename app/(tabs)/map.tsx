@@ -27,6 +27,9 @@ export default function MapScreen() {
   const [sheetCollapsed, setSheetCollapsed] = useState(false);
   const [safeZone, setSafeZone] = useState(null); // { lat, lng, radius }
   const [settingZone, setSettingZone] = useState(false);
+  const [showSafeZoneModal, setShowSafeZoneModal] = useState(false);
+  const [zoneRadius, setZoneRadius] = useState(300);
+  const [outsideAlert, setOutsideAlert] = useState(false);
   const [myDog, setMyDog] = useState(null);
   const [userLat, setUserLat] = useState(19.4136);
   const [userLng, setUserLng] = useState(-99.1716);
@@ -125,12 +128,22 @@ export default function MapScreen() {
   }
 
   async function checkSafeZone() {
+    // Called every 30s from location watch
     if (!safeZone || !myDog) return;
     const { data } = await supabase.from('dog_locations').select('lat,lng').eq('dog_name', myDog.name).single();
     if (!data) return;
     const dist = distanceKm(safeZone.lat, safeZone.lng, data.lat, data.lng) * 1000;
-    if (dist > safeZone.radius) {
+    if (dist > safeZone.radius + 250) {
+      // 250m beyond zone — trigger full community alert prompt
+      setOutsideAlert(true);
       await supabase.from('dog_locations').update({ outside_zone: true }).eq('dog_name', myDog.name);
+    } else if (dist > safeZone.radius) {
+      // Just outside zone — soft alert
+      setOutsideAlert(false);
+      await supabase.from('dog_locations').update({ outside_zone: true }).eq('dog_name', myDog.name);
+    } else {
+      setOutsideAlert(false);
+      await supabase.from('dog_locations').update({ outside_zone: false }).eq('dog_name', myDog.name);
     }
   }
 
@@ -518,16 +531,16 @@ function initMap() {
         </TouchableOpacity>
         <View style={s.bottomSheetHeader}>
           <Text style={s.bottomSheetTitle}>{lang === 'es' ? `${filteredDogs.length} mascotas cerca` : `${filteredDogs.length} pets nearby`}</Text>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-        {safeZone && (
-          <TouchableOpacity style={s.safeZoneActiveBtn} onPress={clearSafeZone}>
-            <Text style={s.safeZoneActiveBtnText}>🛡️ {lang === 'es' ? 'Zona activa' : 'Zone active'} ✕</Text>
-          </TouchableOpacity>
-        )}
-        <TouchableOpacity style={[s.safeZoneBtn, settingZone && s.safeZoneBtnActive]} onPress={() => setSettingZone(!settingZone)}>
-          <Text style={s.safeZoneBtnText}>{settingZone ? (lang === 'es' ? '✕ Cancelar' : '✕ Cancel') : (lang === 'es' ? '🛡️ Zona segura' : '🛡️ Safe zone')}</Text>
+          <TouchableOpacity
+          style={[s.safeZoneBtn, safeZone && s.safeZoneBtnOn]}
+          onPress={() => setShowSafeZoneModal(true)}
+        >
+          <Text style={s.safeZoneBtnIcon}>🛡️</Text>
+          <Text style={[s.safeZoneBtnText, safeZone && s.safeZoneBtnTextOn]}>
+            {safeZone ? (lang === 'es' ? 'Zona activa' : 'Zone on') : (lang === 'es' ? 'Zona segura' : 'Safe zone')}
+          </Text>
+          {safeZone && <View style={s.safeZoneActiveDot} />}
         </TouchableOpacity>
-        </View>
         <TouchableOpacity style={s.inviteBtn} onPress={() => {
             if (typeof navigator !== 'undefined' && navigator.share) {
               navigator.share({ title: 'SmartPet Tag', text: lang === 'es' ? '🐾 Protege a tu mascota con SmartPet Tag' : '🐾 Protect your pet with SmartPet Tag', url: 'https://smartpettag.vercel.app' });
@@ -609,6 +622,103 @@ function initMap() {
           </View>
         </Animated.View>
       )}
+      {/* Safe Zone Modal */}
+      {showSafeZoneModal && (
+        <View style={s.szModal}>
+          <View style={s.szModalCard}>
+            <View style={s.szModalHandle} />
+            <Text style={s.szModalTitle}>🛡️ {lang === 'es' ? 'Zona Segura' : 'Safe Zone'}</Text>
+            <Text style={s.szModalSub}>
+              {lang === 'es'
+                ? 'Recibirás una alerta si tu mascota sale de esta área. Si se aleja más de 250m, podrás alertar a toda la comunidad.'
+                : 'You will get an alert if your pet leaves this area. If they go 250m beyond, you can alert the whole community.'}
+            </Text>
+
+            {/* Radius selector */}
+            <View style={s.szRadiusSection}>
+              <Text style={s.szRadiusLabel}>
+                {lang === 'es' ? 'Radio de la zona:' : 'Zone radius:'} <Text style={s.szRadiusValue}>{zoneRadius}m</Text>
+              </Text>
+              <View style={s.szSliderRow}>
+                {[100, 200, 300, 500, 750, 1000, 1500, 2000].map(r => (
+                  <TouchableOpacity
+                    key={r}
+                    style={[s.szRadiusBtn, zoneRadius === r && s.szRadiusBtnActive]}
+                    onPress={() => setZoneRadius(r)}
+                  >
+                    <Text style={[s.szRadiusBtnText, zoneRadius === r && s.szRadiusBtnTextActive]}>
+                      {r >= 1000 ? `${r/1000}km` : `${r}m`}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Zone explanation */}
+            <View style={s.szInfoRow}>
+              <View style={[s.szInfoDot, { backgroundColor: '#10B981' }]} />
+              <Text style={s.szInfoText}>{lang === 'es' ? 'Zona segura — tu mascota está dentro' : 'Safe zone — pet is inside'}</Text>
+            </View>
+            <View style={s.szInfoRow}>
+              <View style={[s.szInfoDot, { backgroundColor: '#F59E0B' }]} />
+              <Text style={s.szInfoText}>{lang === 'es' ? 'Alerta suave — salió de la zona' : 'Soft alert — left the zone'}</Text>
+            </View>
+            <View style={s.szInfoRow}>
+              <View style={[s.szInfoDot, { backgroundColor: '#EF4444' }]} />
+              <Text style={s.szInfoText}>{lang === 'es' ? 'Alerta crítica — más de 250m fuera' : 'Critical alert — 250m+ beyond zone'}</Text>
+            </View>
+
+            {/* Zone location note */}
+            <View style={s.szLocationNote}>
+              <Text style={s.szLocationNoteText}>
+                📍 {lang === 'es'
+                  ? 'La zona se centrará en la ubicación actual de tu mascota en el mapa'
+                  : "Zone will center on your pet's current location on the map"}
+              </Text>
+            </View>
+
+            {/* Actions */}
+            <View style={s.szActions}>
+              {safeZone && (
+                <TouchableOpacity style={s.szDeactivateBtn} onPress={() => { clearSafeZone(); setShowSafeZoneModal(false); }}>
+                  <Text style={s.szDeactivateBtnText}>{lang === 'es' ? 'Desactivar zona' : 'Deactivate zone'}</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={s.szActivateBtn}
+                onPress={() => {
+                  saveSafeZone(userLat, userLng, zoneRadius);
+                  setShowSafeZoneModal(false);
+                }}
+              >
+                <Text style={s.szActivateBtnText}>
+                  ✓ {lang === 'es' ? 'Activar zona segura' : 'Activate safe zone'}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={s.szCancelBtn} onPress={() => setShowSafeZoneModal(false)}>
+                <Text style={s.szCancelBtnText}>{lang === 'es' ? 'Cancelar' : 'Cancel'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* Outside zone alert popup */}
+      {outsideAlert && (
+        <View style={s.outsideAlert}>
+          <Text style={s.outsideAlertTitle}>🚨 {myDog?.name} {lang === 'es' ? 'está muy lejos de su zona' : 'is far outside their zone'}</Text>
+          <Text style={s.outsideAlertSub}>{lang === 'es' ? 'Más de 250m fuera. ¿Alertar a la comunidad?' : 'Over 250m beyond zone. Alert the community?'}</Text>
+          <View style={s.outsideAlertBtns}>
+            <TouchableOpacity style={s.outsideAlertDismiss} onPress={() => setOutsideAlert(false)}>
+              <Text style={s.outsideAlertDismissText}>{lang === 'es' ? 'Ignorar' : 'Dismiss'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.outsideAlertSend} onPress={() => { setOutsideAlert(false); router.push('/emergency'); }}>
+              <Text style={s.outsideAlertSendText}>🚨 {lang === 'es' ? 'Enviar alerta' : 'Send alert'}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
     </View>
   );
 }
@@ -636,11 +746,47 @@ const s = StyleSheet.create({
   // Bottom sheet
   bottomSheet: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(255,255,255,0.98)', borderTopLeftRadius: 16, borderTopRightRadius: 16, paddingBottom: 8, shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.06, shadowRadius: 8 },
   bottomSheetHandle: { width: 32, height: 3, borderRadius: 2, backgroundColor: '#D1D5DB', alignSelf: 'center', marginTop: 6, marginBottom: 6 },
-  safeZoneBtn: { backgroundColor: '#F0FDF4', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, borderWidth: 1, borderColor: '#10B981' },
-  safeZoneBtnActive: { backgroundColor: '#FEF2F2', borderColor: '#EF4444' },
+  safeZoneBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#F0FDF4', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7, borderWidth: 1, borderColor: '#10B981' },
+  safeZoneBtnOn: { backgroundColor: '#ECFDF5', borderColor: '#10B981' },
+  safeZoneBtnIcon: { fontSize: 14 },
   safeZoneBtnText: { fontSize: 12, color: '#10B981', fontWeight: '700' },
-  safeZoneActiveBtn: { backgroundColor: '#ECFDF5', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#10B981', flexDirection: 'row', alignItems: 'center' },
-  safeZoneActiveBtnText: { fontSize: 11, color: '#10B981', fontWeight: '700' },
+  safeZoneBtnTextOn: { color: '#065F46' },
+  safeZoneActiveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#10B981' },
+  // Safe zone modal
+  szModal: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15,23,42,0.6)', justifyContent: 'flex-end', zIndex: 9999 },
+  szModalCard: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 40 },
+  szModalHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: '#E2E8F0', alignSelf: 'center', marginBottom: 20 },
+  szModalTitle: { fontSize: 22, fontWeight: '800', color: '#0F172A', letterSpacing: -0.5, marginBottom: 6 },
+  szModalSub: { fontSize: 13, color: '#64748B', lineHeight: 20, marginBottom: 20 },
+  szRadiusSection: { marginBottom: 16 },
+  szRadiusLabel: { fontSize: 13, color: '#64748B', fontWeight: '600', marginBottom: 10 },
+  szRadiusValue: { color: '#10B981', fontWeight: '800', fontSize: 16 },
+  szSliderRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  szRadiusBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' },
+  szRadiusBtnActive: { backgroundColor: '#ECFDF5', borderColor: '#10B981' },
+  szRadiusBtnText: { fontSize: 12, fontWeight: '600', color: '#64748B' },
+  szRadiusBtnTextActive: { color: '#10B981', fontWeight: '700' },
+  szInfoRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  szInfoDot: { width: 10, height: 10, borderRadius: 5 },
+  szInfoText: { fontSize: 12, color: '#64748B' },
+  szLocationNote: { backgroundColor: '#F8FAFC', borderRadius: 10, padding: 12, marginTop: 12, marginBottom: 16, borderWidth: 0.5, borderColor: '#E2E8F0' },
+  szLocationNoteText: { fontSize: 12, color: '#64748B', lineHeight: 18 },
+  szActions: { gap: 8 },
+  szActivateBtn: { backgroundColor: '#10B981', borderRadius: 14, paddingVertical: 15, alignItems: 'center' },
+  szActivateBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },
+  szDeactivateBtn: { backgroundColor: '#FFF1F1', borderRadius: 14, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: '#FECACA' },
+  szDeactivateBtnText: { color: '#EF4444', fontWeight: '600', fontSize: 13 },
+  szCancelBtn: { paddingVertical: 10, alignItems: 'center' },
+  szCancelBtnText: { color: '#94A3B8', fontSize: 13 },
+  // Outside alert
+  outsideAlert: { position: 'absolute', top: 80, left: 16, right: 16, backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, borderWidth: 2, borderColor: '#EF4444', zIndex: 999, shadowColor: '#EF4444', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 10 },
+  outsideAlertTitle: { fontSize: 16, fontWeight: '800', color: '#EF4444', marginBottom: 4 },
+  outsideAlertSub: { fontSize: 13, color: '#64748B', marginBottom: 14 },
+  outsideAlertBtns: { flexDirection: 'row', gap: 10 },
+  outsideAlertDismiss: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10, backgroundColor: '#F1F5F9' },
+  outsideAlertDismissText: { color: '#64748B', fontWeight: '600', fontSize: 13 },
+  outsideAlertSend: { flex: 2, paddingVertical: 10, alignItems: 'center', borderRadius: 10, backgroundColor: '#EF4444' },
+  outsideAlertSendText: { color: '#FFFFFF', fontWeight: '800', fontSize: 13 },
   collapseBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 16, alignSelf: 'center', backgroundColor: '#F1F5F9', borderRadius: 20, marginTop: 6, marginBottom: 4, borderWidth: 0.5, borderColor: '#E2E8F0' },
   collapseBtnArrow: { fontSize: 10, color: '#64748B' },
   collapseBtnLabel: { fontSize: 11, fontWeight: '700', color: '#64748B' },
