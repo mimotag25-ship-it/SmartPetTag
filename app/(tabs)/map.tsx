@@ -498,7 +498,7 @@ function initMap() {
       <View style={s.mapFull}>
         {Platform.OS === 'web' ? (
           <iframe
-            key={(focusPark || 'default') + filter + userLat + userLng + (showSafeZoneModal ? 'sz' : '')}
+            key={(focusPark || 'default') + filter + String(Math.round(userLat * 100)) + String(Math.round(userLng * 100))}
             srcDoc={buildMapHTML()}
             style={{ width: '100%', height: '100%', border: 'none' }}
             title="SmartPet Tag Map"
