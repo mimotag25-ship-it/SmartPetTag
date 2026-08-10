@@ -179,7 +179,8 @@ export default function HomeScreen() {
     // Load dog for this email
     let data = null;
     for (let i = 0; i < 5; i++) {
-      const { data: result } = await supabase.from('dogs').select('*').eq('owner_email', email).single();
+      const { data: results } = await supabase.from('dogs').select('*').eq('owner_email', email).limit(1);
+      const result = results?.[0] || null;
       if (result) { data = result; break; }
       if (i < 4) await new Promise(r => setTimeout(r, 1000));
     }
