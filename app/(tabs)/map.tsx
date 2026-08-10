@@ -31,6 +31,14 @@ export default function MapScreen() {
   const [szStep, setSzStep] = useState(1);
   const [zoneRadius, setZoneRadius] = useState(300);
   const [communityThreshold, setCommunityThreshold] = useState(500);
+  const mapIframeRef = typeof document !== 'undefined' ? null : null;
+
+  function sendRadiusPreview(radius) {
+    const iframe = typeof document !== 'undefined' ? document.querySelector('iframe[title="SmartPet Tag Map"]') : null;
+    if (iframe?.contentWindow) {
+      iframe.contentWindow.postMessage({ type: 'previewZone', lat: userLat, lng: userLng, radius }, '*');
+    }
+  }
   const [outsideAlert, setOutsideAlert] = useState(false);
   const [confirmCount, setConfirmCount] = useState(0);
   const [myDog, setMyDog] = useState(null);
@@ -658,16 +666,22 @@ function initMap() {
                   <Text style={s.szRadiusDisplayNum}>{zoneRadius >= 1000 ? `${zoneRadius/1000}km` : `${zoneRadius}m`}</Text>
                   <Text style={s.szRadiusDisplayLabel}>{lang === 'es' ? 'radio' : 'radius'}</Text>
                 </View>
-                <View style={s.szSliderRow}>
-                  {[100, 200, 300, 500, 750, 1000, 1500, 2000].map(r => (
-                    <TouchableOpacity
-                      key={r}
-                      style={[s.szRadiusBtn, zoneRadius === r && s.szRadiusBtnActive]}
-                      onPress={() => setZoneRadius(r)}
-                    >
-                      <Text style={[s.szRadiusBtnText, zoneRadius === r && s.szRadiusBtnTextActive]}>
-                        {r >= 1000 ? `${r/1000}km` : `${r}m`}
-                      </Text>
+                <View style={s.szManualRow}>
+                  <TouchableOpacity style={s.szMinusBtn} onPress={() => { const v = Math.max(50, zoneRadius - 50); setZoneRadius(v); sendRadiusPreview(v); }}>
+                    <Text style={s.szPlusMinusText}>−</Text>
+                  </TouchableOpacity>
+                  <View style={s.szManualDisplay}>
+                    <Text style={s.szManualValue}>{zoneRadius >= 1000 ? `${(zoneRadius/1000).toFixed(1)}km` : `${zoneRadius}m`}</Text>
+                    <Text style={s.szManualLabel}>{lang === 'es' ? 'radio' : 'radius'}</Text>
+                  </View>
+                  <TouchableOpacity style={s.szPlusBtn} onPress={() => { const v = Math.min(3000, zoneRadius + 50); setZoneRadius(v); sendRadiusPreview(v); }}>
+                    <Text style={s.szPlusMinusText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={s.szQuickBtns}>
+                  {[100, 300, 500, 1000, 2000].map(r => (
+                    <TouchableOpacity key={r} style={[s.szQuickBtn, zoneRadius === r && s.szQuickBtnActive]} onPress={() => { setZoneRadius(r); sendRadiusPreview(r); }}>
+                      <Text style={[s.szQuickBtnText, zoneRadius === r && s.szQuickBtnTextActive]}>{r >= 1000 ? `${r/1000}km` : `${r}m`}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -699,16 +713,22 @@ function initMap() {
                   <Text style={s.szRadiusDisplayLabel}>{lang === 'es' ? 'más allá de tu zona' : 'beyond your zone'}</Text>
                 </View>
 
-                <View style={s.szSliderRow}>
-                  {[250, 500, 750, 1000, 1500, 2000].map(r => (
-                    <TouchableOpacity
-                      key={r}
-                      style={[s.szRadiusBtn, communityThreshold === r && s.szRadiusBtnActive]}
-                      onPress={() => setCommunityThreshold(r)}
-                    >
-                      <Text style={[s.szRadiusBtnText, communityThreshold === r && s.szRadiusBtnTextActive]}>
-                        {r >= 1000 ? `${r/1000}km` : `${r}m`}
-                      </Text>
+                <View style={s.szManualRow}>
+                  <TouchableOpacity style={s.szMinusBtn} onPress={() => setCommunityThreshold(v => Math.max(100, v - 50))}>
+                    <Text style={s.szPlusMinusText}>−</Text>
+                  </TouchableOpacity>
+                  <View style={s.szManualDisplay}>
+                    <Text style={s.szManualValue}>{communityThreshold >= 1000 ? `${(communityThreshold/1000).toFixed(1)}km` : `${communityThreshold}m`}</Text>
+                    <Text style={s.szManualLabel}>{lang === 'es' ? 'adicional' : 'additional'}</Text>
+                  </View>
+                  <TouchableOpacity style={s.szPlusBtn} onPress={() => setCommunityThreshold(v => Math.min(5000, v + 50))}>
+                    <Text style={s.szPlusMinusText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={s.szQuickBtns}>
+                  {[250, 500, 1000, 2000].map(r => (
+                    <TouchableOpacity key={r} style={[s.szQuickBtn, communityThreshold === r && s.szQuickBtnActive]} onPress={() => setCommunityThreshold(r)}>
+                      <Text style={[s.szQuickBtnText, communityThreshold === r && s.szQuickBtnTextActive]}>{r >= 1000 ? `${r/1000}km` : `${r}m`}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -853,8 +873,8 @@ const s = StyleSheet.create({
   safeZoneBtnTextOn: { color: '#065F46' },
   safeZoneActiveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#10B981' },
   // Safe zone modal
-  szModal: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15,23,42,0.6)', justifyContent: 'flex-end', zIndex: 9999 },
-  szModalCard: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 40 },
+  szModal: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15,23,42,0.3)', justifyContent: 'flex-end', zIndex: 9999 },
+  szModalCard: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 20, paddingBottom: 36, maxHeight: '62%' },
   szModalHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: '#E2E8F0', alignSelf: 'center', marginBottom: 20 },
   szModalTitle: { fontSize: 22, fontWeight: '800', color: '#0F172A', letterSpacing: -0.5, marginBottom: 6 },
   szModalSub: { fontSize: 13, color: '#64748B', lineHeight: 20, marginBottom: 20 },
@@ -889,6 +909,18 @@ const s = StyleSheet.create({
   szRadiusDisplay: { alignItems: 'center', paddingVertical: 16 },
   szRadiusDisplayNum: { fontSize: 48, fontWeight: '900', color: '#10B981', letterSpacing: -2 },
   szRadiusDisplayLabel: { fontSize: 13, color: '#64748B', fontWeight: '600' },
+  szManualRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginVertical: 12 },
+  szMinusBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E2E8F0' },
+  szPlusBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#ECFDF5', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#10B981' },
+  szPlusMinusText: { fontSize: 24, fontWeight: '300', color: '#0F172A' },
+  szManualDisplay: { flex: 1, alignItems: 'center' },
+  szManualValue: { fontSize: 36, fontWeight: '900', color: '#10B981', letterSpacing: -1 },
+  szManualLabel: { fontSize: 11, color: '#94A3B8', fontWeight: '600', marginTop: 2 },
+  szQuickBtns: { flexDirection: 'row', gap: 8, justifyContent: 'center', marginBottom: 8 },
+  szQuickBtn: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' },
+  szQuickBtnActive: { backgroundColor: '#ECFDF5', borderColor: '#10B981' },
+  szQuickBtnText: { fontSize: 12, fontWeight: '600', color: '#64748B' },
+  szQuickBtnTextActive: { color: '#10B981', fontWeight: '700' },
   szTip: { backgroundColor: '#F0FDF4', borderRadius: 10, padding: 12, marginVertical: 12, borderWidth: 0.5, borderColor: '#A7F3D0' },
   szTipText: { fontSize: 12, color: '#065F46', lineHeight: 18 },
   szSafeguardCard: { backgroundColor: '#F8FAFC', borderRadius: 14, padding: 14, marginVertical: 12, borderWidth: 0.5, borderColor: '#E2E8F0' },
